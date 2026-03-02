@@ -1,40 +1,30 @@
 class HTMLFormatter:
-    def __init__(self):
-        # 네이버 블로그에 최적화된 기본 스타일 설정
-        self.table_style = (
-            "width: 100%; border-collapse: collapse; border: 1px solid #eeeeee; "
-            "font-family: 'Nanum Gothic', sans-serif; line-height: 1.8;"
-        )
-
     def wrap_in_table(self, title, content):
-        """본문 내용을 네이버 스마트에디터 호환 표 서식으로 감쌉니다."""
+        # 네이버 블로그 UI 가이드를 반영한 메인 컨테이너 [cite: 17, 32]
         html = f"""
-        <div style="max-width: 800px; margin: 0 auto;">
-            <table style="{self.table_style}">
+        <div style="max-width: 800px; margin: 0 auto; font-family: 'Nanum Gothic', sans-serif; line-height: 1.8; color: #333;">
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; border: 1px solid #eee;">
                 <thead>
                     <tr>
-                        <th style="padding: 20px; background-color: #f9f9f9; text-align: center; border-bottom: 2px solid #333;">
-                            <h2 style="margin: 0; color: #333;">{title}</h2>
+                        <th style="padding: 30px; background-color: #fcfcfc; text-align: center; border-bottom: 3px solid #333;">
+                            <span style="font-size: 14px; color: #888; letter-spacing: 2px;">MK CINELAB PREVIEW</span>
+                            <h1 style="margin: 10px 0; color: #222; font-size: 28px;">{title}</h1>
                         </th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td style="padding: 30px; color: #444; font-size: 16px;">
-                            {content.replace('\n', '<br>')}
+                        <td style="padding: 40px 20px;">
+                            {content}
                         </td>
                     </tr>
                 </tbody>
             </table>
+            
+            <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; text-align: center; margin-top: 40px;">
+                <p style="margin: 0; font-size: 14px; color: #666;">🎬 <b>MK CINELAB</b>의 다른 영화 이야기가 궁금하다면?</p>
+                <p style="margin: 10px 0 0 0; font-size: 12px; color: #999;">[이곳에 이전 포스팅 링크를 삽입하세요]</p>
+            </div>
         </div>
         """
         return html
-
-    def format_post(self, raw_text):
-        """클로드의 결과물(텍스트)을 깔끔한 HTML로 최종 가공합니다."""
-        # 텍스트 내의 특정 마커들을 HTML 태그로 치환하거나 정제하는 로직
-        # 가이드북에 따라 불렛 포인트(√) 등을 강조할 수 있습니다.
-        formatted_text = raw_text.replace("√", "<b>√</b>")
-        
-        # 실제 앱에서는 클로드가 반환한 HTML 코드 블록만 추출하는 로직이 추가될 수 있습니다.
-        return formatted_text
