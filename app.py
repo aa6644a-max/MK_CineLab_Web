@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components # 미리보기를 위한 컴포넌트 추가
 from tmdb_client import TMDBClient
 from gemini_client import GeminiClient
 from prompt_builder import PromptBuilder
@@ -40,7 +41,14 @@ with tab1:
                     final_html = formatter.wrap_in_table(f"{details['title']} 리뷰", result)
                     
                     st.success(f"'{details['title']}' 리뷰 생성 완료!")
-                    st.code(final_html, language='html')
+                    
+                    # --- 수정된 부분: 코드와 미리보기를 탭으로 분리 ---
+                    sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
+                    with sub_tab1:
+                        st.code(final_html, language='html')
+                    with sub_tab2:
+                        components.html(final_html, height=800, scrolling=True)
+                    # ------------------------------------------
                 else:
                     st.error(f"'{title}' 영회를 찾을 수 없습니다. 제목과 연도를 확인해 주세요.")
         else:
@@ -62,7 +70,14 @@ with tab2:
                     final_html = formatter.wrap_in_table(f"{details['title']} 프리뷰", result)
                     
                     st.success("프리뷰 생성 완료!")
-                    st.code(final_html, language='html')
+                    
+                    # --- 수정된 부분 ---
+                    sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
+                    with sub_tab1:
+                        st.code(final_html, language='html')
+                    with sub_tab2:
+                        components.html(final_html, height=800, scrolling=True)
+                    # -----------------
                 else:
                     st.error("해당하는 영화 정보가 없습니다.")
         else:
@@ -80,6 +95,13 @@ with tab3:
                 final_html = formatter.wrap_in_table("최신 영화 뉴스", result)
                 
                 st.success("뉴스 포스팅 생성 완료!")
-                st.code(final_html, language='html')
+                
+                # --- 수정된 부분 ---
+                sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
+                with sub_tab1:
+                    st.code(final_html, language='html')
+                with sub_tab2:
+                    components.html(final_html, height=800, scrolling=True)
+                # -----------------
         else:
             st.warning("뉴스 원문을 입력해 주세요.")
