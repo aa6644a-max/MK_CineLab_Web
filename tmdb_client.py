@@ -1,21 +1,22 @@
 import requests
+import re
 
 class TMDBClient:
     def __init__(self):
-        # ⚠️ 아래 큰따옴표("") 안에 한글이 절대 없어야 합니다.
-        # ⚠️ Bearer 뒤에 한글 주석을 달지 마세요.
+        # 1. 여기에 본인의 키와 토큰을 넣으세요.
+        # 주의: 주석(#)을 달지 말고 값만 넣으세요.
+        raw_api_key = "여기에_API_키"
+        raw_token = "여기에_액세스_토큰"
         
-        # 1. API 키 입력
-        self.api_key = "민규님의_TMDB_API_KEY"
         self.base_url = "https://api.themoviedb.org/3"
         
-        # 2. 액세스 토큰 입력 (주석 없이 값만 딱 넣으세요)
-        token = "민규님의_ACCESS_TOKEN"
+        # 2. 토큰에서 영어, 숫자, 마침표(.)를 제외한 모든 문자(한글 포함)를 강제로 제거
+        # latin-1 에러를 방지하는 가장 확실한 방법입니다.
+        self.api_key = re.sub(r'[^a-zA-Z0-9.]', '', raw_api_key)
+        token = re.sub(r'[^a-zA-Z0-9.]', '', raw_token)
         
-        # 3. 헤더 구성 (strip()으로 앞뒤 공백까지 완벽 제거)
-        clean_token = token.strip()
         self.headers = {
-            "Authorization": f"Bearer {clean_token}",
+            "Authorization": f"Bearer {token}",
             "accept": "application/json"
         }
 
@@ -29,7 +30,7 @@ class TMDBClient:
         if year:
             params["primary_release_year"] = year
             
-        # ❱ 이 줄에서 에러가 났던 겁니다. headers가 순수한 영어/숫자여야 합니다.
+        # ❱ 이 줄에서 터졌던 에러를 위에서 정제한 headers가 해결해줍니다.
         response = requests.get(url, headers=self.headers, params=params)
         
         if response.status_code == 200:
