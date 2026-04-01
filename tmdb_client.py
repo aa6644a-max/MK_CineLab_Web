@@ -2,23 +2,27 @@ import requests
 
 class TMDBClient:
     def __init__(self):
-        # ⚠️ 여기 따옴표 안에 민규님의 API 키와 토큰을 '직접' 넣으세요.
-        # ⚠️ 값 뒤에 한글 주석(# 어쩌구)이 붙어있다면 반드시 지워주세요!
+        # ⚠️ 아래 값들에 한글 주석(# 어쩌구)을 절대 달지 마세요!
         self.api_key = "민규님의_API_키"
         self.base_url = "https://api.themoviedb.org/3"
+        
+        # 토큰을 변수에 담고 strip()으로 눈에 안 보이는 공백을 지웁니다.
+        token = "민규님의_ACCESS_TOKEN"
+        token = token.strip() 
+        
         self.headers = {
-            "Authorization": "Bearer 민규님의_액세스_토큰",
+            "Authorization": f"Bearer {token}",
             "accept": "application/json"
         }
 
     def search_movie(self, title):
+        """영화 제목으로 검색 (가장 심플한 방식)"""
         url = f"{self.base_url}/search/movie"
         params = {
             "query": title,
             "language": "ko-KR",
             "region": "KR"
         }
-        # 이 줄에서 에러가 난다면 100% 위 Authorization의 토큰 값에 한글/공백이 섞인 겁니다.
         response = requests.get(url, headers=self.headers, params=params)
         
         if response.status_code == 200:
@@ -27,6 +31,7 @@ class TMDBClient:
         return None
 
     def get_movie_details(self, movie_id):
+        """영화 상세 정보 가져오기"""
         url = f"{self.base_url}/movie/{movie_id}"
         params = {"language": "ko-KR", "append_to_response": "credits"}
         response = requests.get(url, headers=self.headers, params=params)
