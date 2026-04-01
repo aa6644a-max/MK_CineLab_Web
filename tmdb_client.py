@@ -1,4 +1,5 @@
 import requests
+import re
 import os
 from dotenv import load_dotenv
 
@@ -6,32 +7,54 @@ load_dotenv()
 
 class TMDBClient:
     def __init__(self):
-        self.api_key = os.getenv("TMDB_API_KEY")
-        self.base_url = "https://api.themoviedb.org/3"
-
-    def search_movie_exact(self, title, year=None):
-        search_url = f"{self.base_url}/search/movie"
-        params = {
-            "api_key": self.api_key,
-            "query": title,
-            "language": "ko-KR",  # 한국어 결과 우선
-            "region": "KR"        # 한국 개봉 데이터 기준
-        }
+        # 1. API 키와 토큰을 직접 문자열로 넣으세요 (에러 방지용)
+        raw_token = "여기에_민규님의_TMDB_액세스_토큰_입력"
         
+        # 2. 유니코드/latin-1 에러 원천 차단 (영어, 숫자, 점만 남김)
+        token = re.sub(r'[^a-zA-Z0-9.]', '', str(raw_token))
+        
+        self.base_url = "https://api.themoviedb.org/3"
+        self.headers = {
+            "Authorization": f"Bearer {token}",
+            "accept": "application/json"
+        }
+
+    def search_movie(self, title, year=None):
+        url = f"{self.base_url}/search/movie"
+        params = {
+            "query": title,
+            "language": "ko-KR",
+            "region": "KR"
+        }
         if year:
             params["primary_release_year"] = year
 
-        response = requests.get(search_url, params=params)
-        data = response.json()
-
-        if not data.get('results'):
-            return None
-
-        # 정확도 향상을 위한 후처리: 제목이 완전히 일치하는 것 찾기
-        for movie in data['results']:
-            if movie['title'] == title:
-                # 상세 정보(장르명 등)를 위해 한 번 더 조회하거나 그대로 반환
-                return movie
+        # 에러가 나던 지점: 정제된 token을 쓰므로 이제 안전합니다.
+        response = requests.get(url, headers=self.headers, params=params)
         
-        # 완전 일치가 없으면 가장 상단 결과 반환
-        return data['results'][0]
+        if response.status_code == 200:
+            results = response.json().get('results', [])
+            return results[0] if results else None
+        return None
+
+    def get_movie_details(self, movie_id):
+        url = f"{self.base_url}/movie/{movie_id}"
+        params = {"language": "ko-KR", "append_to_response": "credits"}
+        response = requests.get(url, headers=self.headers, params=params)
+        
+        if response.status_code == 200:
+            data = response.json()
+            director = ""
+            for crew in data.get("credits", {}).get("crew", []):
+                if crew.get("job") == "Director":
+                    director = crew.get("name")
+                    break
+            
+            return {
+                "id": data.get("id"),
+                "title": data.get("title"),
+                "release_date": data.get("release_date"),
+                "director": director,
+                "overview": data.get("overview")
+            }
+        return {}
