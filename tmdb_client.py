@@ -1,20 +1,18 @@
 import requests
-import re
 
 class TMDBClient:
     def __init__(self):
-        # ⚠️ 본인의 키와 토큰을 넣으세요 (주석 금지)
-        raw_api_key = "민규님의_API_키"
-        raw_token = "민규님의_액세스_토큰"
-        
+        # 1. API 키 (따옴표 안에 영어/숫자만 딱 넣으세요. 주석 절대 금지!)
+        self.api_key = "민규님의_API_키" 
         self.base_url = "https://api.themoviedb.org/3"
         
-        # 보안 및 인코딩 에러 방지를 위해 영어/숫자만 남김
-        self.api_key = re.sub(r'[^a-zA-Z0-9.]', '', raw_api_key)
-        token = re.sub(r'[^a-zA-Z0-9.]', '', raw_token)
+        # 2. 액세스 토큰 (여기도 주석 절대 금지!)
+        token = "민규님의_ACCESS_TOKEN"
         
+        # 3. 헤더 구성 (문자열 앞뒤 공백을 강제로 제거해서 latin-1 에러 방지)
+        token = str(token).strip()
         self.headers = {
-            "Authorization": f"Bearer {token}",
+            "Authorization": "Bearer " + token,
             "accept": "application/json"
         }
 
@@ -26,6 +24,7 @@ class TMDBClient:
             "language": "ko-KR",
             "region": "KR"
         }
+        # 32번째 줄: headers가 완전히 정제된 상태로 요청을 보냅니다.
         response = requests.get(url, headers=self.headers, params=params)
         
         if response.status_code == 200:
