@@ -27,7 +27,7 @@ class MKCineLabApp(ctk.CTk):
         self.status_label = ctk.CTkLabel(self, text="준비 완료", text_color="gray")
         self.status_label.pack(side="bottom", pady=10)
 
-        # 3가지 탭 생성 (리뷰, 프리뷰, 뉴스)
+        # 탭 생성
         self.tabview = ctk.CTkTabview(self, width=860, height=650)
         self.tabview.pack(padx=20, pady=20)
 
@@ -40,16 +40,23 @@ class MKCineLabApp(ctk.CTk):
         self.setup_news_tab()
 
     def setup_review_tab(self):
+        # 영화 제목 입력
         ctk.CTkLabel(self.tab_review, text="영화 제목:").pack(pady=(10, 0))
         self.review_title = ctk.CTkEntry(self.tab_review, width=400)
         self.review_title.pack(pady=5)
 
+        # 개봉 연도 입력창 추가 (정밀 검색용)
+        ctk.CTkLabel(self.tab_review, text="개봉 연도 (선택 사항):").pack(pady=(5, 0))
+        self.review_year = ctk.CTkEntry(self.tab_review, width=150, placeholder_text="예: 2024")
+        self.review_year.pack(pady=5)
+
         ctk.CTkLabel(self.tab_review, text="나의 주관적 감상평:").pack(pady=(10, 0))
-        self.review_comment = ctk.CTkTextbox(self.tab_review, width=600, height=200)
+        self.review_comment = ctk.CTkTextbox(self.tab_review, width=600, height=250)
         self.review_comment.pack(pady=5)
 
         ctk.CTkButton(self.tab_review, text="리뷰 생성 시작", command=self.generate_review).pack(pady=20)
 
+    # --- 기존 프리뷰/뉴스 탭은 동일하게 유지 ---
     def setup_preview_tab(self):
         ctk.CTkLabel(self.tab_preview, text="개봉 예정작 제목:").pack(pady=(10, 0))
         self.preview_title = ctk.CTkEntry(self.tab_preview, width=400)
@@ -86,16 +93,21 @@ class MKCineLabApp(ctk.CTk):
 
     def generate_review(self):
         title = self.review_title.get().strip()
+        year = self.review_year.get().strip() # 입력된 연도 가져오기
         comment = self.review_comment.get("1.0", "end").strip()
         
         if not title:
             messagebox.showwarning("입력 확인", "영화 제목을 입력해 주세요.")
             return
 
+        # 연도 값이 숫자인지 확인 후 처리
+        year_val = int(year) if year.isdigit() else None
+
         self.status_label.configure(text=f"'{title}' 검색 중...", text_color="yellow")
         self.update()
 
-        movie_info = self.tmdb.search_movie(title)
+        # TMDBClient의 search_movie 함수에 year_val 전달
+        movie_info = self.tmdb.search_movie(title, year=year_val)
         
         if movie_info:
             details = self.tmdb.get_movie_details(movie_info['id'])
@@ -103,28 +115,24 @@ class MKCineLabApp(ctk.CTk):
             self.process_generation(prompt, f"{details['title']} 리뷰")
         else:
             self.status_label.configure(text="검색 결과가 없습니다.", text_color="red")
-            messagebox.showerror("검색 실패", "해당하는 영화 정보가 없습니다.\n제목을 다시 확인해 주세요.")
+            messagebox.showerror("검색 실패", f"'{title}'에 대한 정보를 찾을 수 없습니다.\n제목과 연도를 다시 확인해 주세요.")
 
+    # --- 프리뷰/뉴스 실행 로직은 기존과 동일 ---
     def generate_preview(self):
         title = self.preview_title.get().strip()
         point = self.preview_point.get().strip()
-        
         if not title:
             messagebox.showwarning("입력 확인", "영화 제목을 입력해 주세요.")
             return
-
         self.status_label.configure(text=f"'{title}' 정보 수집 중...", text_color="yellow")
         self.update()
-
         movie_info = self.tmdb.search_movie(title)
-        
         if movie_info:
             details = self.tmdb.get_movie_details(movie_info['id'])
             prompt = self.builder.build_preview_prompt(details, point)
             self.process_generation(prompt, f"{details['title']} 프리뷰")
         else:
-            self.status_label.configure(text="검색 결과가 없습니다.", text_color="red")
-            messagebox.showerror("검색 실패", "해당하는 영화 정보가 없습니다.\n정확한 제목을 입력해 주세요.")
+            messagebox.showerror("검색 실패", "해당하는 영화 정보가 없습니다.")
 
     def generate_news(self):
         content = self.news_content.get("1.0", "end").strip()
