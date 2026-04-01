@@ -20,7 +20,7 @@ tab1, tab2, tab3 = st.tabs(["🎥 영화 리뷰", "📅 개봉 프리뷰", "📰
 with tab1:
     st.subheader("영화 리뷰 생성")
     title = st.text_input("리뷰할 영화 제목", key="rev_title")
-    comment = st.text_area("나의 주관적 감상평", height=150)
+    comment = st.text_area("나의 주관적 감상평", height=150, key="rev_comment")
     if st.button("리뷰 생성"):
         if title:
             with st.spinner("정보 수집 중..."):
@@ -36,7 +36,7 @@ with tab1:
 with tab2:
     st.subheader("개봉 예정작 프리뷰")
     p_title = st.text_input("프리뷰 영화 제목", key="pre_title")
-    point = st.text_input("강조 포인트")
+    point = st.text_input("강조 포인트", key="pre_point")
     if st.button("프리뷰 생성"):
         if p_title:
             with st.spinner("프리뷰 원고 작성 중..."):
@@ -49,8 +49,8 @@ with tab2:
 
 with tab3:
     st.subheader("최신 영화 뉴스")
-    news_content = st.text_area("뉴스 기사 원문", height=300)
-    if st.button("뉴스 생성"):
+    news_content = st.text_area("뉴스 기사 원문", height=300, key="news_input")
+    if st.button("뉴스 포스팅 생성"):
         if news_content:
             with st.spinner("뉴스 분석 중..."):
                 prompt = builder.build_news_prompt(news_content)

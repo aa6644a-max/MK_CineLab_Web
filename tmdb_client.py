@@ -4,12 +4,12 @@ import re
 class TMDBClient:
     def __init__(self):
         # ⚠️ 중요: 아래 따옴표 안에 키와 토큰만 넣으세요. 주석은 지우셔도 됩니다.
-        raw_api_key = "민규님의_API_키"
-        raw_token = "민규님의_액세스_토큰"
+        raw_api_key = "민규님의_TMDB_API_키"
+        raw_token = "민규님의_TMDB_액세스_토큰"
         
         self.base_url = "https://api.themoviedb.org/3"
         
-        # [해결책] 영어, 숫자, 마침표(.) 외의 모든 문자(한글 포함)를 강제로 삭제합니다.
+        # [핵심 해결책] 영어, 숫자, 마침표(.) 외의 모든 문자(한글 포함)를 강제로 삭제합니다.
         # latin-1 에러를 방지하는 가장 확실한 필터입니다.
         self.api_key = re.sub(r'[^a-zA-Z0-9.]', '', str(raw_api_key))
         token = re.sub(r'[^a-zA-Z0-9.]', '', str(raw_token))
@@ -43,8 +43,10 @@ class TMDBClient:
                     director = crew.get("name")
                     break
             return {
-                "id": data.get("id"), "title": data.get("title"),
+                "id": data.get("id"), 
+                "title": data.get("title"),
                 "release_date": data.get("release_date"),
-                "director": director, "overview": data.get("overview")
+                "director": director, 
+                "overview": data.get("overview")
             }
         return {}
