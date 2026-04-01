@@ -5,6 +5,7 @@ from tmdb_client import TMDBClient
 from gemini_client import GeminiClient
 from prompt_builder import PromptBuilder
 from html_formatter import HTMLFormatter
+from naver_client import NaverClient
 
 # GUI 테마 설정
 ctk.set_appearance_mode("dark")
@@ -22,6 +23,7 @@ class MKCineLabApp(ctk.CTk):
         self.gemini = GeminiClient() 
         self.builder = PromptBuilder()
         self.formatter = HTMLFormatter()
+        self.naver = NaverClient()
 
         # 하단 상태 표시줄
         self.status_label = ctk.CTkLabel(self, text="준비 완료", text_color="gray")
@@ -111,7 +113,14 @@ class MKCineLabApp(ctk.CTk):
         
         if movie_info:
             details = self.tmdb.get_movie_details(movie_info['id'])
-            prompt = self.builder.build_review_prompt(details, comment)
+            
+            # --- 추가된 부분: 네이버에서 뉴스 긁어오기 ---
+            self.status_label.configure(text="최신 트렌드(뉴스) 검색 중...", text_color="yellow")
+            self.update()
+            latest_news = self.naver.search_movie_news(title)
+            
+            # --- 수정된 부분: latest_news 변수도 같이 넘겨주기 ---
+            prompt = self.builder.build_review_prompt(details, comment, latest_news) 
             self.process_generation(prompt, f"{details['title']} 리뷰")
         else:
             self.status_label.configure(text="검색 결과가 없습니다.", text_color="red")
@@ -127,9 +136,15 @@ class MKCineLabApp(ctk.CTk):
         self.status_label.configure(text=f"'{title}' 정보 수집 중...", text_color="yellow")
         self.update()
         movie_info = self.tmdb.search_movie(title)
-        if movie_info:
+       if movie_info:
             details = self.tmdb.get_movie_details(movie_info['id'])
-            prompt = self.builder.build_preview_prompt(details, point)
+            
+            # 네이버 뉴스 검색 추가
+            self.status_label.configure(text="최신 트렌드(뉴스) 검색 중...", text_color="yellow")
+            self.update()
+            latest_news = self.naver.search_movie_news(title)
+            
+            prompt = self.builder.build_preview_prompt(details, point, latest_news) # latest_news 추가
             self.process_generation(prompt, f"{details['title']} 프리뷰")
         else:
             messagebox.showerror("검색 실패", "해당하는 영화 정보가 없습니다.")

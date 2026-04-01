@@ -4,6 +4,7 @@ from tmdb_client import TMDBClient
 from gemini_client import GeminiClient
 from prompt_builder import PromptBuilder
 from html_formatter import HTMLFormatter
+from naver_client import NaverClient
 
 st.set_page_config(page_title="MK CINELAB", page_icon="🎬", layout="centered")
 

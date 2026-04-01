@@ -36,7 +36,7 @@ class PromptBuilder:
         출력 형식: 오직 HTML 본문 코드만 출력하세요. 맨 마지막 줄에 HTML 주석() 형식으로 클릭을 유도하는 매력적인 제목 5개를 제안하세요.
         """
 
-    def build_preview_prompt(self, details, point):
+    def build_preview_prompt(self, details, point, latest_news=""):
         """개봉 프리뷰 프롬프트"""
         base = self._get_base_guideline()
         return f"""
@@ -52,15 +52,19 @@ class PromptBuilder:
         
         [강조 포인트]
         - {point}
+
+        [최신 네이버 뉴스 동향]
+        {latest_news}
         
         [특이사항]
         - 반드시 제공된 [영화 실제 데이터]를 바탕으로 작성하여 거짓 정보(할루시네이션)를 만들지 마세요.
         - 만약 줄거리 정보가 부족하다면, 감독이나 배우의 전작, 장르적 특징을 활용해 기대감을 조성하세요.
+        - [최신 네이버 뉴스 동향]을 참고하여, 이 영화에 대한 대중들의 현재 기대감이나 최신 이슈를 서론이나 본론에 자연스럽게 녹여내 주세요. (뉴스가 없다면 생략 가능)
         
         {base}
         """
 
-    def build_review_prompt(self, details, comment):
+    def build_review_prompt(self, details, comment, latest_news=""):
         """영화 리뷰 프롬프트"""
         base = self._get_base_guideline()
         return f"""
@@ -76,11 +80,15 @@ class PromptBuilder:
         
         [나의 주관적 감상평]
         {comment}
+
+        [최신 네이버 뉴스 동향]
+        {latest_news}
         
         [특이사항]
         - 감상평에 담긴 저의 솔직한 감정을 본문에 자연스럽게 녹여내 주세요.
         - 반드시 제공된 [영화 실제 데이터]를 바탕으로 작성하여 거짓 정보(할루시네이션)를 만들지 마세요. 특히 감독 이름({details.get('director', '')})을 정확히 명시하세요.
         - 정보가 부족한 단편/독립 영화의 경우, 제가 적은 [나의 주관적 감상평]을 뼈대로 삼아 글을 전개해 주세요.
+        - [최신 네이버 뉴스 동향]을 참고하여 최근 대중들의 반응이나 관련 이슈를 리뷰에 가볍게 곁들여 글을 더 풍성하게 만들어주세요. (뉴스가 없다면 생략 가능)
         
         {base}
         """
