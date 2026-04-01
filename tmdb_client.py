@@ -1,52 +1,37 @@
 import requests
-import re
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class TMDBClient:
     def __init__(self):
-        # ⚠️ 중요: 아래 따옴표 안에 키와 토큰만 넣으세요. 주석은 지우셔도 됩니다.
-        raw_api_key = "민규님의_TMDB_API_키"
-        raw_token = "민규님의_TMDB_액세스_토큰"
-        
+        self.api_key = os.getenv("TMDB_API_KEY")
         self.base_url = "https://api.themoviedb.org/3"
-        
-        # [핵심 해결책] 영어, 숫자, 마침표(.) 외의 모든 문자(한글 포함)를 강제로 삭제합니다.
-        # latin-1 에러를 방지하는 가장 확실한 필터입니다.
-        self.api_key = re.sub(r'[^a-zA-Z0-9.]', '', str(raw_api_key))
-        token = re.sub(r'[^a-zA-Z0-9.]', '', str(raw_token))
-        
-        self.headers = {
-            "Authorization": f"Bearer {token}",
-            "accept": "application/json"
+
+    def search_movie_exact(self, title, year=None):
+        search_url = f"{self.base_url}/search/movie"
+        params = {
+            "api_key": self.api_key,
+            "query": title,
+            "language": "ko-KR",  # 한국어 결과 우선
+            "region": "KR"        # 한국 개봉 데이터 기준
         }
-
-    def search_movie(self, title):
-        url = f"{self.base_url}/search/movie"
-        params = {"query": title, "language": "ko-KR", "region": "KR"}
-        # 32번째 줄: 이제 headers가 완벽하게 정제되어 에러가 나지 않습니다.
-        response = requests.get(url, headers=self.headers, params=params)
         
-        if response.status_code == 200:
-            results = response.json().get('results', [])
-            return results[0] if results else None
-        return None
+        if year:
+            params["primary_release_year"] = year
 
-    def get_movie_details(self, movie_id):
-        url = f"{self.base_url}/movie/{movie_id}"
-        params = {"language": "ko-KR", "append_to_response": "credits"}
-        response = requests.get(url, headers=self.headers, params=params)
+        response = requests.get(search_url, params=params)
+        data = response.json()
+
+        if not data.get('results'):
+            return None
+
+        # 정확도 향상을 위한 후처리: 제목이 완전히 일치하는 것 찾기
+        for movie in data['results']:
+            if movie['title'] == title:
+                # 상세 정보(장르명 등)를 위해 한 번 더 조회하거나 그대로 반환
+                return movie
         
-        if response.status_code == 200:
-            data = response.json()
-            director = ""
-            for crew in data.get("credits", {}).get("crew", []):
-                if crew.get("job") == "Director":
-                    director = crew.get("name")
-                    break
-            return {
-                "id": data.get("id"), 
-                "title": data.get("title"),
-                "release_date": data.get("release_date"),
-                "director": director, 
-                "overview": data.get("overview")
-            }
-        return {}
+        # 완전 일치가 없으면 가장 상단 결과 반환
+        return data['results'][0]
