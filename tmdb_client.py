@@ -2,19 +2,20 @@ import requests
 
 class TMDBClient:
     def __init__(self):
-        # 1. API 키와 토큰에서 '한글 주석'을 완전히 제거하세요.
-        # 잘못된 예: self.api_key = "abc123" # 내 키
-        # 올바른 예: self.api_key = "abc123"
+        # ⚠️ 아래 큰따옴표("") 안에 한글이 절대 없어야 합니다.
+        # ⚠️ Bearer 뒤에 한글 주석을 달지 마세요.
         
-        self.api_key = "민규님의_API_KEY" 
+        # 1. API 키 입력
+        self.api_key = "민규님의_TMDB_API_KEY"
         self.base_url = "https://api.themoviedb.org/3"
         
-        # 2. 토큰 값을 변수에 담을 때도 주석 없이 순수하게 문자열만 넣으세요.
-        token = "민규님의_ACCESS_TOKEN" 
+        # 2. 액세스 토큰 입력 (주석 없이 값만 딱 넣으세요)
+        token = "민규님의_ACCESS_TOKEN"
         
-        # 3. 헤더 구성 (문자열 결합 시 불필요한 공백이나 특수문자가 없어야 함)
+        # 3. 헤더 구성 (strip()으로 앞뒤 공백까지 완벽 제거)
+        clean_token = token.strip()
         self.headers = {
-            "Authorization": f"Bearer {token.strip()}",
+            "Authorization": f"Bearer {clean_token}",
             "accept": "application/json"
         }
 
@@ -28,7 +29,7 @@ class TMDBClient:
         if year:
             params["primary_release_year"] = year
             
-        # 여기서 self.headers가 깨끗하지 않으면 에러가 발생합니다.
+        # ❱ 이 줄에서 에러가 났던 겁니다. headers가 순수한 영어/숫자여야 합니다.
         response = requests.get(url, headers=self.headers, params=params)
         
         if response.status_code == 200:
