@@ -39,9 +39,20 @@ class PromptBuilder:
         return f"""
         당신은 네이버 영화 인플루언서 'MK'입니다. 아래 정보를 바탕으로 프리뷰 원고를 작성하세요.
         
-        [기본 정보]
-        - 영화: {details['title']}
-        - 강조 포인트: {point}
+        [영화 실제 데이터]
+        - 제목: {details.get('title', '')}
+        - 개봉일: {details.get('release_date', '')}
+        - 장르: {details.get('genres', '')}
+        - 감독: {details.get('director', '')}
+        - 출연: {details.get('actors', '')}
+        - 줄거리: {details.get('overview', '')}
+        
+        [강조 포인트]
+        - {point}
+        
+        [특이사항]
+        - 반드시 제공된 [영화 실제 데이터]를 바탕으로 작성하여 거짓 정보(할루시네이션)를 만들지 마세요.
+        - 만약 줄거리 정보가 부족하다면, 감독이나 배우의 전작, 장르적 특징을 활용해 기대감을 조성하세요.
         
         {base}
         """
@@ -52,12 +63,21 @@ class PromptBuilder:
         return f"""
         당신은 네이버 영화 인플루언서 'MK'입니다. 영화를 직접 관람한 후 작성하는 상세 리뷰 원고를 작성하세요.
         
-        [기본 정보]
-        - 영화: {details['title']}
-        - 나의 주관적 감상평: {comment}
+        [영화 실제 데이터]
+        - 제목: {details.get('title', '')}
+        - 개봉일: {details.get('release_date', '')}
+        - 장르: {details.get('genres', '')}
+        - 감독: {details.get('director', '')}
+        - 출연: {details.get('actors', '')}
+        - 줄거리: {details.get('overview', '')}
+        
+        [나의 주관적 감상평]
+        {comment}
         
         [특이사항]
         - 감상평에 담긴 저의 솔직한 감정을 본문에 자연스럽게 녹여내 주세요.
+        - 반드시 제공된 [영화 실제 데이터]를 바탕으로 작성하여 거짓 정보(할루시네이션)를 만들지 마세요. 특히 감독 이름({details.get('director', '')})을 정확히 명시하세요.
+        - 정보가 부족한 단편/독립 영화의 경우, 제가 적은 [나의 주관적 감상평]을 뼈대로 삼아 글을 전개해 주세요.
         
         {base}
         """

@@ -56,18 +56,31 @@ class TMDBClient:
             response = requests.get(url, params=params, timeout=10)
             if response.status_code == 200:
                 data = response.json()
+                
+                # 💡 수정된 부분: 감독, 배우, 장르를 모두 뽑아옵니다!
                 director = ""
                 for crew in data.get("credits", {}).get("crew", []):
                     if crew.get("job") == "Director":
                         director = crew.get("name")
                         break
                 
+                # 배우 상위 3명 추출
+                actors = [cast.get("name") for cast in data.get("credits", {}).get("cast", [])[:3]]
+                actors_str = ", ".join(actors) if actors else "정보 없음"
+                
+                # 장르 추출
+                genres = [g.get("name") for g in data.get("genres", [])]
+                genres_str = ", ".join(genres) if genres else "정보 없음"
+                
                 return {
                     "id": data.get("id"),
                     "title": data.get("title"),
-                    "release_date": data.get("release_date"),
-                    "director": director,
-                    "overview": data.get("overview")
+                    "release_date": data.get("release_date", "정보 없음"),
+                    "director": director if director else "정보 없음",
+                    "actors": actors_str,
+                    "genres": genres_str,
+                    # 줄거리가 비어있을 때를 대비한 기본값 추가
+                    "overview": data.get("overview") if data.get("overview") else "TMDB에 등록된 공식 줄거리가 없습니다."
                 }
         except Exception as e:
             print(f"TMDB Detail Error: {e}")
