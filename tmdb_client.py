@@ -1,5 +1,4 @@
 import requests
-import re
 import os
 from dotenv import load_dotenv
 
@@ -7,30 +6,27 @@ load_dotenv()
 
 class TMDBClient:
     def __init__(self):
-        # 1. API 키와 토큰을 직접 문자열로 넣으세요 (에러 방지용)
-        raw_token = "여기에_민규님의_TMDB_액세스_토큰_입력"
-        
-        # 2. 유니코드/latin-1 에러 원천 차단 (영어, 숫자, 점만 남김)
-        token = re.sub(r'[^a-zA-Z0-9.]', '', str(raw_token))
-        
+        # 환경변수에서 API 키를 가져옵니다. 
+        # (만약 .env 파일 설정이 어렵다면, os.getenv(...) 부분을 지우고 "민규님의_API_키"를 직접 문자열로 넣으셔도 됩니다.)
+        self.api_key = os.getenv("TMDB_API_KEY", "")
         self.base_url = "https://api.themoviedb.org/3"
-        self.headers = {
-            "Authorization": f"Bearer {token}",
-            "accept": "application/json"
-        }
 
     def search_movie(self, title, year=None):
         url = f"{self.base_url}/search/movie"
+        
+        # 💡 핵심: headers를 아예 안 씁니다! params에 api_key를 직접 넣습니다.
         params = {
+            "api_key": self.api_key.strip(),
             "query": title,
             "language": "ko-KR",
             "region": "KR"
         }
+        
         if year:
             params["primary_release_year"] = year
 
-        # 에러가 나던 지점: 정제된 token을 쓰므로 이제 안전합니다.
-        response = requests.get(url, headers=self.headers, params=params)
+        # headers=self.headers 부분이 삭제되었습니다. 에러 원천 차단!
+        response = requests.get(url, params=params)
         
         if response.status_code == 200:
             results = response.json().get('results', [])
@@ -39,8 +35,15 @@ class TMDBClient:
 
     def get_movie_details(self, movie_id):
         url = f"{self.base_url}/movie/{movie_id}"
-        params = {"language": "ko-KR", "append_to_response": "credits"}
-        response = requests.get(url, headers=self.headers, params=params)
+        
+        # 💡 여기도 마찬가지로 params에 api_key를 넣습니다.
+        params = {
+            "api_key": self.api_key.strip(),
+            "language": "ko-KR", 
+            "append_to_response": "credits"
+        }
+        
+        response = requests.get(url, params=params)
         
         if response.status_code == 200:
             data = response.json()
