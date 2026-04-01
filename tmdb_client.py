@@ -1,14 +1,15 @@
 import requests
 import os
 import re
+import streamlit as st  # 💡 여기 꼭대기로 올렸습니다!
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class TMDBClient:
     def __init__(self):
-        # 💡 숨어있던 민규님의 진짜 TMDB API 키(v3)를 넣습니다!
-        raw_key = "ed303aad7e82e47159f48e850f45eecf"
+        # 💡 진짜 키 대신 Streamlit 금고(secrets)에서 키를 꺼내옵니다.
+        raw_key = st.secrets.get("TMDB_API_KEY", "")
         self.api_key = re.sub(r'[^a-zA-Z0-9]', '', str(raw_key))
         self.base_url = "https://api.themoviedb.org/3"
 
