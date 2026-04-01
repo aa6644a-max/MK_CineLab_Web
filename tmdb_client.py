@@ -7,8 +7,8 @@ load_dotenv()
 
 class TMDBClient:
     def __init__(self):
-        # 환경변수에서 키를 가져오되, 영문과 숫자만 남기고 한글/공백을 강제 삭제합니다.
-        raw_key = os.getenv("TMDB_API_KEY", "")
+        # 💡 숨어있던 민규님의 진짜 TMDB API 키(v3)를 넣습니다!
+        raw_key = "ed303aad7e82e47159f48e850f45eecf"
         self.api_key = re.sub(r'[^a-zA-Z0-9]', '', str(raw_key))
         self.base_url = "https://api.themoviedb.org/3"
 

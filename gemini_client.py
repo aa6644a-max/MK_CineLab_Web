@@ -7,8 +7,8 @@ load_dotenv()
 
 class GeminiClient:
     def __init__(self):
-        # 영문, 숫자, 하이픈(-) 등 API 키에 허용된 문자만 남깁니다.
-        raw_key = os.getenv("GOOGLE_API_KEY", "")
+        # 💡 민규님의 제미나이 API 키를 직접 넣습니다!
+        raw_key = "AIzaSyCcqbYO4OOtaoZgJWQr-eKvXZ8sSa7GQ80"
         api_key = re.sub(r'[^a-zA-Z0-9_-]', '', str(raw_key))
         
         if not api_key:
