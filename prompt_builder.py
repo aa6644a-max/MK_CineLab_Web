@@ -102,13 +102,25 @@ class PromptBuilder:
 
     def display_in_browser(self, html_content, filename="mk_blog_preview.html"):
         """생성된 HTML 코드를 파일로 저장하고 기본 브라우저에서 즉시 엽니다."""
-        # 1. 파일 절대 경로 설정
         file_path = os.path.abspath(filename)
-        
-        # 2. HTML 파일 저장 (UTF-8 인코딩으로 한글 깨짐 방지)
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(html_content)
         
-        # 3. 브라우저로 파일 열기
         print(f"\n[알림] 결과물을 브라우저에서 확인합니다: {file_path}")
         webbrowser.open(f"file://{file_path}")
+
+# ==========================================
+# 실제 실행부: AI가 생성한 코드를 아래에 넣으세요
+# ==========================================
+if __name__ == "__main__":
+    builder = PromptBuilder()
+
+    # 1. AI가 생성해준 HTML 코드 전체를 아래 따옴표(''') 사이에 복사해서 넣으세요.
+    result_html = """
+    """
+
+    # 2. 내용이 있을 경우에만 브라우저를 실행합니다.
+    if "<html>" in result_html or "<div" in result_html:
+        builder.display_in_browser(result_html)
+    else:
+        print("\n[안내] result_html 변수 안에 HTML 코드를 넣고 파일을 실행하면 브라우저가 열립니다.")
