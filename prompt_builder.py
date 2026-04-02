@@ -17,16 +17,14 @@ class PromptBuilder:
             - 모바일 가독성을 위해 3~4줄마다 반드시 문단을 나누고(<p> 태그 활용), 문단 사이에 빈 줄(<p style="text-align: center;">&nbsp;</p>)을 삽입하여 숨통을 트여주세요.
 
         3. 포스팅 레이아웃 구조 (서론-본론-결론):
-            - [최상단]: 시선 끄는 첫 문장(핵심 메시지나 강렬한 감상평)으로 시작하고, 바로 아래에 제공된 [포스터 이미지 URL]을 활용해 메인 이미지를 배치하세요. 스포일러가 포함된 경우 명확히 경고 문구를 작성하세요.
+            - [최상단]: 시선 끄는 첫 문장(핵심 메시지나 강렬한 감상평)으로 시작하고, 바로 아래에 [제공되는 실제 이미지 HTML 코드]의 '메인 포스터' 코드를 그대로 붙여넣으세요. 스포일러가 포함된 경우 명확히 경고 문구를 작성하세요.
             - [서론]: 콘텐츠를 보게 된 계기, 영화의 기본 정보 요약, 포스팅의 목적(무엇을 짚어볼 것인지)을 명확히 밝히세요.
-            - [본론]: H2, H3 태그를 활용하여 핵심 내용을 요약한 소제목으로 단락을 구분하세요. 복잡한 이유나 특징은 불렛 포인트(•, -)를 사용하여 요약하고, 블로그 에디터의 인용구 기능을 활용해 뇌리에 남는 명대사를 강조하세요. 제공된 [스틸컷 이미지 URL]을 본문 중간에 적절히 배치하세요.
-            - [결론]: 전체적인 감상을 갈무리하며 나만의 한줄평과 별점을 직관적으로 제시하세요. "이런 분들께 추천해요"라며 타겟 독자를 명시하고, 영화 상세 정보(장르, 감독, 개봉일 등)를 이모지와 함께 리스트 형식으로 정리하세요. 마지막에는 "여러분의 감상평은 어떠셨나요?"와 같은 질문형으로 끝맺어 소통을 유도하세요.
-            - [하단 링크]: 이전에 작성했던 관련 글(비슷한 장르, 같은 감독의 전작 등) 링크를 박스 형태로 삽입하는 멘트를 추가하세요.
+            - [본론]: H2, H3 태그를 활용하여 핵심 내용을 요약한 소제목으로 단락을 구분하세요. 복잡한 이유나 특징은 불렛 포인트(•, -)를 사용하여 요약하세요. 그리고 본문 중간의 적절한 위치에 [제공되는 실제 이미지 HTML 코드]의 '스틸컷' 코드를 그대로 붙여넣으세요.
+            - [결론]: 전체적인 감상을 갈무리하며 나만의 한줄평과 별점을 직관적으로 제시하세요. "이런 분들께 추천해요"라며 타겟 독자를 명시하고, 영화 상세 정보(장르, 감독, 개봉일 등)를 이모지와 함께 리스트 형식으로 정리하세요. 
 
-        4. 멀티미디어 및 이미지 가이드 (매우 중요):
-            - 제공된 [포스터 이미지 URL]과 [스틸컷 이미지 URL]이 존재한다면, 반드시 아래 HTML 형식을 사용하여 실제 이미지로 삽입하세요.
-            - 실제 이미지 삽입 형식: <div style="text-align: center; margin: 25px 0;"><img src="여기에_URL_삽입" alt="영화 관련 이미지" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"></div>
-            - 제공된 URL 2개를 모두 사용한 후에도 추가 이미지가 들어갈 자리가 필요하다면, 기존처럼 가짜 박스 형식(<p style="text-align: center; color: #888; font-size: 14px; background: #eee; padding: 10px;">{{사진: 관련 장면 묘사}}</p>)으로 위치만 표시하세요.
+        4. 멀티미디어 및 이미지 가이드 (🚨 절대 준수):
+            - 본문 최상단과 중간에는 반드시 하단에 제공된 [제공되는 실제 이미지 HTML 코드]를 1글자도 수정하지 말고 그대로 복사해서 삽입하세요.
+            - 위 2장의 진짜 이미지를 모두 삽입한 후, 추가로 관람 인증샷 등이 들어갈 자리가 필요할 때만 기존처럼 가짜 박스(<p style="text-align: center; color: #888; font-size: 14px; background: #eee; padding: 10px;">{{사진: 관련 장면 묘사}}</p>)를 사용하세요.
 
         5. SEO (검색 최적화):
             - 본문 서두와 제목에 메인 키워드를 자연스럽게 배치하되 과도한 반복은 피하세요.
@@ -36,21 +34,30 @@ class PromptBuilder:
         출력 형식: 오직 HTML 본문 코드만 출력하세요. 맨 마지막 줄에 HTML 주석() 형식으로 클릭을 유도하는 매력적인 제목 5개를 제안하세요.
         """
 
+    def _build_image_html(self, url, alt_text):
+        """이미지 URL이 있으면 완성된 HTML 태그를 반환하고, 없으면 빈 문자열을 반환합니다."""
+        if not url:
+            return ""
+        return f'<div style="text-align: center; margin: 25px 0;"><img src="{url}" alt="{alt_text}" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"></div>'
+
     def build_preview_prompt(self, details, point, latest_news=""):
-        """개봉 프리뷰 프롬프트"""
         base = self._get_base_guideline()
+        title = details.get('title', '')
+        
+        # 파이썬에서 미리 완벽한 HTML 태그를 만들어 버립니다.
+        poster_html = self._build_image_html(details.get('poster_url'), f"{title} 메인 포스터")
+        backdrop_html = self._build_image_html(details.get('backdrop_url'), f"{title} 공식 스틸컷")
+
         return f"""
         당신은 네이버 영화 인플루언서 'MK'입니다. 아래 정보를 바탕으로 프리뷰 원고를 작성하세요.
         
         [영화 실제 데이터]
-        - 제목: {details.get('title', '')}
+        - 제목: {title}
         - 개봉일: {details.get('release_date', '')}
         - 장르: {details.get('genres', '')}
         - 감독: {details.get('director', '')}
         - 출연: {details.get('actors', '')}
         - 줄거리: {details.get('overview', '')}
-        - 포스터 이미지 URL: {details.get('poster_url', '')}
-        - 스틸컷 이미지 URL: {details.get('backdrop_url', '')}
         
         [강조 포인트]
         - {point}
@@ -58,29 +65,34 @@ class PromptBuilder:
         [최신 네이버 뉴스 동향]
         {latest_news}
         
+        [제공되는 실제 이미지 HTML 코드]
+        - 메인 포스터 (최상단에 배치할 것): {poster_html if poster_html else '제공된 이미지 없음'}
+        - 스틸컷 (본론 중간에 배치할 것): {backdrop_html if backdrop_html else '제공된 이미지 없음'}
+        
         [특이사항]
         - 반드시 제공된 [영화 실제 데이터]를 바탕으로 작성하여 거짓 정보(할루시네이션)를 만들지 마세요.
-        - 만약 줄거리 정보가 부족하다면, 감독이나 배우의 전작, 장르적 특징을 활용해 기대감을 조성하세요.
-        - [최신 네이버 뉴스 동향]의 내용을 본문에 반영하되, "네이버 뉴스에 따르면", "기사에 따르면", "최근 뉴스 동향에서" 같은 출처를 암시하는 단어는 절대 쓰지 마세요. 블로거 본인이 평소 알고 있던 정보나 대중의 전반적인 분위기인 것처럼 문맥에 아주 자연스럽게 녹여내야 합니다. (뉴스가 없다면 생략)
+        - [최신 네이버 뉴스 동향]의 내용을 본문에 반영하되, "기사에 따르면", "최근 뉴스에서" 같은 출처를 암시하는 단어는 절대 쓰지 마세요.
         
         {base}
         """
 
     def build_review_prompt(self, details, comment, latest_news=""):
-        """영화 리뷰 프롬프트"""
         base = self._get_base_guideline()
+        title = details.get('title', '')
+        
+        poster_html = self._build_image_html(details.get('poster_url'), f"{title} 메인 포스터")
+        backdrop_html = self._build_image_html(details.get('backdrop_url'), f"{title} 공식 스틸컷")
+
         return f"""
         당신은 네이버 영화 인플루언서 'MK'입니다. 영화를 직접 관람한 후 작성하는 상세 리뷰 원고를 작성하세요.
         
         [영화 실제 데이터]
-        - 제목: {details.get('title', '')}
+        - 제목: {title}
         - 개봉일: {details.get('release_date', '')}
         - 장르: {details.get('genres', '')}
         - 감독: {details.get('director', '')}
         - 출연: {details.get('actors', '')}
         - 줄거리: {details.get('overview', '')}
-        - 포스터 이미지 URL: {details.get('poster_url', '')}
-        - 스틸컷 이미지 URL: {details.get('backdrop_url', '')}
         
         [나의 주관적 감상평]
         {comment}
@@ -88,17 +100,19 @@ class PromptBuilder:
         [최신 네이버 뉴스 동향]
         {latest_news}
         
+        [제공되는 실제 이미지 HTML 코드]
+        - 메인 포스터 (최상단에 배치할 것): {poster_html if poster_html else '제공된 이미지 없음'}
+        - 스틸컷 (본론 중간에 배치할 것): {backdrop_html if backdrop_html else '제공된 이미지 없음'}
+        
         [특이사항]
         - 감상평에 담긴 저의 솔직한 감정을 본문에 자연스럽게 녹여내 주세요.
-        - 반드시 제공된 [영화 실제 데이터]를 바탕으로 작성하여 거짓 정보(할루시네이션)를 만들지 마세요. 특히 감독 이름({details.get('director', '')})을 정확히 명시하세요.
-        - 정보가 부족한 단편/독립 영화의 경우, 제가 적은 [나의 주관적 감상평]을 뼈대로 삼아 글을 전개해 주세요.
-        - [최신 네이버 뉴스 동향]의 내용을 반영하되, "뉴스에서", "기사에서", "동향을 보면" 등의 표현은 절대 피하세요. 영화 팬들 사이의 입소문이나 블로거 본인의 배경지식처럼 포장하여 글에 스며들게 작성하세요. (뉴스가 없다면 생략)
+        - [최신 네이버 뉴스 동향]의 내용을 반영하되, "뉴스에서", "동향을 보면" 등의 표현은 절대 피하세요.
         
         {base}
         """
 
     def build_news_prompt(self, news_content):
-        """영화 소식/뉴스 프롬프트"""
+        # ... (이하 기존과 동일) ...
         base = self._get_base_guideline()
         return f"""
         당신은 네이버 영화 인플루언서 'MK'입니다. 최신 영화 뉴스(기사)를 MK만의 시각으로 재해석한 포스팅을 작성하세요.
@@ -113,26 +127,8 @@ class PromptBuilder:
         """
 
     def display_in_browser(self, html_content, filename="mk_blog_preview.html"):
-        """생성된 HTML 코드를 파일로 저장하고 기본 브라우저에서 즉시 엽니다."""
         file_path = os.path.abspath(filename)
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(html_content)
-        
         print(f"\n[알림] 결과물을 브라우저에서 확인합니다: {file_path}")
         webbrowser.open(f"file://{file_path}")
-
-# ==========================================
-# 실제 실행부: AI가 생성한 코드를 아래에 넣으세요
-# ==========================================
-if __name__ == "__main__":
-    builder = PromptBuilder()
-
-    # 1. AI가 생성해준 HTML 코드 전체를 아래 따옴표(''') 사이에 복사해서 넣으세요.
-    result_html = """
-    """
-
-    # 2. 내용이 있을 경우에만 브라우저를 실행합니다.
-    if "<html>" in result_html or "<div" in result_html:
-        builder.display_in_browser(result_html)
-    else:
-        print("\n[안내] result_html 변수 안에 HTML 코드를 넣고 파일을 실행하면 브라우저가 열립니다.")
