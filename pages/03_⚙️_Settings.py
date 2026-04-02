@@ -48,15 +48,14 @@ if st.button("🚀 내 블로그 최신 글 DB에 동기화하기", type="primar
                     
                     # 중복되지 않은 새 글만 저장
                     if title not in existing_titles:
-                        # 포스팅 종류를 '블로그원본'으로 통일해서 저장
                         db.save_post(title, "블로그원본", content)
                         saved_count += 1
+                        time.sleep(2)  # 👈 바로 여기에 추가!
                     
                     # 진행률 업데이트
                     progress = int(((i + 1) / total_entries) * 100)
                     progress_bar.progress(progress)
                     status_text.text(f"수집 진행 중... ({i+1}/{total_entries})")
-                    time.sleep(0.05) # 너무 빠르면 진행률 바가 안 보여서 살짝 딜레이
                 
                 status_text.text("수집 완료!")
                 if saved_count > 0:
