@@ -18,21 +18,19 @@ tmdb, gemini, builder, formatter, naver, db = init_engines()
 st.title("🎬 MK CINELAB 블로그 자동화")
 st.markdown("---")
 
-tab1, tab2, tab3 = st.tabs(["🎥 영화 리뷰", "📅 개봉 프리뷰", "📰 영화 소식"])
+# 💡 4번째 탭 [내 글 직접 등록]을 추가했습니다!
+tab1, tab2, tab3, tab4 = st.tabs(["🎥 영화 리뷰", "📅 개봉 프리뷰", "📰 영화 소식", "📝 내 글 직접 등록"])
 
 if "rev_data" not in st.session_state: st.session_state.rev_data = None
 if "pre_data" not in st.session_state: st.session_state.pre_data = None
 if "news_data" not in st.session_state: st.session_state.news_data = None
 
-# 💡 과거 글을 가져오는 헬퍼 함수 추가
 def get_recent_references(post_type_filter, limit=2):
     try:
         all_posts = db.get_all_posts()
-        # 해당 타입(리뷰/프리뷰/뉴스)의 글만 필터링 (p[2]가 post_type)
         filtered_posts = [p[3] for p in all_posts if p[2] == post_type_filter]
         if not filtered_posts:
             return ""
-        # 가장 최근 글(리스트의 맨 뒤) 2개를 묶어서 텍스트로 반환
         recent_posts = filtered_posts[-limit:]
         return "\n\n---\n[이전 글 구분선]\n---\n\n".join(recent_posts)
     except Exception as e:
@@ -58,8 +56,6 @@ with tab1:
                 if movie_info:
                     details = tmdb.get_movie_details(movie_info['id'])
                     latest_news = naver.search_movie_news(title)
-                    
-                    # 💡 DB에서 과거 리뷰 글을 불러옵니다!
                     reference_posts = get_recent_references("리뷰")
                     
                     prompt = builder.build_review_prompt(details, comment, latest_news, reference_posts)
@@ -94,8 +90,6 @@ with tab2:
                 if movie_info:
                     details = tmdb.get_movie_details(movie_info['id'])
                     latest_news = naver.search_movie_news(p_title)
-                    
-                    # 💡 DB에서 과거 프리뷰 글을 불러옵니다!
                     reference_posts = get_recent_references("프리뷰")
                     
                     prompt = builder.build_preview_prompt(details, point, latest_news, reference_posts)
@@ -125,9 +119,7 @@ with tab3:
     if st.button("뉴스 포스팅 생성", type="primary"):
         if news_content:
             with st.spinner("뉴스 분석 및 취향 데이터 반영 중..."):
-                # 💡 DB에서 과거 뉴스 글을 불러옵니다!
                 reference_posts = get_recent_references("뉴스")
-                
                 prompt = builder.build_news_prompt(news_content, reference_posts)
                 result = gemini.generate_post(prompt)
                 final_html = formatter.wrap_in_table("최신 영화 뉴스", result)
@@ -145,3 +137,24 @@ with tab3:
         sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
         with sub_tab1: st.code(st.session_state.news_data['html'], language='html')
         with sub_tab2: components.html(st.session_state.news_data['html'], height=800, scrolling=True)
+
+# 💡 새로 추가된 4번째 탭 로직
+with tab4:
+    st.subheader("📝 내 블로그 원문 직접 등록")
+    st.markdown("제미나이의 완벽한 문체 학습을 위해, 민규 님이 과거에 직접 쓰셨던 **진짜(Real) 블로그 포스팅**을 여기에 복사해서 넣어주세요.")
+    
+    col_a, col_b = st.columns([3, 1])
+    with col_a:
+        manual_title = st.text_input("영화 제목 (등록용)", placeholder="예: 더 퍼스트 슬램덩크", key="manual_title")
+    with col_b:
+        manual_type = st.selectbox("포스팅 종류", ["리뷰", "프리뷰", "뉴스"], key="manual_type")
+        
+    manual_content = st.text_area("블로그 본문 텍스트 (또는 HTML)", height=300, placeholder="과거 블로그 글을 그대로 복사해서 붙여넣으세요.", key="manual_content")
+    
+    if st.button("💾 내 글 DB에 주입하기", type="primary"):
+        if manual_title and manual_content:
+            with st.spinner("DB에 저장 중입니다..."):
+                if db.save_post(manual_title, manual_type, manual_content):
+                    st.success("✅ 민규 님의 찐! 원본 글이 성공적으로 등록되었습니다. 다음 포스팅부터 이 글투를 따라갑니다!")
+        else:
+            st.warning("영화 제목과 블로그 본문을 모두 입력해 주세요.")
