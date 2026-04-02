@@ -57,7 +57,7 @@ class TMDBClient:
             if response.status_code == 200:
                 data = response.json()
                 
-                # 💡 수정된 부분: 감독, 배우, 장르를 모두 뽑아옵니다!
+                # 💡 감독, 배우, 장르를 뽑아옵니다!
                 director = ""
                 for crew in data.get("credits", {}).get("crew", []):
                     if crew.get("job") == "Director":
@@ -71,6 +71,10 @@ class TMDBClient:
                 # 장르 추출
                 genres = [g.get("name") for g in data.get("genres", [])]
                 genres_str = ", ".join(genres) if genres else "정보 없음"
+
+                # 🖼️ 새로 추가된 부분: 포스터와 스틸컷(Backdrop) 이미지 경로 추출
+                poster_path = data.get("poster_path")
+                backdrop_path = data.get("backdrop_path")
                 
                 return {
                     "id": data.get("id"),
@@ -79,8 +83,11 @@ class TMDBClient:
                     "director": director if director else "정보 없음",
                     "actors": actors_str,
                     "genres": genres_str,
-                    # 줄거리가 비어있을 때를 대비한 기본값 추가
-                    "overview": data.get("overview") if data.get("overview") else "TMDB에 등록된 공식 줄거리가 없습니다."
+                    "overview": data.get("overview") if data.get("overview") else "TMDB에 등록된 공식 줄거리가 없습니다.",
+                    
+                    # 🖼️ 새로 추가된 부분: 완성된 이미지 URL 반환 (없으면 빈 문자열 반환)
+                    "poster_url": f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else "",
+                    "backdrop_url": f"https://image.tmdb.org/t/p/original{backdrop_path}" if backdrop_path else ""
                 }
         except Exception as e:
             print(f"TMDB Detail Error: {e}")
