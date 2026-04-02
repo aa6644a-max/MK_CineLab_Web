@@ -56,7 +56,8 @@ with tab1:
         with sub_tab1:
             st.code(st.session_state.rev_data['html'], language='html')
         with sub_tab2:
-            st.components.v1.iframe(srcdoc=st.session_state.rev_data['html'], height=800, scrolling=True)
+            # 💡 수정: TypeError 해결을 위해 components.iframe으로 호출
+            components.iframe(srcdoc=st.session_state.rev_data['html'], height=800, scrolling=True)
         if st.button("💾 리뷰 DB에 저장하기", key="save_rev"):
             db.save_post(movie_title=st.session_state.rev_data['title'], post_type="review", content=st.session_state.rev_data['html'])
             st.success("저장 완료! 🎉")
@@ -85,7 +86,8 @@ with tab2:
         with sub_tab1:
             st.code(st.session_state.pre_data['html'], language='html')
         with sub_tab2:
-            st.components.v1.iframe(srcdoc=st.session_state.pre_data['html'], height=800, scrolling=True)
+            # 💡 수정: components.iframe 적용
+            components.iframe(srcdoc=st.session_state.pre_data['html'], height=800, scrolling=True)
         if st.button("💾 프리뷰 DB에 저장하기", key="save_pre"):
             db.save_post(movie_title=st.session_state.pre_data['title'], post_type="preview", content=st.session_state.pre_data['html'])
             st.success("저장 완료! 🎉")
@@ -106,7 +108,8 @@ with tab3:
         with sub_tab1:
             st.code(st.session_state.news_data['html'], language='html')
         with sub_tab2:
-            st.components.v1.iframe(srcdoc=st.session_state.news_data['html'], height=800, scrolling=True)
+            # 💡 수정: components.iframe 적용
+            components.iframe(srcdoc=st.session_state.news_data['html'], height=800, scrolling=True)
         if st.button("💾 뉴스 DB에 저장하기", key="save_news"):
             db.save_post(movie_title="영화 뉴스", post_type="news", content=st.session_state.news_data['html'])
             st.success("저장 완료! 🎉")
@@ -127,7 +130,8 @@ with tab4:
                 with sub_tab1:
                     st.code(content, language='html')
                 with sub_tab2:
-                    st.components.v1.iframe(srcdoc=content, height=800, scrolling=True)
+                    # 💡 수정: components.iframe 적용
+                    components.iframe(srcdoc=content, height=800, scrolling=True)
                 if st.button("🗑️ 이 포스팅 삭제하기"):
                     db.delete_post(selected_post_id)
                     st.rerun()
