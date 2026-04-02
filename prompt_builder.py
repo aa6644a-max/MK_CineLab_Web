@@ -72,7 +72,6 @@ class PromptBuilder:
             ticket_html = self._build_placeholder_html(f"{title} 영화관 관람 인증샷 (티켓 등)")
             return poster_html, stills_prompt_text, ticket_html
 
-    # 💡 문체 강제 복제 지시문 (강력 버전 유지)
     def _get_reference_prompt(self, reference_posts):
         if not reference_posts:
             return ""
@@ -177,7 +176,6 @@ class PromptBuilder:
         {base}
         """
 
-    # 💡 4번째 탭을 위한 HTML 변환용 프롬프트 (유지)
     def build_html_conversion_prompt(self, raw_text):
         return f"""
         당신은 전문 HTML 포매터입니다. 
@@ -196,7 +194,7 @@ class PromptBuilder:
         출력 형식: 설명이나 인사말 없이 오직 변환된 HTML 본문 코드만 출력하세요. (```html 마크다운은 제외할 것)
         """
 
-    # 💡 5번째 탭을 위한 신규 추가: 영화 큐레이션 리스트 프롬프트
+    # 💡 5번째 탭용: 200자 내외 제한 규칙 추가 완료!
     def build_curation_prompt(self, theme, movies_data_text, reference_posts=""):
         ref_prompt = self._get_reference_prompt(reference_posts)
         
@@ -211,14 +209,18 @@ class PromptBuilder:
         [수집된 영화 상세 데이터 (TMDB 정보 + 네이버 최신 뉴스 결합)]
         {movies_data_text}
 
+        [🚨 큐레이션 작성 핵심 규칙 (글자 수 제한)]
+        - 독자가 스크롤을 내리며 가볍게 읽을 수 있도록, 영화 1편당 설명은 매우 짧고 간결해야 합니다.
+        - 정보 박스를 제외하고, '영화 소개글'과 '관전 포인트'를 모두 합쳐서 영화 1편당 공백 포함 200자 ~ 250자 내외로 타이트하게 요약하세요. 절대 장황하게 쓰지 마세요.
+
         [🚨 절대 준수: MK CINELAB 큐레이션 HTML 레이아웃]
         아래의 HTML 구조를 100% 동일하게 따라야 합니다. 제공된 영화 목록의 개수만큼 <영화 섹션>을 반복해서 생성하세요.
 
-        <p>어느덧 [계절/시기]가 다가옵니다. [제시된 테마에 맞춰서 MK 특유의 다정하고 감성적인 서론 인사말을 작성하세요. 2~3문장]</p>
+        <p>어느덧 [계절/시기]가 다가옵니다. [제시된 테마에 맞춰서 MK 특유의 다정하고 감성적인 서론 인사말을 간결하게 작성하세요. 2문장 내외]</p>
         <p style="text-align: center;">&nbsp;</p>
 
         <h2 style="border-bottom: 2px solid #333; padding-bottom: 5px;">[영화 제목]</h2>
-        <p style="color: #666; font-weight: bold; font-size: 18px;">[영화의 분위기를 요약하는 감각적인 부제 1줄 (예: 경이로운 우주로의 여정)]</p>
+        <p style="color: #666; font-weight: bold; font-size: 18px;">[영화의 분위기를 요약하는 감각적인 부제 1줄]</p>
 
         [수집된 영화 데이터에 포함된 <메인 포스터 HTML 코드>를 여기에 반드시 삽입]
 
@@ -230,14 +232,14 @@ class PromptBuilder:
             <p style="margin: 0;">📅 개봉일 : [Release Date]</p>
         </div>
 
-        <p>[TMDB 줄거리를 바탕으로 하되, 복붙 느낌이 나지 않도록 MK의 서정적인 문체로 다듬어 작성한 영화 소개글. 3~4문장]</p>
+        <p>[TMDB 줄거리를 바탕으로 하되, 아주 간결하게 압축한 영화 소개글. (1~2문장)]</p>
 
         <h3 style="color: #2e7d32; margin-top: 20px;">🔎 관전 포인트</h3>
-        <p>[수집된 네이버 뉴스의 팩트와 MK의 주관적인 기대감을 섞어서 작성한 핵심 관전 포인트. (예: 어떤 감독의 전작과 비교, 특정 배우의 연기 변신 강조 등) 2~3문장]</p>
+        <p>[수집된 네이버 뉴스의 팩트와 MK의 주관적인 기대감을 섞은 핵심 관전 포인트. (1~2문장)]</p>
 
         <p style="text-align: center;">&nbsp;</p>
         <hr style="border: 0; border-top: 1px dashed #ccc; margin: 30px 0;">
-        <p>[포스팅을 마무리하는 따뜻한 결론 인사말과 독자에게 던지는 가벼운 질문]</p>
+        <p>[포스팅을 마무리하는 따뜻한 결론 인사말. 1~2문장]</p>
         
         출력 형식: 앞뒤의 부가 설명이나 인사말 없이 오직 완성된 HTML 본문 코드만 출력하세요. (```html 같은 마크다운 기호도 절대 쓰지 마세요.)
         """
