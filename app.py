@@ -18,14 +18,14 @@ tmdb, gemini, builder, formatter, naver, db = init_engines()
 st.title("🎬 MK CINELAB 블로그 자동화")
 st.markdown("---")
 
-# 💡 5번째 탭 [🎬 큐레이션 리스트]를 추가했습니다!
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["🎥 영화 리뷰", "📅 개봉 프리뷰", "📰 영화 소식", "📝 내 글 직접 등록", "🎬 큐레이션 리스트"])
+# 탭 순서 변경: 큐레이션 리스트가 4번째, 내 글 직접 등록이 5번째로 이동
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["🎥 영화 리뷰", "📅 개봉 프리뷰", "📰 영화 소식", "🎬 큐레이션 리스트", "📝 내 글 직접 등록"])
 
 if "rev_data" not in st.session_state: st.session_state.rev_data = None
 if "pre_data" not in st.session_state: st.session_state.pre_data = None
 if "news_data" not in st.session_state: st.session_state.news_data = None
 if "converted_html" not in st.session_state: st.session_state.converted_html = None
-if "cur_data" not in st.session_state: st.session_state.cur_data = None # 큐레이션용 세션
+if "cur_data" not in st.session_state: st.session_state.cur_data = None 
 
 def get_recent_references(post_type_filter, limit=2):
     try:
@@ -39,6 +39,7 @@ def get_recent_references(post_type_filter, limit=2):
         print(f"DB 참조 실패: {e}")
         return ""
 
+# --- Tab 1: 영화 리뷰 ---
 with tab1:
     st.subheader("영화 리뷰 생성")
     col1, col2 = st.columns([3, 1])
@@ -71,6 +72,7 @@ with tab1:
         with sub_tab1: st.code(st.session_state.rev_data['html'], language='html')
         with sub_tab2: components.html(st.session_state.rev_data['html'], height=800, scrolling=True)
 
+# --- Tab 2: 개봉 프리뷰 ---
 with tab2:
     st.subheader("개봉 예정작 프리뷰")
     p_title = st.text_input("프리뷰 영화 제목", key="pre_title")
@@ -99,6 +101,7 @@ with tab2:
         with sub_tab1: st.code(st.session_state.pre_data['html'], language='html')
         with sub_tab2: components.html(st.session_state.pre_data['html'], height=800, scrolling=True)
 
+# --- Tab 3: 영화 뉴스 ---
 with tab3:
     st.subheader("최신 영화 뉴스")
     news_content = st.text_area("뉴스 기사 원문", height=300, key="news_input")
@@ -121,14 +124,79 @@ with tab3:
         with sub_tab1: st.code(st.session_state.news_data['html'], language='html')
         with sub_tab2: components.html(st.session_state.news_data['html'], height=800, scrolling=True)
 
+# --- Tab 4: 큐레이션 리스트 (위치 변경됨) ---
 with tab4:
+    st.subheader("🎬 영화 큐레이션 리스트 생성")
+    st.markdown("여러 편의 영화를 특정 테마에 맞춰 한 번에 소개하는 포스팅을 작성합니다.")
+    
+    cur_theme = st.text_input("포스팅 메인 테마", placeholder="예: 다가오는 2026년 3월 개봉 예정 기대작 정리", key="cur_theme")
+    cur_movies = st.text_area("소개할 영화 제목들 (쉼표로 구분)", placeholder="예: 프로젝트 헤일메리, 브라이드!, 호퍼스", height=100, key="cur_movies")
+    
+    if st.button("큐레이션 포스팅 생성", type="primary"):
+        if cur_theme and cur_movies:
+            movie_list = [m.strip() for m in cur_movies.split(",") if m.strip()]
+            
+            with st.spinner(f"총 {len(movie_list)}편의 영화 정보(TMDB)와 최신 뉴스(Naver)를 수집 중입니다..."):
+                movies_data_text = ""
+                
+                for m_title in movie_list:
+                    m_info = tmdb.search_movie(m_title)
+                    if m_info:
+                        details = tmdb.get_movie_details(m_info['id'])
+                        latest_news = naver.search_movie_news(m_title, display=2) 
+                        
+                        poster_html = builder._build_image_html(details.get('poster_url'), f"{details.get('title')} 포스터")
+                        if not poster_html:
+                            poster_html = builder._build_placeholder_html(f"영화 '{details.get('title')}' 메인 포스터")
+                            
+                        movies_data_text += f"""
+                        [영화: {details.get('title')}]
+                        - 원제: {details.get('original_title', '정보 없음')}
+                        - 국가: {details.get('country', '정보 없음')}
+                        - 감독: {details.get('director', '')}
+                        - 출연: {details.get('actors', '')}
+                        - 개봉일: {details.get('release_date', '')}
+                        - 줄거리: {details.get('overview', '')}
+                        - <메인 포스터 HTML 코드>: {poster_html}
+                        - [최신 네이버 뉴스 동향]: 
+                        {latest_news}
+                        ============================================
+                        """
+                    else:
+                        st.warning(f"'{m_title}' 정보를 찾을 수 없어 리스트에서 제외했습니다.")
+                
+                if movies_data_text.strip():
+                    st.info("제미나이가 수집된 데이터를 바탕으로 MK 스타일 원고를 작성하고 있습니다...")
+                    reference_posts = get_recent_references("리스트")
+                    
+                    prompt = builder.build_curation_prompt(cur_theme, movies_data_text, reference_posts)
+                    result = gemini.generate_post(prompt)
+                    final_html = formatter.wrap_in_table(cur_theme, result)
+                    
+                    st.session_state.cur_data = {"title": cur_theme, "html": final_html}
+                else:
+                    st.error("유효한 영화 정보를 하나도 수집하지 못했습니다. 제목을 정확히 확인해 주세요.")
+        else:
+            st.warning("테마와 영화 제목들을 모두 입력해 주세요.")
+            
+    if st.session_state.cur_data:
+        st.success("큐레이션 리스트 포스팅 생성 완료!")
+        if st.button("💾 이 리스트를 내 취향 DB에 저장하기", key="save_cur_btn"):
+            if db.save_post(st.session_state.cur_data['title'], "리스트", st.session_state.cur_data['html']):
+                st.toast("✅ DB에 저장되었습니다!", icon="🎉")
+
+        sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
+        with sub_tab1: st.code(st.session_state.cur_data['html'], language='html')
+        with sub_tab2: components.html(st.session_state.cur_data['html'], height=800, scrolling=True)
+
+# --- Tab 5: 내 글 직접 등록 (위치 변경됨) ---
+with tab5:
     st.subheader("📝 내 블로그 원문 직접 등록")
     st.markdown("제미나이의 완벽한 문체 학습을 위해, 민규 님이 과거에 직접 쓰셨던 **진짜(Real) 블로그 포스팅 텍스트**를 넣어주세요.")
     col_a, col_b = st.columns([3, 1])
     with col_a:
         manual_title = st.text_input("영화 제목 (또는 테마)", placeholder="예: 더 퍼스트 슬램덩크", key="manual_title")
     with col_b:
-        # 💡 종류에 "리스트"를 추가했습니다!
         manual_type = st.selectbox("포스팅 종류", ["리뷰", "프리뷰", "뉴스", "리스트"], key="manual_type")
         
     manual_content = st.text_area("블로그 본문 텍스트", height=300, placeholder="과거 블로그 글을 그대로 복사해서 붙여넣으세요.", key="manual_content")
@@ -163,75 +231,3 @@ with tab4:
                     st.success("✅ 포맷팅된 HTML 글이 DB에 등록되었습니다!")
                     st.session_state.converted_html = None
             else: st.warning("영화 제목을 입력해 주세요.")
-
-# 💡 대망의 5번째 탭: 여러 영화 루프 처리 로직
-with tab5:
-    st.subheader("🎬 영화 큐레이션 리스트 생성")
-    st.markdown("여러 편의 영화를 특정 테마에 맞춰 한 번에 소개하는 포스팅을 작성합니다.")
-    
-    cur_theme = st.text_input("포스팅 메인 테마", placeholder="예: 다가오는 2026년 3월 개봉 예정 기대작 정리", key="cur_theme")
-    cur_movies = st.text_area("소개할 영화 제목들 (쉼표로 구분)", placeholder="예: 프로젝트 헤일메리, 브라이드!, 호퍼스", height=100, key="cur_movies")
-    
-    if st.button("큐레이션 포스팅 생성", type="primary"):
-        if cur_theme and cur_movies:
-            # 쉼표로 나눈 뒤 앞뒤 공백을 제거하여 리스트로 만듭니다.
-            movie_list = [m.strip() for m in cur_movies.split(",") if m.strip()]
-            
-            with st.spinner(f"총 {len(movie_list)}편의 영화 정보(TMDB)와 최신 뉴스(Naver)를 수집 중입니다..."):
-                movies_data_text = ""
-                
-                # 영화 제목들을 하나씩 순회하며 API를 찌릅니다.
-                for m_title in movie_list:
-                    m_info = tmdb.search_movie(m_title)
-                    if m_info:
-                        details = tmdb.get_movie_details(m_info['id'])
-                        # 리스트 글은 너무 길어지면 안 되므로 뉴스 핵심 2개만 추출합니다.
-                        latest_news = naver.search_movie_news(m_title, display=2) 
-                        
-                        # 포스터 HTML 코드를 미리 조립해서 프롬프트로 넘겨줍니다.
-                        poster_html = builder._build_image_html(details.get('poster_url'), f"{details.get('title')} 포스터")
-                        if not poster_html:
-                            poster_html = builder._build_placeholder_html(f"영화 '{details.get('title')}' 메인 포스터")
-                            
-                        # 수집된 데이터를 하나로 뭉칩니다.
-                        movies_data_text += f"""
-                        [영화: {details.get('title')}]
-                        - 원제: {details.get('original_title', '정보 없음')}
-                        - 국가: {details.get('country', '정보 없음')}
-                        - 감독: {details.get('director', '')}
-                        - 출연: {details.get('actors', '')}
-                        - 개봉일: {details.get('release_date', '')}
-                        - 줄거리: {details.get('overview', '')}
-                        - <메인 포스터 HTML 코드>: {poster_html}
-                        - [최신 네이버 뉴스 동향]: 
-                        {latest_news}
-                        ============================================
-                        """
-                    else:
-                        st.warning(f"'{m_title}' 정보를 찾을 수 없어 리스트에서 제외했습니다.")
-                
-                # 수집된 정보가 하나라도 있으면 글쓰기 돌입
-                if movies_data_text.strip():
-                    st.info("제미나이가 수집된 데이터를 바탕으로 MK 스타일 원고를 작성하고 있습니다...")
-                    # 💡 DB에서 과거 '리스트' 양식의 글을 불러옵니다.
-                    reference_posts = get_recent_references("리스트")
-                    
-                    prompt = builder.build_curation_prompt(cur_theme, movies_data_text, reference_posts)
-                    result = gemini.generate_post(prompt)
-                    final_html = formatter.wrap_in_table(cur_theme, result)
-                    
-                    st.session_state.cur_data = {"title": cur_theme, "html": final_html}
-                else:
-                    st.error("유효한 영화 정보를 하나도 수집하지 못했습니다. 제목을 정확히 확인해 주세요.")
-        else:
-            st.warning("테마와 영화 제목들을 모두 입력해 주세요.")
-            
-    if st.session_state.cur_data:
-        st.success("큐레이션 리스트 포스팅 생성 완료!")
-        if st.button("💾 이 리스트를 내 취향 DB에 저장하기", key="save_cur_btn"):
-            if db.save_post(st.session_state.cur_data['title'], "리스트", st.session_state.cur_data['html']):
-                st.toast("✅ DB에 저장되었습니다!", icon="🎉")
-
-        sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
-        with sub_tab1: st.code(st.session_state.cur_data['html'], language='html')
-        with sub_tab2: components.html(st.session_state.cur_data['html'], height=800, scrolling=True)
