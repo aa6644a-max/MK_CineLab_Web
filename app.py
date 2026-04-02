@@ -119,4 +119,28 @@ with tab3:
     
     if st.button("뉴스 포스팅 생성", type="primary"):
         if news_content:
-            with st.spinner("뉴스 분석 및
+            with st.spinner("뉴스 분석 및 작성 중..."):
+                prompt = builder.build_news_prompt(news_content)
+                result = gemini.generate_post(prompt)
+                final_html = formatter.wrap_in_table("최신 영화 뉴스", result)
+                
+                st.session_state.news_data = {
+                    "title": "영화 뉴스",
+                    "html": final_html
+                }
+        else:
+            st.warning("뉴스 원문을 입력해 주세요.")
+
+    if st.session_state.news_data:
+        st.success("뉴스 포스팅 생성 완료!")
+        
+        # --- DB 저장 버튼 추가 ---
+        if st.button("💾 이 뉴스를 내 취향 DB에 저장하기", key="save_news_btn"):
+            if db.save_post(st.session_state.news_data['title'], "뉴스", st.session_state.news_data['html']):
+                st.toast("✅ 구글 스프레드시트에 성공적으로 저장되었습니다!", icon="🎉")
+
+        sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
+        with sub_tab1:
+            st.code(st.session_state.news_data['html'], language='html')
+        with sub_tab2:
+            components.html(st.session_state.news_data['html'], height=800, scrolling=True)
