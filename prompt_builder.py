@@ -51,7 +51,6 @@ class PromptBuilder:
 
     def _generate_media_prompts(self, details, is_preview=False):
         title = details.get('title', '')
-        
         poster_html = self._build_image_html(details.get('poster_url'), f"{title} 메인 포스터")
         if not poster_html:
             poster_html = self._build_placeholder_html(f"영화 '{title}' 메인 포스터")
@@ -73,10 +72,23 @@ class PromptBuilder:
             ticket_html = self._build_placeholder_html(f"{title} 영화관 관람 인증샷 (티켓 등)")
             return poster_html, stills_prompt_text, ticket_html
 
-    def build_preview_prompt(self, details, point, latest_news=""):
-        base = self._get_base_guideline(post_type="preview")
-        title = details.get('title', '')
+    # 💡 핵심: reference_posts 매개변수를 추가하여 과거 글을 주입받습니다.
+    def _get_reference_prompt(self, reference_posts):
+        if not reference_posts:
+            return ""
+        return f"""
+        [나의 과거 작성 글 (문체 학습용 레퍼런스)]
+        아래는 제가 과거에 직접 작성하여 블로그에 올렸던 글들입니다. 
+        이 글들을 꼼꼼히 읽고 제가 주로 사용하는 문장 구조, 감성적인 어휘 선택, 소제목을 뽑는 스타일, 단락 전개 방식 등을 철저히 분석하세요. 
+        이번에 새로 작성할 글은 무조건 아래 레퍼런스들과 동일한 문체와 분위기(Tone & Manner)로 작성해야 합니다.
         
+        {reference_posts}
+        """
+
+    def build_preview_prompt(self, details, point, latest_news="", reference_posts=""):
+        base = self._get_base_guideline(post_type="preview")
+        ref_prompt = self._get_reference_prompt(reference_posts)
+        title = details.get('title', '')
         poster_html, stills_prompt_text, _ = self._generate_media_prompts(details, is_preview=True)
 
         return f"""
@@ -92,12 +104,14 @@ class PromptBuilder:
         
         [핵심 주제 및 강조 포인트 (🚨가장 중요🚨)]
         - 사용자의 요청: "{point}"
-        - 💡 통제 규칙: 만약 사용자가 위 요청에서 특정 인물(예: 마이클 잭슨의 일대기), 특정 사건, 원작 등 '특정 주제'에 집중하라고 지시했다면, 영화의 일반적인 제작 정보(감독 소개, 배우 캐스팅 등)는 과감하게 전부 생략하거나 아주 짧게 줄이세요. 오직 사용자가 요청한 [핵심 주제]에 글의 90% 이상을 할애하여 깊이 있는 정보성 포스팅을 작성해야 합니다.
+        - 💡 통제 규칙: 만약 사용자가 위 요청에서 특정 인물, 특정 사건 등에 집중하라고 지시했다면 일반적인 제작 정보는 과감히 줄이고 핵심 주제에 90% 이상을 할애하세요.
 
         [최신 네이버 뉴스 동향]
         {latest_news}
         
-        [제공되는 실제 이미지 HTML 코드 (목록에 있는 코드를 하나도 빠짐없이 복사해서 붙여넣으세요)]
+        {ref_prompt}
+
+        [제공되는 실제 이미지 HTML 코드]
         - [메인 포스터]: {poster_html}
 {stills_prompt_text}
         
@@ -108,10 +122,10 @@ class PromptBuilder:
         {base}
         """
 
-    def build_review_prompt(self, details, comment, latest_news=""):
+    def build_review_prompt(self, details, comment, latest_news="", reference_posts=""):
         base = self._get_base_guideline(post_type="review")
+        ref_prompt = self._get_reference_prompt(reference_posts)
         title = details.get('title', '')
-        
         poster_html, stills_prompt_text, ticket_html = self._generate_media_prompts(details, is_preview=False)
 
         return f"""
@@ -131,35 +145,32 @@ class PromptBuilder:
         [최신 네이버 뉴스 동향]
         {latest_news}
         
-        [제공되는 실제 이미지 HTML 코드 (목록에 있는 코드를 하나도 빠짐없이 복사해서 붙여넣으세요)]
+        {ref_prompt}
+
+        [제공되는 실제 이미지 HTML 코드]
         - [메인 포스터]: {poster_html}
         - [관람 인증샷]: {ticket_html}
 {stills_prompt_text}
         
         [특이사항]
         - 감상평에 담긴 저의 솔직한 감정을 본문에 자연스럽게 녹여내 주세요.
-        - [최신 네이버 뉴스 동향]의 내용을 반영하되, 출처를 암시하는 단어는 절대 피하세요.
         
         {base}
         """
 
-    def build_news_prompt(self, news_content):
+    def build_news_prompt(self, news_content, reference_posts=""):
         base = self._get_base_guideline(post_type="preview")
+        ref_prompt = self._get_reference_prompt(reference_posts)
         return f"""
         당신은 네이버 영화 인플루언서 'MK'입니다. 최신 영화 뉴스(기사)를 MK만의 시각으로 재해석한 포스팅을 작성하세요.
         
         [뉴스 원문 데이터]
         {news_content}
         
+        {ref_prompt}
+
         [특이사항]
         - 단순히 기사를 요약하는 것이 아니라, 인플루언서로서 이 소식이 영화계나 팬들에게 어떤 의미가 있을지 의견을 덧붙여주세요.
         
         {base}
         """
-
-    def display_in_browser(self, html_content, filename="mk_blog_preview.html"):
-        file_path = os.path.abspath(filename)
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(html_content)
-        print(f"\n[알림] 결과물을 브라우저에서 확인합니다: {file_path}")
-        webbrowser.open(f"file://{file_path}")
