@@ -2,14 +2,26 @@ import os
 import webbrowser
 
 class PromptBuilder:
-    def _get_base_guideline(self):
-        return """
+    def _get_base_guideline(self, post_type="review"):
+        """post_type('preview' 또는 'review')에 따라 맞춤형 지침을 반환합니다."""
+        
+        # 1. 포스팅 타입별 서론 지침 세팅
+        if post_type == "preview":
+            intro_guideline = "- [서론]: 영화에 대한 기대감, 개봉 전 정보, 포스팅 목적을 밝히세요. (개봉 전 프리뷰이므로 관람 인증샷은 들어가지 않습니다.)"
+            media_guideline = """- 제공된 [메인 포스터]와 [스틸컷 1~N개] HTML 코드는 본문에 모두 1번씩 그대로 복사하여 삽입해야 합니다.
+            - 💡 [융통성 발휘]: 개봉 전 프리뷰이므로, 제공된 영화 스틸컷 외에 '실제 역사적 인물의 사진', '감독의 전작 포스터', '원작 책 표지' 등 문맥상 부가적인 정보 사진이 들어가면 좋은 위치에는 언제든지 `<p style="text-align: center; color: #888; font-size: 14px; background: #eee; padding: 10px;">{{사진: 필요한 실제 사진/상황에 대한 구체적 설명}}</p>` 코드를 사용하여 회색 박스 자리를 자유롭게 만들어 주세요."""
+        else:
+            intro_guideline = "- [서론]: 콘텐츠를 보게 된 계기나 첫인상을 적고, 그 직후(서론 중간)에 [관람 인증샷] HTML 코드를 전체 글의 두 번째 이미지로 자연스럽게 삽입하세요. 그 후 영화의 기본 정보 요약, 포스팅 목적을 밝히세요."
+            media_guideline = """- 하단에 제공되는 이미지 HTML 코드 목록([메인 포스터], [관람 인증샷], [스틸컷 1~N개]) 전체를 무조건 한 번씩 본문에 1글자도 수정하지 말고 그대로 복사해서 배치해야 합니다.
+            - 제미나이 임의로 이미지 태그를 줄이거나 생략하지 마세요. 제공된 코드는 반드시 모두 사용해야 합니다."""
+
+        return f"""
         [작성 지침]
         1. 어조 및 페르소나 (Tone of Voice):
             - 정중하고 친근한 경어체("~습니다", "~해요")를 사용하여 예의와 친근함을 동시에 갖추세요.
             - 확정적 표현 대신 조심스러운 분석("~이지 않을까 싶어요", "~라고 생각됩니다", "~인 듯 보이기도 하며")을 사용하여 독자의 공감을 유도하세요.
             - 전문 용어나 복잡한 내용은 정보 전달자로서 친절하게 풀어서 설명하세요.
-            - 영화의 정서를 다룰 때는 서정적이고 감성적인 어휘("공허한 마음을 채워 줄 수 있는" 등)를 활용하여 분위기를 풍성하게 만드세요.
+            - 영화의 정서를 다룰 때는 서정적이고 감성적인 어휘를 활용하여 분위기를 풍성하게 만드세요.
 
         2. 전체 분량 및 가독성 (Layout & Readability):
             - 정보의 밀도를 높여 공백 제외 1,500 ~ 2,500자 내외로 작성하세요.
@@ -17,13 +29,12 @@ class PromptBuilder:
 
         3. 포스팅 레이아웃 구조 (서론-본론-결론):
             - [최상단]: 시선 끄는 첫 문장으로 시작하고, 바로 아래에 [메인 포스터] HTML 코드를 삽입하세요. 스포일러 경고 문구도 잊지 마세요.
-            - [서론]: 콘텐츠를 보게 된 계기나 첫인상을 적고, 그 직후(서론 중간)에 [관람 인증샷] HTML 코드를 전체 글의 두 번째 이미지로 자연스럽게 삽입하세요. 그 후 영화의 기본 정보 요약, 포스팅 목적을 밝히세요.
-            - [본론]: H2, H3 태그를 활용해 소제목으로 단락을 구분하세요. 내용 흐름에 맞게 아래 제공된 [스틸컷 1] 부터 마지막 스틸컷까지의 HTML 코드를 문단 사이사이에 전부 다 빠짐없이 골고루 흩뿌려서 모두 삽입하세요.
-            - [결론]: 전체적인 감상을 갈무리하며 나만의 한줄평과 별점을 직관적으로 제시하세요.
+            {intro_guideline}
+            - [본론]: H2, H3 태그를 활용해 소제목으로 단락을 구분하세요. 내용 흐름에 맞게 아래 제공된 [스틸컷] HTML 코드를 문단 사이사이에 전부 다 빠짐없이 골고루 흩뿌려서 삽입하세요.
+            - [결론]: 전체적인 감상을 갈무리하며 나만의 한줄평과 별점(또는 기대평)을 직관적으로 제시하세요.
 
         4. 멀티미디어 및 이미지 가이드 (🚨 절대 준수 사항):
-            - 하단에 제공되는 이미지 HTML 코드 목록([메인 포스터], [관람 인증샷], [스틸컷 1~N개]) 전체를 무조건 한 번씩 본문에 1글자도 수정하지 말고 그대로 복사해서 배치해야 합니다.
-            - 제미나이 임의로 이미지 태그를 줄이거나 생략하지 마세요. 제공된 코드는 반드시 모두 사용해야 합니다.
+            {media_guideline}
 
         5. SEO (검색 최적화):
             - 본문 서두와 제목에 메인 키워드를 자연스럽게 배치하되 과도한 반복은 피하세요.
@@ -41,16 +52,17 @@ class PromptBuilder:
     def _build_placeholder_html(self, text):
         return f'<p style="text-align: center; color: #888; font-size: 14px; background: #eee; padding: 10px;">{{{{사진: {text}}}}}</p>'
 
-    def _generate_media_prompts(self, details):
+    def _generate_media_prompts(self, details, is_preview=False):
         title = details.get('title', '')
         
+        # 1. 포스터
         poster_html = self._build_image_html(details.get('poster_url'), f"{title} 메인 포스터")
         if not poster_html:
             poster_html = self._build_placeholder_html(f"영화 '{title}' 메인 포스터")
             
+        # 2. 스틸컷
         backdrop_urls = details.get('backdrop_urls', [])
         stills_html_list = []
-        
         for i, url in enumerate(backdrop_urls):
             stills_html_list.append(self._build_image_html(url, f"{title} 공식 스틸컷 {i+1}"))
             
@@ -60,15 +72,18 @@ class PromptBuilder:
 
         stills_prompt_text = "\n".join([f"        - [스틸컷 {i+1}]: {html}" for i, html in enumerate(stills_html_list)])
         
-        ticket_html = self._build_placeholder_html(f"{title} 영화관 관람 인증샷 (티켓 등)")
-        
-        return poster_html, stills_prompt_text, ticket_html
+        # 3. 관람 인증샷 (프리뷰면 제외)
+        if is_preview:
+            return poster_html, stills_prompt_text, ""
+        else:
+            ticket_html = self._build_placeholder_html(f"{title} 영화관 관람 인증샷 (티켓 등)")
+            return poster_html, stills_prompt_text, ticket_html
 
     def build_preview_prompt(self, details, point, latest_news=""):
-        base = self._get_base_guideline()
+        base = self._get_base_guideline(post_type="preview")
         title = details.get('title', '')
         
-        poster_html, stills_prompt_text, ticket_html = self._generate_media_prompts(details)
+        poster_html, stills_prompt_text, _ = self._generate_media_prompts(details, is_preview=True)
 
         return f"""
         당신은 네이버 영화 인플루언서 'MK'입니다. 아래 정보를 바탕으로 프리뷰 원고를 작성하세요.
@@ -89,7 +104,6 @@ class PromptBuilder:
         
         [제공되는 실제 이미지 HTML 코드 (🚨목록에 있는 코드를 하나도 빠짐없이 전부 복사해서 붙여넣으세요)]
         - [메인 포스터]: {poster_html}
-        - [관람 인증샷]: {ticket_html}
 {stills_prompt_text}
         
         [특이사항]
@@ -100,10 +114,10 @@ class PromptBuilder:
         """
 
     def build_review_prompt(self, details, comment, latest_news=""):
-        base = self._get_base_guideline()
+        base = self._get_base_guideline(post_type="review")
         title = details.get('title', '')
         
-        poster_html, stills_prompt_text, ticket_html = self._generate_media_prompts(details)
+        poster_html, stills_prompt_text, ticket_html = self._generate_media_prompts(details, is_preview=False)
 
         return f"""
         당신은 네이버 영화 인플루언서 'MK'입니다. 영화를 직접 관람한 후 작성하는 상세 리뷰 원고를 작성하세요.
@@ -135,7 +149,7 @@ class PromptBuilder:
         """
 
     def build_news_prompt(self, news_content):
-        base = self._get_base_guideline()
+        base = self._get_base_guideline(post_type="preview") # 뉴스는 프리뷰 형태와 유사하게 인증샷 제외
         return f"""
         당신은 네이버 영화 인플루언서 'MK'입니다. 최신 영화 뉴스(기사)를 MK만의 시각으로 재해석한 포스팅을 작성하세요.
         
@@ -152,5 +166,5 @@ class PromptBuilder:
         file_path = os.path.abspath(filename)
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(html_content)
-        print(f"\\n[알림] 결과물을 브라우저에서 확인합니다: {file_path}")
+        print(f"\n[알림] 결과물을 브라우저에서 확인합니다: {file_path}")
         webbrowser.open(f"file://{file_path}")
