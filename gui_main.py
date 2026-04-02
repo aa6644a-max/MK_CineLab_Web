@@ -136,7 +136,8 @@ class MKCineLabApp(ctk.CTk):
         self.status_label.configure(text=f"'{title}' 정보 수집 중...", text_color="yellow")
         self.update()
         movie_info = self.tmdb.search_movie(title)
-       if movie_info:
+        
+        if movie_info:  # 들여쓰기가 수정된 부분
             details = self.tmdb.get_movie_details(movie_info['id'])
             
             # 네이버 뉴스 검색 추가
