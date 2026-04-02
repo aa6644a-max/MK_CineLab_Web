@@ -89,4 +89,68 @@ class PromptBuilder:
         
         [제공되는 실제 이미지 HTML 코드 (🚨목록에 있는 코드를 하나도 빠짐없이 전부 복사해서 붙여넣으세요)]
         - [메인 포스터]: {poster_html}
-        - [관람 인증샷]: {ticket_
+        - [관람 인증샷]: {ticket_html}
+{stills_prompt_text}
+        
+        [특이사항]
+        - 반드시 제공된 [영화 실제 데이터]를 바탕으로 작성하여 거짓 정보(할루시네이션)를 만들지 마세요.
+        - [최신 네이버 뉴스 동향]의 내용을 본문에 반영하되, 출처를 암시하는 단어는 절대 쓰지 마세요.
+        
+        {base}
+        """
+
+    def build_review_prompt(self, details, comment, latest_news=""):
+        base = self._get_base_guideline()
+        title = details.get('title', '')
+        
+        poster_html, stills_prompt_text, ticket_html = self._generate_media_prompts(details)
+
+        return f"""
+        당신은 네이버 영화 인플루언서 'MK'입니다. 영화를 직접 관람한 후 작성하는 상세 리뷰 원고를 작성하세요.
+        
+        [영화 실제 데이터]
+        - 제목: {title}
+        - 개봉일: {details.get('release_date', '')}
+        - 장르: {details.get('genres', '')}
+        - 감독: {details.get('director', '')}
+        - 출연: {details.get('actors', '')}
+        - 줄거리: {details.get('overview', '')}
+        
+        [나의 주관적 감상평]
+        {comment}
+
+        [최신 네이버 뉴스 동향]
+        {latest_news}
+        
+        [제공되는 실제 이미지 HTML 코드 (🚨목록에 있는 코드를 하나도 빠짐없이 전부 복사해서 붙여넣으세요)]
+        - [메인 포스터]: {poster_html}
+        - [관람 인증샷]: {ticket_html}
+{stills_prompt_text}
+        
+        [특이사항]
+        - 감상평에 담긴 저의 솔직한 감정을 본문에 자연스럽게 녹여내 주세요.
+        - [최신 네이버 뉴스 동향]의 내용을 반영하되, 출처를 암시하는 단어는 절대 피하세요.
+        
+        {base}
+        """
+
+    def build_news_prompt(self, news_content):
+        base = self._get_base_guideline()
+        return f"""
+        당신은 네이버 영화 인플루언서 'MK'입니다. 최신 영화 뉴스(기사)를 MK만의 시각으로 재해석한 포스팅을 작성하세요.
+        
+        [뉴스 원문 데이터]
+        {news_content}
+        
+        [특이사항]
+        - 단순히 기사를 요약하는 것이 아니라, 인플루언서로서 이 소식이 영화계나 팬들에게 어떤 의미가 있을지 의견을 덧붙여주세요.
+        
+        {base}
+        """
+
+    def display_in_browser(self, html_content, filename="mk_blog_preview.html"):
+        file_path = os.path.abspath(filename)
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(html_content)
+        print(f"\\n[알림] 결과물을 브라우저에서 확인합니다: {file_path}")
+        webbrowser.open(f"file://{file_path}")
