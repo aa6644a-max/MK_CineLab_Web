@@ -1,6 +1,6 @@
 import os
 import re
-from google import genai # 최신 라이브러리로 변경
+from google import genai
 import streamlit as st
 from dotenv import load_dotenv
 
@@ -8,26 +8,27 @@ load_dotenv()
 
 class GeminiClient:
     def __init__(self):
-        # 1. 웹 금고(secrets) 확인 후 없으면 로컬(.env) 확인
+        # 1. API 키 로드 로직 (기존 유지)
         if "GOOGLE_API_KEY" in st.secrets:
             raw_key = st.secrets["GOOGLE_API_KEY"]
         else:
             raw_key = os.getenv("GOOGLE_API_KEY", "")
 
-        # API 키에서 불필요한 공백이나 특수문자 제거
         api_key = re.sub(r'[^a-zA-Z0-9_-]', '', str(raw_key))
         
         if not api_key:
              raise ValueError("GOOGLE_API_KEY가 없습니다. 설정을 확인하세요.")
 
-        # 2026년 기준 최신 구글 genai 클라이언트 생성 방식 적용
+        # 2. 클라이언트 생성
         self.client = genai.Client(api_key=api_key)
-        # 현재 안정적으로 지원되는 최신 모델명으로 설정
-        self.model_name = 'gemini-2.0-flash' 
+        
+        # 💡 수정 포인트: 404 에러 방지를 위해 가장 안정적인 모델명으로 변경
+        # 'gemini-1.5-flash'는 현재 모든 사용자에게 가장 보편적으로 지원되는 모델입니다.
+        self.model_name = 'gemini-1.5-flash' 
 
     def generate_post(self, prompt):
         try:
-            # 최신 SDK의 콘텐츠 생성 메서드 호출 방식 적용
+            # 💡 호출 방식 최신화
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=prompt
@@ -38,4 +39,5 @@ class GeminiClient:
             else:
                 return "에러: 제미나이가 유효한 응답을 생성하지 못했습니다."
         except Exception as e:
-            return f"제미나이 API 에러 발생: {str(e)}"
+            # 💡 에러 메시지 강화: 어떤 모델명을 사용했는지 함께 출력하여 원인 파악을 돕습니다.
+            return f"제미나이 API 에러 발생: {str(e)} (사용 모델: {self.model_name})"
