@@ -5,27 +5,25 @@ from gemini_client import GeminiClient
 from prompt_builder import PromptBuilder
 from html_formatter import HTMLFormatter
 from naver_client import NaverClient
-from db_manager import DBManager  # 💡 추가 1: 방금 만든 DB 매니저를 불러옵니다.
+from db_manager import DBManager
 
 st.set_page_config(page_title="MK CINELAB", page_icon="🎬", layout="centered")
 
 @st.cache_resource
 def init_engines():
-    # 💡 추가 2: DB 매니저도 엔진 목록에 추가해서 켜줍니다.
     return TMDBClient(), GeminiClient(), PromptBuilder(), HTMLFormatter(), NaverClient(), DBManager()
 
-# 💡 추가 3: db 변수로 매니저를 받습니다.
 tmdb, gemini, builder, formatter, naver, db = init_engines()
 
 st.title("🎬 MK CINELAB 블로그 자동화")
 st.markdown("---")
 
-# 💡 핵심 추가: 스트림릿은 버튼을 누르면 화면이 초기화되므로, 생성된 글을 '메모리'에 기억시킵니다.
 if "rev_data" not in st.session_state: st.session_state.rev_data = None
 if "pre_data" not in st.session_state: st.session_state.pre_data = None
 if "news_data" not in st.session_state: st.session_state.news_data = None
 
-tab1, tab2, tab3 = st.tabs(["🎥 영화 리뷰", "📅 개봉 프리뷰", "📰 영화 소식"])
+# 💡 수정 1: 4번째 탭(내 보물창고)을 추가했습니다.
+tab1, tab2, tab3, tab4 = st.tabs(["🎥 영화 리뷰", "📅 개봉 프리뷰", "📰 영화 소식", "🗄️ 내 보물창고"])
 
 # ==========================================
 # 탭 1: 영화 리뷰
@@ -53,14 +51,12 @@ with tab1:
                     result = gemini.generate_post(prompt)
                     final_html = formatter.wrap_in_table(f"{details['title']} 리뷰", result)
                     
-                    # 생성된 결과물을 메모리에 저장!
                     st.session_state.rev_data = {"title": details['title'], "html": final_html}
                 else:
                     st.error(f"'{title}' 영화를 찾을 수 없습니다. 제목과 연도를 확인해 주세요.")
         else:
             st.warning("영화 제목을 입력해 주세요.")
 
-    # 💡 메모리에 글이 있다면 화면에 뿌려주고 저장 버튼을 표시합니다.
     if st.session_state.rev_data:
         st.success(f"'{st.session_state.rev_data['title']}' 리뷰 생성 완료!")
         
@@ -71,11 +67,9 @@ with tab1:
             components.html(st.session_state.rev_data['html'], height=800, scrolling=True)
             
         st.divider()
-        # 💾 DB 저장 버튼 추가
         if st.button("💾 리뷰 DB에 저장하기", key="save_rev"):
             db.save_post(movie_title=st.session_state.rev_data['title'], post_type="review", content=st.session_state.rev_data['html'])
-            st.success(f"[{st.session_state.rev_data['title']}] 리뷰가 내 데이터베이스에 안전하게 저장되었습니다! 🎉")
-
+            st.success(f"[{st.session_state.rev_data['title']}] 리뷰가 내 보물창고에 안전하게 저장되었습니다! 🎉")
 
 # ==========================================
 # 탭 2: 개봉 프리뷰
@@ -96,14 +90,12 @@ with tab2:
                     result = gemini.generate_post(prompt)
                     final_html = formatter.wrap_in_table(f"{details['title']} 프리뷰", result)
                     
-                    # 결과물 메모리 저장
                     st.session_state.pre_data = {"title": details['title'], "html": final_html}
                 else:
                     st.error("해당하는 영화 정보가 없습니다.")
         else:
             st.warning("영화 제목을 입력해 주세요.")
 
-    # 💡 프리뷰 결과 출력 및 저장 버튼
     if st.session_state.pre_data:
         st.success("프리뷰 생성 완료!")
         
@@ -116,8 +108,7 @@ with tab2:
         st.divider()
         if st.button("💾 프리뷰 DB에 저장하기", key="save_pre"):
             db.save_post(movie_title=st.session_state.pre_data['title'], post_type="preview", content=st.session_state.pre_data['html'])
-            st.success(f"[{st.session_state.pre_data['title']}] 프리뷰가 내 데이터베이스에 안전하게 저장되었습니다! 🎉")
-
+            st.success(f"[{st.session_state.pre_data['title']}] 프리뷰가 내 보물창고에 안전하게 저장되었습니다! 🎉")
 
 # ==========================================
 # 탭 3: 최신 영화 뉴스
@@ -133,12 +124,10 @@ with tab3:
                 result = gemini.generate_post(prompt)
                 final_html = formatter.wrap_in_table("최신 영화 뉴스", result)
                 
-                # 결과물 메모리 저장
                 st.session_state.news_data = {"title": "영화 뉴스 포스팅", "html": final_html}
         else:
             st.warning("뉴스 원문을 입력해 주세요.")
 
-    # 💡 뉴스 결과 출력 및 저장 버튼
     if st.session_state.news_data:
         st.success("뉴스 포스팅 생성 완료!")
         
@@ -151,4 +140,48 @@ with tab3:
         st.divider()
         if st.button("💾 뉴스 DB에 저장하기", key="save_news"):
             db.save_post(movie_title="영화 뉴스", post_type="news", content=st.session_state.news_data['html'])
-            st.success("뉴스 포스팅이 내 데이터베이스에 안전하게 저장되었습니다! 🎉")
+            st.success("뉴스 포스팅이 내 보물창고에 안전하게 저장되었습니다! 🎉")
+
+# ==========================================
+# 💡 탭 4: 내 보물창고 (DB 관리)
+# ==========================================
+with tab4:
+    st.subheader("🗄️ 내 콘텐츠 보물창고")
+    st.markdown("지금까지 저장한 모든 포스팅을 확인하고 관리할 수 있습니다.")
+    
+    # DB에서 모든 글 목록 가져오기
+    posts = db.get_all_posts() 
+    
+    if not posts:
+        st.info("아직 저장된 포스팅이 없습니다. 리뷰나 프리뷰를 생성하고 저장 버튼을 눌러보세요!")
+    else:
+        # 보기 좋게 목록 만들기 (예: "[REVIEW] 쇼생크 탈출 (2026-04-02 10:00:00)")
+        post_options = {p[0]: f"[{p[2].upper()}] {p[1]} ({p[3]})" for p in posts}
+        
+        # 드롭다운(선택창)으로 글 고르기
+        selected_post_id = st.selectbox(
+            "불러올 포스팅을 선택하세요:", 
+            options=list(post_options.keys()), 
+            format_func=lambda x: post_options[x]
+        )
+        
+        if selected_post_id:
+            # 선택한 글의 진짜 내용(HTML) 가져오기
+            content = db.get_post_content(selected_post_id)
+            
+            if content:
+                st.success("포스팅을 성공적으로 불러왔습니다!")
+                
+                # 예전 글도 똑같이 코드/미리보기 탭으로 보여주기
+                sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드 복사하기", "👁️ 블로그 미리보기"])
+                with sub_tab1:
+                    st.code(content, language='html')
+                with sub_tab2:
+                    components.html(content, height=800, scrolling=True)
+                    
+                st.divider()
+                
+                # 삭제 버튼
+                if st.button("🗑️ 이 포스팅 삭제하기", type="secondary"):
+                    db.delete_post(selected_post_id)
+                    st.rerun() # 삭제 후 화면을 새로고침해서 목록 업데이트!
