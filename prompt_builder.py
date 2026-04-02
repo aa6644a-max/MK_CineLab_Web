@@ -3,11 +3,8 @@ import webbrowser
 
 class PromptBuilder:
     def _get_base_guideline(self, post_type="review"):
-        """post_type('preview' 또는 'review')에 따라 맞춤형 지침을 반환합니다."""
-        
-        # 1. 포스팅 타입별 서론 지침 세팅
         if post_type == "preview":
-            intro_guideline = "- [서론]: 영화에 대한 기대감, 개봉 전 정보, 포스팅 목적을 밝히세요. (개봉 전 프리뷰이므로 관람 인증샷은 들어가지 않습니다.)"
+            intro_guideline = "- [서론]: 콘텐츠를 다루게 된 계기, 포스팅 목적(무엇에 집중해서 알아볼 것인지)을 명확히 밝히세요. (개봉 전 프리뷰이므로 관람 인증샷은 들어가지 않습니다.)"
             media_guideline = """- 제공된 [메인 포스터]와 [스틸컷 1~N개] HTML 코드는 본문에 모두 1번씩 그대로 복사하여 삽입해야 합니다.
             - 💡 [융통성 발휘]: 개봉 전 프리뷰이므로, 제공된 영화 스틸컷 외에 '실제 역사적 인물의 사진', '감독의 전작 포스터', '원작 책 표지' 등 문맥상 부가적인 정보 사진이 들어가면 좋은 위치에는 언제든지 `<p style="text-align: center; color: #888; font-size: 14px; background: #eee; padding: 10px;">{{사진: 필요한 실제 사진/상황에 대한 구체적 설명}}</p>` 코드를 사용하여 회색 박스 자리를 자유롭게 만들어 주세요."""
         else:
@@ -31,7 +28,7 @@ class PromptBuilder:
             - [최상단]: 시선 끄는 첫 문장으로 시작하고, 바로 아래에 [메인 포스터] HTML 코드를 삽입하세요. 스포일러 경고 문구도 잊지 마세요.
             {intro_guideline}
             - [본론]: H2, H3 태그를 활용해 소제목으로 단락을 구분하세요. 내용 흐름에 맞게 아래 제공된 [스틸컷] HTML 코드를 문단 사이사이에 전부 다 빠짐없이 골고루 흩뿌려서 삽입하세요.
-            - [결론]: 전체적인 감상을 갈무리하며 나만의 한줄평과 별점(또는 기대평)을 직관적으로 제시하세요.
+            - [결론]: 전체적인 감상을 갈무리하며 나만의 한줄평과 기대평을 직관적으로 제시하세요.
 
         4. 멀티미디어 및 이미지 가이드 (🚨 절대 준수 사항):
             {media_guideline}
@@ -55,12 +52,10 @@ class PromptBuilder:
     def _generate_media_prompts(self, details, is_preview=False):
         title = details.get('title', '')
         
-        # 1. 포스터
         poster_html = self._build_image_html(details.get('poster_url'), f"{title} 메인 포스터")
         if not poster_html:
             poster_html = self._build_placeholder_html(f"영화 '{title}' 메인 포스터")
             
-        # 2. 스틸컷
         backdrop_urls = details.get('backdrop_urls', [])
         stills_html_list = []
         for i, url in enumerate(backdrop_urls):
@@ -72,7 +67,6 @@ class PromptBuilder:
 
         stills_prompt_text = "\n".join([f"        - [스틸컷 {i+1}]: {html}" for i, html in enumerate(stills_html_list)])
         
-        # 3. 관람 인증샷 (프리뷰면 제외)
         if is_preview:
             return poster_html, stills_prompt_text, ""
         else:
@@ -96,13 +90,14 @@ class PromptBuilder:
         - 출연: {details.get('actors', '')}
         - 줄거리: {details.get('overview', '')}
         
-        [강조 포인트]
-        - {point}
+        [핵심 주제 및 강조 포인트 (🚨가장 중요🚨)]
+        - 사용자의 요청: "{point}"
+        - 💡 통제 규칙: 만약 사용자가 위 요청에서 특정 인물(예: 마이클 잭슨의 일대기), 특정 사건, 원작 등 '특정 주제'에 집중하라고 지시했다면, 영화의 일반적인 제작 정보(감독 소개, 배우 캐스팅 등)는 과감하게 전부 생략하거나 아주 짧게 줄이세요. 오직 사용자가 요청한 [핵심 주제]에 글의 90% 이상을 할애하여 깊이 있는 정보성 포스팅을 작성해야 합니다.
 
         [최신 네이버 뉴스 동향]
         {latest_news}
         
-        [제공되는 실제 이미지 HTML 코드 (🚨목록에 있는 코드를 하나도 빠짐없이 전부 복사해서 붙여넣으세요)]
+        [제공되는 실제 이미지 HTML 코드 (목록에 있는 코드를 하나도 빠짐없이 복사해서 붙여넣으세요)]
         - [메인 포스터]: {poster_html}
 {stills_prompt_text}
         
@@ -136,7 +131,7 @@ class PromptBuilder:
         [최신 네이버 뉴스 동향]
         {latest_news}
         
-        [제공되는 실제 이미지 HTML 코드 (🚨목록에 있는 코드를 하나도 빠짐없이 전부 복사해서 붙여넣으세요)]
+        [제공되는 실제 이미지 HTML 코드 (목록에 있는 코드를 하나도 빠짐없이 복사해서 붙여넣으세요)]
         - [메인 포스터]: {poster_html}
         - [관람 인증샷]: {ticket_html}
 {stills_prompt_text}
@@ -149,7 +144,7 @@ class PromptBuilder:
         """
 
     def build_news_prompt(self, news_content):
-        base = self._get_base_guideline(post_type="preview") # 뉴스는 프리뷰 형태와 유사하게 인증샷 제외
+        base = self._get_base_guideline(post_type="preview")
         return f"""
         당신은 네이버 영화 인플루언서 'MK'입니다. 최신 영화 뉴스(기사)를 MK만의 시각으로 재해석한 포스팅을 작성하세요.
         
