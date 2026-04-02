@@ -1,6 +1,6 @@
 import os
 import re
-import google.generativeai as genai
+from google import genai # 최신 라이브러리로 변경
 import streamlit as st
 from dotenv import load_dotenv
 
@@ -14,18 +14,25 @@ class GeminiClient:
         else:
             raw_key = os.getenv("GOOGLE_API_KEY", "")
 
+        # API 키에서 불필요한 공백이나 특수문자 제거
         api_key = re.sub(r'[^a-zA-Z0-9_-]', '', str(raw_key))
         
         if not api_key:
              raise ValueError("GOOGLE_API_KEY가 없습니다. 설정을 확인하세요.")
 
-        genai.configure(api_key=api_key)
-        self.model_name = 'models/gemini-2.5-flash' 
-        self.model = genai.GenerativeModel(self.model_name)
+        # 2026년 기준 최신 구글 genai 클라이언트 생성 방식 적용
+        self.client = genai.Client(api_key=api_key)
+        # 현재 안정적으로 지원되는 최신 모델명으로 설정
+        self.model_name = 'gemini-2.0-flash' 
 
     def generate_post(self, prompt):
         try:
-            response = self.model.generate_content(prompt)
+            # 최신 SDK의 콘텐츠 생성 메서드 호출 방식 적용
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt
+            )
+            
             if response.text:
                 return response.text
             else:
