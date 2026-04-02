@@ -50,31 +50,42 @@ class TMDBClient:
         params = {
             "api_key": self.api_key,
             "language": "ko-KR", 
-            "append_to_response": "credits"
+            # 💡 수정: images 탭을 추가로 요청하고, 언어 필터를 넓혀서 스틸컷을 다 가져옵니다.
+            "append_to_response": "credits,images",
+            "include_image_language": "ko,en,null"
         }
         try:
             response = requests.get(url, params=params, timeout=10)
             if response.status_code == 200:
                 data = response.json()
                 
-                # 💡 감독, 배우, 장르를 뽑아옵니다!
+                # 감독, 배우, 장르 추출
                 director = ""
                 for crew in data.get("credits", {}).get("crew", []):
                     if crew.get("job") == "Director":
                         director = crew.get("name")
                         break
                 
-                # 배우 상위 3명 추출
                 actors = [cast.get("name") for cast in data.get("credits", {}).get("cast", [])[:3]]
                 actors_str = ", ".join(actors) if actors else "정보 없음"
                 
-                # 장르 추출
                 genres = [g.get("name") for g in data.get("genres", [])]
                 genres_str = ", ".join(genres) if genres else "정보 없음"
 
-                # 🖼️ 새로 추가된 부분: 포스터와 스틸컷(Backdrop) 이미지 경로 추출
+                # 🖼️ 포스터 추출
                 poster_path = data.get("poster_path")
-                backdrop_path = data.get("backdrop_path")
+                poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else ""
+
+                # 🖼️ 스틸컷(Backdrops) 여러 장 추출 (최대 10장)
+                backdrops = data.get("images", {}).get("backdrops", [])
+                backdrop_urls = []
+                for bd in backdrops[:10]:
+                    if bd.get("file_path"):
+                        backdrop_urls.append(f"https://image.tmdb.org/t/p/original{bd['file_path']}")
+                
+                # 만약 이미지가 하나도 없다면 기본 backdrop이라도 가져오기 시도
+                if not backdrop_urls and data.get("backdrop_path"):
+                    backdrop_urls.append(f"https://image.tmdb.org/t/p/original{data.get('backdrop_path')}")
                 
                 return {
                     "id": data.get("id"),
@@ -84,10 +95,8 @@ class TMDBClient:
                     "actors": actors_str,
                     "genres": genres_str,
                     "overview": data.get("overview") if data.get("overview") else "TMDB에 등록된 공식 줄거리가 없습니다.",
-                    
-                    # 🖼️ 새로 추가된 부분: 완성된 이미지 URL 반환 (없으면 빈 문자열 반환)
-                    "poster_url": f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else "",
-                    "backdrop_url": f"https://image.tmdb.org/t/p/original{backdrop_path}" if backdrop_path else ""
+                    "poster_url": poster_url,
+                    "backdrop_urls": backdrop_urls # 이제 URL이 여러 개 담긴 리스트(List)가 됩니다!
                 }
         except Exception as e:
             print(f"TMDB Detail Error: {e}")
