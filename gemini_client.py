@@ -1,3 +1,4 @@
+# gemini_client.py 전체를 이 내용으로 덮어쓰세요.
 import os
 import re
 from google import genai
@@ -8,7 +9,7 @@ load_dotenv()
 
 class GeminiClient:
     def __init__(self):
-        # 1. API 키 로드 (기본 로직 유지)
+        # API 키 로드
         if "GOOGLE_API_KEY" in st.secrets:
             raw_key = st.secrets["GOOGLE_API_KEY"]
         else:
@@ -17,28 +18,25 @@ class GeminiClient:
         api_key = re.sub(r'[^a-zA-Z0-9_-]', '', str(raw_key))
         
         if not api_key:
-             raise ValueError("GOOGLE_API_KEY가 없습니다. 설정을 확인하세요.")
+             raise ValueError("GOOGLE_API_KEY가 없습니다.")
 
-        # 2. 클라이언트 생성
+        # 클라이언트 생성
         self.client = genai.Client(api_key=api_key)
         
-        # 💡 원상 복구 및 안정화 모델 설정
-        # 만약 2.5 flash 명칭이 필요하다면 아래 이름을 유지하고, 
-        # 일반적인 최신 무료 모델은 'gemini-2.0-flash'를 사용합니다.
-        self.model_name = 'gemini-2.0-flash' 
+        # 💡 [핵심 수정] 원래 가장 잘 작동하는 표준 모델명입니다.
+        self.model_name = 'gemini-1.5-flash' 
 
     def generate_post(self, prompt):
         try:
-            # 콘텐츠 생성 호출
+            # 2026년 기준 최신 호출 방식입니다.
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=prompt
             )
             
-            if response.text:
+            if response and response.text:
                 return response.text
             else:
-                return "에러: 제미나이가 유효한 응답을 생성하지 못했습니다."
+                return "에러: 제미나이가 응답을 생성하지 못했습니다."
         except Exception as e:
-            # 에러 발생 시 원인 파악을 위해 상세 메시지 출력
             return f"제미나이 API 에러 발생: {str(e)}"
