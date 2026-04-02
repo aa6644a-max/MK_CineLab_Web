@@ -15,7 +15,7 @@ class PromptBuilder:
         return f"""
         [작성 지침]
         1. 어조 및 페르소나 (Tone of Voice):
-            - 정중하고 친근한 경어체("~습니다", "~해요")를 사용하여 예의와 친근함을 동시에 갖추세요.
+            - 정중하고 친근한 경어체("~습니다", "~해요", "~죠")를 자연스럽게 섞어 쓰세요.
             - 확정적 표현 대신 조심스러운 분석("~이지 않을까 싶어요", "~라고 생각됩니다", "~인 듯 보이기도 하며")을 사용하여 독자의 공감을 유도하세요.
             - 전문 용어나 복잡한 내용은 정보 전달자로서 친절하게 풀어서 설명하세요.
             - 영화의 정서를 다룰 때는 서정적이고 감성적인 어휘를 활용하여 분위기를 풍성하게 만드세요.
@@ -72,16 +72,19 @@ class PromptBuilder:
             ticket_html = self._build_placeholder_html(f"{title} 영화관 관람 인증샷 (티켓 등)")
             return poster_html, stills_prompt_text, ticket_html
 
-    # 💡 핵심: reference_posts 매개변수를 추가하여 과거 글을 주입받습니다.
+    # 💡 문체 강제 복제 지시문 (강력 버전 유지)
     def _get_reference_prompt(self, reference_posts):
         if not reference_posts:
             return ""
         return f"""
-        [나의 과거 작성 글 (문체 학습용 레퍼런스)]
-        아래는 제가 과거에 직접 작성하여 블로그에 올렸던 글들입니다. 
-        이 글들을 꼼꼼히 읽고 제가 주로 사용하는 문장 구조, 감성적인 어휘 선택, 소제목을 뽑는 스타일, 단락 전개 방식 등을 철저히 분석하세요. 
-        이번에 새로 작성할 글은 무조건 아래 레퍼런스들과 동일한 문체와 분위기(Tone & Manner)로 작성해야 합니다.
-        
+        [🚨 절대 준수: MK 문체 완벽 복제 지침]
+        아래 제공된 [나의 과거 레퍼런스 글]은 이 블로그의 주인장인 제가 직접 쓴 글입니다. 
+        당신은 AI의 기계적인 작문 습관을 모두 버리고, 무조건 이 레퍼런스의 '말투', '단어 선택', '문장 끝맺음', '비유 방식'을 100% 똑같이 흉내 내서 빙의해야 합니다.
+
+        * ❌ AI 금지어 (절대 사용 금지): "결론적으로", "요약하자면", "이 영화는 ~라는 점에서 큰 의미를 가집니다", "~의 향연", "~할 수밖에 없습니다", "과언이 아닙니다", "시각적 즐거움", "흥미로운".
+        * ⭕ 강제 사항: 레퍼런스 글에서 보여지는 문장 호흡, 감정적인 형용사, 접속사 사용 스타일을 분석하여 새 글에 그대로 적용하세요. 내용만 새 영화로 바꿀 뿐, 글쓴이가 완전히 '동일 인물'이라고 느껴져야 합니다.
+
+        [나의 과거 레퍼런스 글]
         {reference_posts}
         """
 
@@ -104,7 +107,6 @@ class PromptBuilder:
         
         [핵심 주제 및 강조 포인트 (🚨가장 중요🚨)]
         - 사용자의 요청: "{point}"
-        - 💡 통제 규칙: 만약 사용자가 위 요청에서 특정 인물, 특정 사건 등에 집중하라고 지시했다면 일반적인 제작 정보는 과감히 줄이고 핵심 주제에 90% 이상을 할애하세요.
 
         [최신 네이버 뉴스 동향]
         {latest_news}
@@ -173,4 +175,69 @@ class PromptBuilder:
         - 단순히 기사를 요약하는 것이 아니라, 인플루언서로서 이 소식이 영화계나 팬들에게 어떤 의미가 있을지 의견을 덧붙여주세요.
         
         {base}
+        """
+
+    # 💡 4번째 탭을 위한 HTML 변환용 프롬프트 (유지)
+    def build_html_conversion_prompt(self, raw_text):
+        return f"""
+        당신은 전문 HTML 포매터입니다. 
+        아래 제공된 [원본 블로그 텍스트]의 **내용, 문체, 단어, 어투는 절대 단 한 글자도 수정하지 말고 그대로 복사해서 사용**하되, 
+        MK CINELAB 블로그 포스팅 양식에 맞게 HTML 태그만 입혀서 출력하세요.
+
+        [적용할 HTML 서식 규칙]
+        1. 문단 구분: 내용의 호흡에 맞게 3~4줄마다 <p> 태그를 이용해 문단을 나누세요.
+        2. 여백: 반드시 빈 줄(<p style="text-align: center;">&nbsp;</p>)을 삽입하여 가독성을 높이세요.
+        3. 이미지 기획: 원본 텍스트의 흐름상 이미지가 들어가면 좋을 위치를 알아서 2~3곳 정도 파악한 후, 아래의 회색 박스 코드를 삽입하세요.
+           <p style="text-align: center; color: #888; font-size: 14px; background: #eee; padding: 10px;">{{{{사진: 문맥에 맞는 사진 설명(예: 영화 포스터, 스틸컷 등)}}}}</p>
+
+        [원본 블로그 텍스트]
+        {raw_text}
+
+        출력 형식: 설명이나 인사말 없이 오직 변환된 HTML 본문 코드만 출력하세요. (```html 마크다운은 제외할 것)
+        """
+
+    # 💡 5번째 탭을 위한 신규 추가: 영화 큐레이션 리스트 프롬프트
+    def build_curation_prompt(self, theme, movies_data_text, reference_posts=""):
+        ref_prompt = self._get_reference_prompt(reference_posts)
+        
+        return f"""
+        당신은 네이버 영화 인플루언서 'MK'입니다. 여러 영화를 묶어서 소개하는 '영화 큐레이션(리스트형)' 블로그 포스팅을 작성하세요.
+
+        [포스팅 메인 테마 및 요청사항]
+        - 테마: {theme}
+
+        {ref_prompt}
+
+        [수집된 영화 상세 데이터 (TMDB 정보 + 네이버 최신 뉴스 결합)]
+        {movies_data_text}
+
+        [🚨 절대 준수: MK CINELAB 큐레이션 HTML 레이아웃]
+        아래의 HTML 구조를 100% 동일하게 따라야 합니다. 제공된 영화 목록의 개수만큼 <영화 섹션>을 반복해서 생성하세요.
+
+        <p>어느덧 [계절/시기]가 다가옵니다. [제시된 테마에 맞춰서 MK 특유의 다정하고 감성적인 서론 인사말을 작성하세요. 2~3문장]</p>
+        <p style="text-align: center;">&nbsp;</p>
+
+        <h2 style="border-bottom: 2px solid #333; padding-bottom: 5px;">[영화 제목]</h2>
+        <p style="color: #666; font-weight: bold; font-size: 18px;">[영화의 분위기를 요약하는 감각적인 부제 1줄 (예: 경이로운 우주로의 여정)]</p>
+
+        [수집된 영화 데이터에 포함된 <메인 포스터 HTML 코드>를 여기에 반드시 삽입]
+
+        <div style="background: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+            <p style="margin: 0;">🏷️ 원제 : [Original Title]</p>
+            <p style="margin: 0;">🌍 국가 : [Country]</p>
+            <p style="margin: 0;">🎬 감독 : [Director]</p>
+            <p style="margin: 0;">👤 출연 : [Actors (주연 위주로 2~3명)]</p>
+            <p style="margin: 0;">📅 개봉일 : [Release Date]</p>
+        </div>
+
+        <p>[TMDB 줄거리를 바탕으로 하되, 복붙 느낌이 나지 않도록 MK의 서정적인 문체로 다듬어 작성한 영화 소개글. 3~4문장]</p>
+
+        <h3 style="color: #2e7d32; margin-top: 20px;">🔎 관전 포인트</h3>
+        <p>[수집된 네이버 뉴스의 팩트와 MK의 주관적인 기대감을 섞어서 작성한 핵심 관전 포인트. (예: 어떤 감독의 전작과 비교, 특정 배우의 연기 변신 강조 등) 2~3문장]</p>
+
+        <p style="text-align: center;">&nbsp;</p>
+        <hr style="border: 0; border-top: 1px dashed #ccc; margin: 30px 0;">
+        <p>[포스팅을 마무리하는 따뜻한 결론 인사말과 독자에게 던지는 가벼운 질문]</p>
+        
+        출력 형식: 앞뒤의 부가 설명이나 인사말 없이 오직 완성된 HTML 본문 코드만 출력하세요. (```html 같은 마크다운 기호도 절대 쓰지 마세요.)
         """

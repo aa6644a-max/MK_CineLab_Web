@@ -72,6 +72,11 @@ class TMDBClient:
                 genres = [g.get("name") for g in data.get("genres", [])]
                 genres_str = ", ".join(genres) if genres else "정보 없음"
 
+                # 💡 핵심 추가: 리스트 포스팅을 위한 '원제'와 '제작 국가' 추출
+                original_title = data.get("original_title", "정보 없음")
+                countries = [c.get("name") for c in data.get("production_countries", [])]
+                country_str = ", ".join(countries) if countries else "정보 없음"
+
                 # 🖼️ 포스터 추출
                 poster_path = data.get("poster_path")
                 poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else ""
@@ -90,13 +95,15 @@ class TMDBClient:
                 return {
                     "id": data.get("id"),
                     "title": data.get("title"),
+                    "original_title": original_title, # 새로 추가됨!
+                    "country": country_str,           # 새로 추가됨!
                     "release_date": data.get("release_date", "정보 없음"),
                     "director": director if director else "정보 없음",
                     "actors": actors_str,
                     "genres": genres_str,
                     "overview": data.get("overview") if data.get("overview") else "TMDB에 등록된 공식 줄거리가 없습니다.",
                     "poster_url": poster_url,
-                    "backdrop_urls": backdrop_urls # 이제 URL이 여러 개 담긴 리스트(List)가 됩니다!
+                    "backdrop_urls": backdrop_urls
                 }
         except Exception as e:
             print(f"TMDB Detail Error: {e}")
