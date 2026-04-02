@@ -22,8 +22,13 @@ class DBManager:
             return None
         
         try:
-            # 💡 수정 포인트: JSON 문자열의 앞뒤 공백을 제거하여 파싱 에러 방지
-            creds_info = json.loads(raw_json.strip())
+            # 💡 안전장치 1: JSON 파싱 시 제어문자(실제 줄바꿈 등) 오류를 무시하도록 strict=False 추가
+            creds_info = json.loads(raw_json.strip(), strict=False)
+            
+            # 💡 안전장치 2: 혹시 꼬여있을 줄바꿈 문자열(\n)을 확실하게 찐 줄바꿈으로 복원 (인증 핵심)
+            if "private_key" in creds_info:
+                creds_info["private_key"] = creds_info["private_key"].replace("\\n", "\n")
+                
             creds = Credentials.from_service_account_info(creds_info, scopes=self.scopes)
             return gspread.authorize(creds)
         except Exception as e:
