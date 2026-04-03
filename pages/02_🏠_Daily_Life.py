@@ -1,6 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
-import pdfplumber  # PDF 추출 라이브러리 활성화
+import pdfplumber  
 from DailyPromptBuilder import DailyPromptBuilder
 from gemini_client import GeminiClient
 from rss_client import RSSClient
@@ -9,14 +9,13 @@ from html_formatter import HTMLFormatter
 # 페이지 기본 설정
 st.set_page_config(page_title="일상 & 현장 기록", page_icon="🏠", layout="centered")
 
-# 엔진 초기화 (기존 영화 블로그와 동일한 방식 권장)
+# 엔진 초기화
 @st.cache_resource(show_spinner=False)
 def init_daily_engines():
     return DailyPromptBuilder(), GeminiClient(), RSSClient(), HTMLFormatter()
 
 daily_builder, gemini, rss, formatter = init_daily_engines()
 
-# 대문 타이틀
 st.title("🏠 민규의 일상 & 현장 기록")
 st.markdown("---")
 
@@ -51,10 +50,11 @@ with tab1:
         )
 
     with col2:
-        post_category = st.selectbox(
-            "포스팅 카테고리",
-            ["☕ 카페/맛집 탐방", "📍 장소/명소 리뷰", "🛠️ 작업/현장 기록", "📝 정보 공유/에세이"],
-            key="daily_category"
+        # ✅ 수정 포인트: selectbox에서 text_input으로 변경
+        post_category = st.text_input(
+            "포스팅 카테고리 입력",
+            placeholder="예: ☕ 카페 탐방, 🛠️ 현장 일지 등",
+            key="daily_category_input"
         )
         
         writing_vibe = st.select_slider(
@@ -67,16 +67,13 @@ with tab1:
         st.write("---")
         generate_btn = st.button("✨ MK 스타일 포스팅 생성", type="primary", use_container_width=True)
 
-    # ✅ 핵심 수정: 실제 생성 로직 가동
     if generate_btn:
-        if uploaded_files and user_context:
+        if uploaded_files and user_context and post_category: # 카테고리 입력 확인 추가
             with st.spinner(f"{len(uploaded_files)}개의 PDF 데이터를 분석 중입니다..."):
-                # 1. 모든 PDF에서 텍스트 추출
                 combined_text = ""
                 for file in uploaded_files:
                     try:
                         with pdfplumber.open(file) as pdf:
-                            # 모든 페이지의 텍스트를 하나로 합침
                             combined_text += "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
                     except Exception as e:
                         st.error(f"{file.name} 읽기 오류: {e}")
@@ -84,27 +81,23 @@ with tab1:
                 if not combined_text.strip():
                     st.error("PDF에서 텍스트를 추출할 수 없습니다. 이미지로 된 PDF인지 확인해 주세요.")
                 else:
-                    # 2. MK 말투 레퍼런스 수집 (RSS)
                     reference_posts = rss.get_latest_posts_text(limit=3)
                     
-                    # 3. 프롬프트 생성 (DailyPromptBuilder 사용)
+                    # 사용자가 직접 입력한 post_category가 프롬프트에 그대로 전달됩니다.
                     prompt = daily_builder.build_pdf_summary_prompt(
                         combined_text, 
                         f"[{post_category} / {writing_vibe} 분위기] {user_context}", 
                         reference_posts
                     )
                     
-                    # 4. 제미나이 실행 및 결과 저장
                     result = gemini.generate_post(prompt)
-                    # 표 양식으로 감싸기 (선택 사항)
                     final_html = formatter.wrap_in_table(f"{post_category} 기록", result)
                     
                     st.session_state.daily_html = final_html
                     st.success("노트북LM 스타일의 맞춤형 포스팅 생성이 완료되었습니다!")
         else:
-            st.warning("분석할 PDF 파일(최소 1개)과 추가 맥락을 입력해 주세요.")
+            st.warning("PDF 파일, 카테고리, 그리고 추가 맥락을 모두 입력해 주세요.")
 
-    # 결과 표시 영역
     if st.session_state.daily_html:
         st.markdown("---")
         res_tab1, res_tab2 = st.tabs(["👁️ 블로그 미리보기", "📄 HTML 코드"])
