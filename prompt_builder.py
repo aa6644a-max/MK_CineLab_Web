@@ -156,6 +156,46 @@ class PromptBuilder:
         {base}
         """
 
+    # 🚨🚨🚨 이 부분이 실수로 지워져 있었던 리뷰 생성 핵심 코드입니다! 🚨🚨🚨
+    def build_review_prompt(self, details, comment, reason="", latest_news="", reference_posts=""):
+        base = self._get_base_guideline(post_type="review")
+        ref_prompt = self._get_reference_prompt(reference_posts)
+        title = details.get('title', '')
+        poster_html, stills_prompt_text, ticket_html = self._generate_media_prompts(details, is_preview=False)
+
+        return f"""
+        당신은 네이버 영화 인플루언서 'MK'입니다. 영화를 직접 관람한 후 작성하는 상세 리뷰 원고를 작성하세요.
+        
+        [영화 실제 데이터]
+        - 제목: {title}
+        - 개봉일: {details.get('release_date', '')}
+        - 장르: {details.get('genres', '')}
+        - 감독: {details.get('director', '')}
+        - 출연: {details.get('actors', '')}
+        - 줄거리: {details.get('overview', '')}
+        
+        [포스팅 계기/관람 이유 (🚨서론에 반드시 자연스럽게 반영할 것)]
+        - {reason}
+
+        [나의 주관적 감상평]
+        {comment}
+
+        [최신 네이버 뉴스 동향]
+        {latest_news}
+        
+        {ref_prompt}
+
+        [제공되는 실제 이미지 HTML 코드]
+        - [메인 포스터]: {poster_html}
+        - [관람 인증샷]: {ticket_html}
+{stills_prompt_text}
+        
+        [특이사항]
+        - 감상평에 담긴 저의 솔직한 감정을 본문에 자연스럽게 녹여내 주세요.
+        
+        {base}
+        """
+
     def build_news_prompt(self, news_content, reference_posts=""):
         base = self._get_base_guideline(post_type="preview")
         ref_prompt = self._get_reference_prompt(reference_posts)
