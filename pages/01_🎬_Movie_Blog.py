@@ -12,8 +12,13 @@ from rss_client import RSSClient
 def show_isolated_html(html_str):
     b64 = base64.b64encode(html_str.encode('utf-8')).decode('utf-8')
     iframe_html = f'<iframe src="data:text/html;charset=utf-8;base64,{b64}" width="100%" height="800" style="border:none;"></iframe>'
-    st.html(iframe_html)
-
+    
+    # 기존 코드 (삭제 또는 주석 처리)
+    # st.html(iframe_html) 
+    
+    # 💡 새로운 코드 (이걸로 교체!)
+    st.markdown(iframe_html, unsafe_allow_html=True)
+    
 st.set_page_config(page_title="MK CINELAB", page_icon="🎬", layout="centered")
 
 # 🚨 해결의 핵심: 함수 이름을 v3로 변경하여 강제 캐시 초기화!
