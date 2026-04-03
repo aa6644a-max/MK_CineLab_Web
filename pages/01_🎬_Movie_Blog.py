@@ -1,4 +1,5 @@
 import streamlit as st
+import base64
 #import streamlit.components.v1 as components
 from tmdb_client import TMDBClient
 from gemini_client import GeminiClient
@@ -7,6 +8,11 @@ from html_formatter import HTMLFormatter
 from naver_client import NaverClient
 from db_manager import DBManager
 from rss_client import RSSClient
+
+def show_isolated_html(html_str):
+    b64 = base64.b64encode(html_str.encode('utf-8')).decode('utf-8')
+    iframe_html = f'<iframe src="data:text/html;charset=utf-8;base64,{b64}" width="100%" height="800" style="border:none;"></iframe>'
+    st.html(iframe_html)
 
 st.set_page_config(page_title="MK CINELAB", page_icon="🎬", layout="centered")
 
@@ -78,7 +84,7 @@ with tab1:
                 st.toast("✅ DB에 저장되었습니다!", icon="🎉")
         sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
         with sub_tab1: st.code(st.session_state.rev_data['html'], language='html')
-        with sub_tab2: st.html(st.session_state.rev_data['html'])
+        with sub_tab2: show_isolated_html(st.session_state.rev_data['html'])
 
 # --- Tab 2: 개봉 프리뷰 ---
 with tab2:
@@ -114,7 +120,7 @@ with tab2:
                 st.toast("✅ DB에 저장되었습니다!", icon="🎉")
         sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
         with sub_tab1: st.code(st.session_state.pre_data['html'], language='html')
-        with sub_tab2: st.html(st.session_state.rev_data['html'])
+        with sub_tab2: show_isolated_html(st.session_state.rev_data['html'])
 
 # --- Tab 3: 영화 뉴스 ---
 with tab3:
@@ -137,7 +143,7 @@ with tab3:
                 st.toast("✅ DB에 저장되었습니다!", icon="🎉")
         sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
         with sub_tab1: st.code(st.session_state.news_data['html'], language='html')
-        with sub_tab2: st.html(st.session_state.rev_data['html'])
+        with sub_tab2: show_isolated_html(st.session_state.rev_data['html'])
 
 # --- Tab 4: 큐레이션 리스트 ---
 with tab4:
@@ -201,7 +207,7 @@ with tab4:
 
         sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
         with sub_tab1: st.code(st.session_state.cur_data['html'], language='html')
-        with sub_tab2: st.html(st.session_state.rev_data['html'])
+        with sub_tab2: show_isolated_html(st.session_state.rev_data['html'])
 
 # --- Tab 5: 내 글 직접 등록 ---
 with tab5:
@@ -237,7 +243,7 @@ with tab5:
         st.subheader("🛠️ 변환된 HTML 코드 결과")
         sub_t1, sub_t2 = st.tabs(["📄 변환된 HTML 코드", "👁️ 미리보기"])
         with sub_t1: st.code(st.session_state.converted_html, language='html')
-        with sub_t2: st.html(st.session_state.rev_data['html'])
+        with sub_t2: show_isolated_html(st.session_state.rev_data['html'])
         
         if st.button("💾 변환된 이 HTML 코드로 DB에 완벽하게 저장하기"):
             if manual_title:

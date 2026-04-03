@@ -1,10 +1,16 @@
 import streamlit as st
+import base64
 #import streamlit.components.v1 as components
 import pdfplumber  
 from DailyPromptBuilder import DailyPromptBuilder
 from gemini_client import GeminiClient
 from rss_client import RSSClient
 from html_formatter import HTMLFormatter
+
+def show_isolated_html(html_str):
+    b64 = base64.b64encode(html_str.encode('utf-8')).decode('utf-8')
+    iframe_html = f'<iframe src="data:text/html;charset=utf-8;base64,{b64}" width="100%" height="800" style="border:none;"></iframe>'
+    st.html(iframe_html)
 
 # 페이지 기본 설정
 st.set_page_config(page_title="일상 & 현장 기록", page_icon="🏠", layout="centered")
@@ -103,6 +109,6 @@ with tab1:
         res_tab1, res_tab2 = st.tabs(["👁️ 블로그 미리보기", "📄 HTML 코드"])
         with res_tab1:
             st.info("외부 정보 없이 민규님이 주신 자료로만 구성된 미리보기입니다.")
-            st.html(st.session_state.daily_html)
+            show_isolated_html(st.session_state.daily_html)
         with res_tab2:
             st.code(st.session_state.daily_html, language="html")
