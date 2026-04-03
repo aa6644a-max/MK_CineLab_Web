@@ -6,19 +6,21 @@ from prompt_builder import PromptBuilder
 from html_formatter import HTMLFormatter
 from naver_client import NaverClient
 from db_manager import DBManager
+from rss_client import RSSClient  # 💡 1. 새로 만든 RSSClient를 불러옵니다!
 
 st.set_page_config(page_title="MK CINELAB", page_icon="🎬", layout="centered")
 
 @st.cache_resource
 def init_engines():
-    return TMDBClient(), GeminiClient(), PromptBuilder(), HTMLFormatter(), NaverClient(), DBManager()
+    # 💡 2. 초기화할 때 RSSClient도 같이 실행해 줍니다.
+    return TMDBClient(), GeminiClient(), PromptBuilder(), HTMLFormatter(), NaverClient(), DBManager(), RSSClient()
 
-tmdb, gemini, builder, formatter, naver, db = init_engines()
+tmdb, gemini, builder, formatter, naver, db, rss = init_engines() # 💡 3. rss 변수 추가
 
 st.title("🎬 MK CINELAB 블로그 자동화")
 st.markdown("---")
 
-# 탭 순서 변경: 큐레이션 리스트가 4번째, 내 글 직접 등록이 5번째로 이동
+# 탭 순서 변경
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["🎥 영화 리뷰", "📅 개봉 프리뷰", "📰 영화 소식", "🎬 큐레이션 리스트", "📝 내 글 직접 등록"])
 
 if "rev_data" not in st.session_state: st.session_state.rev_data = None
@@ -27,6 +29,7 @@ if "news_data" not in st.session_state: st.session_state.news_data = None
 if "converted_html" not in st.session_state: st.session_state.converted_html = None
 if "cur_data" not in st.session_state: st.session_state.cur_data = None 
 
+# 기존 DB에서 가져오던 함수 (필요할 때를 대비해 남겨둠)
 def get_recent_references(post_type_filter, limit=2):
     try:
         all_posts = db.get_all_posts()
@@ -49,13 +52,16 @@ with tab1:
     
     if st.button("리뷰 생성", type="primary"):
         if title:
-            with st.spinner("영화 정보, 최신 뉴스, 그리고 나의 과거 취향 데이터(DB)를 수집 중..."):
+            with st.spinner("영화 정보, 최신 뉴스, 그리고 실시간 네이버 블로그(RSS) 데이터를 수집 중..."):
                 year_val = int(year_input) if year_input.isdigit() else None
                 movie_info = tmdb.search_movie(title, year=year_val)
                 if movie_info:
                     details = tmdb.get_movie_details(movie_info['id'])
                     latest_news = naver.search_movie_news(title)
-                    reference_posts = get_recent_references("리뷰")
+                    
+                    # 💡 [핵심 변경] 기존 DB 대신 RSS에서 진짜 최신 블로그 글 3개를 바로 긁어옵니다!
+                    reference_posts = rss.get_latest_posts_text(limit=5) 
+                    
                     prompt = builder.build_review_prompt(details, comment, latest_news, reference_posts)
                     result = gemini.generate_post(prompt)
                     final_html = formatter.wrap_in_table(f"{details['title']} 리뷰", result)
@@ -79,12 +85,15 @@ with tab2:
     point = st.text_input("강조 포인트 (예: 배우 라인업, 감독의 전작 등)", key="pre_point")
     if st.button("프리뷰 생성", type="primary"):
         if p_title:
-            with st.spinner("정보 및 취향 데이터 수집 중..."):
+            with st.spinner("정보 및 실시간 블로그 취향 데이터 수집 중..."):
                 movie_info = tmdb.search_movie(p_title)
                 if movie_info:
                     details = tmdb.get_movie_details(movie_info['id'])
                     latest_news = naver.search_movie_news(p_title)
-                    reference_posts = get_recent_references("프리뷰")
+                    
+                    # 💡 RSS 적용
+                    reference_posts = rss.get_latest_posts_text(limit=5)
+                    
                     prompt = builder.build_preview_prompt(details, point, latest_news, reference_posts)
                     result = gemini.generate_post(prompt)
                     final_html = formatter.wrap_in_table(f"{details['title']} 프리뷰", result)
@@ -92,6 +101,7 @@ with tab2:
                 else: st.error("해당하는 영화 정보가 없습니다.")
         else: st.warning("영화 제목을 입력해 주세요.")
 
+    # ... (이하 프리뷰 저장 및 출력 코드는 동일)
     if st.session_state.pre_data:
         st.success("프리뷰 생성 완료!")
         if st.button("💾 이 프리뷰를 내 취향 DB에 저장하기", key="save_pre_btn"):
@@ -108,13 +118,15 @@ with tab3:
     if st.button("뉴스 포스팅 생성", type="primary"):
         if news_content:
             with st.spinner("뉴스 분석 및 취향 데이터 반영 중..."):
-                reference_posts = get_recent_references("뉴스")
+                # 💡 RSS 적용
+                reference_posts = rss.get_latest_posts_text(limit=5)
                 prompt = builder.build_news_prompt(news_content, reference_posts)
                 result = gemini.generate_post(prompt)
                 final_html = formatter.wrap_in_table("최신 영화 뉴스", result)
                 st.session_state.news_data = {"title": "영화 뉴스", "html": final_html}
         else: st.warning("뉴스 원문을 입력해 주세요.")
 
+    # ... (이하 뉴스 저장 및 출력 코드는 동일)
     if st.session_state.news_data:
         st.success("뉴스 포스팅 생성 완료!")
         if st.button("💾 이 뉴스를 내 취향 DB에 저장하기", key="save_news_btn"):
@@ -124,7 +136,7 @@ with tab3:
         with sub_tab1: st.code(st.session_state.news_data['html'], language='html')
         with sub_tab2: components.html(st.session_state.news_data['html'], height=800, scrolling=True)
 
-# --- Tab 4: 큐레이션 리스트 (위치 변경됨) ---
+# --- Tab 4: 큐레이션 리스트 ---
 with tab4:
     st.subheader("🎬 영화 큐레이션 리스트 생성")
     st.markdown("여러 편의 영화를 특정 테마에 맞춰 한 번에 소개하는 포스팅을 작성합니다.")
@@ -138,7 +150,7 @@ with tab4:
             
             with st.spinner(f"총 {len(movie_list)}편의 영화 정보(TMDB)와 최신 뉴스(Naver)를 수집 중입니다..."):
                 movies_data_text = ""
-                
+                # ... (중략: TMDB/Naver 데이터 수집 부분 동일)
                 for m_title in movie_list:
                     m_info = tmdb.search_movie(m_title)
                     if m_info:
@@ -167,7 +179,8 @@ with tab4:
                 
                 if movies_data_text.strip():
                     st.info("제미나이가 수집된 데이터를 바탕으로 MK 스타일 원고를 작성하고 있습니다...")
-                    reference_posts = get_recent_references("리스트")
+                    # 💡 RSS 적용
+                    reference_posts = rss.get_latest_posts_text(limit=5)
                     
                     prompt = builder.build_curation_prompt(cur_theme, movies_data_text, reference_posts)
                     result = gemini.generate_post(prompt)
@@ -179,6 +192,7 @@ with tab4:
         else:
             st.warning("테마와 영화 제목들을 모두 입력해 주세요.")
             
+    # ... (이하 리스트 저장 및 출력 코드는 동일)
     if st.session_state.cur_data:
         st.success("큐레이션 리스트 포스팅 생성 완료!")
         if st.button("💾 이 리스트를 내 취향 DB에 저장하기", key="save_cur_btn"):
@@ -189,7 +203,9 @@ with tab4:
         with sub_tab1: st.code(st.session_state.cur_data['html'], language='html')
         with sub_tab2: components.html(st.session_state.cur_data['html'], height=800, scrolling=True)
 
-# --- Tab 5: 내 글 직접 등록 (위치 변경됨) ---
+# --- Tab 5: 내 글 직접 등록 ---
+# (이 부분은 민규 님이 올려주신 코드 원본과 100% 동일하게 유지합니다. 
+# 잘못 붙여넣으신 하단 코드 덩어리만 제거했습니다.)
 with tab5:
     st.subheader("📝 내 블로그 원문 직접 등록")
     st.markdown("제미나이의 완벽한 문체 학습을 위해, 민규 님이 과거에 직접 쓰셨던 **진짜(Real) 블로그 포스팅 텍스트**를 넣어주세요.")
