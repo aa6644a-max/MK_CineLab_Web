@@ -24,11 +24,13 @@ class PromptBuilder:
         time_context = f"현재 시점은 {self.current_year}년 {self.current_month}월({self.season})입니다."
 
         if post_type == "preview":
-            intro_guideline = f"- [서론]: 진부한 날씨 인사말('~하는 요즘')은 생략하세요. {time_context} 계절감을 살짝만 녹이거나, 곧바로 콘텐츠를 다루게 된 계기, 포스팅 목적을 명확히 밝히세요. (개봉 전 프리뷰이므로 관람 인증샷은 들어가지 않습니다.)"
+            # 💡 [포스팅 계기/이유]를 반영하라는 지시 추가
+            intro_guideline = f"- [서론]: 진부한 날씨 인사말('~하는 요즘')은 생략하세요. {time_context} 계절감을 살짝만 녹이거나, 하단에 제공되는 [포스팅 계기/이유]를 바탕으로 이 영화를 프리뷰하게 된 명확한 동기를 밝히며 시작하세요. (개봉 전 프리뷰이므로 관람 인증샷은 들어가지 않습니다.)"
             media_guideline = """- 제공된 [메인 포스터]와 [스틸컷 1~N개] HTML 코드는 본문에 모두 1번씩 그대로 복사하여 삽입해야 합니다.
             - 💡 [융통성 발휘]: 개봉 전 프리뷰이므로, 제공된 영화 스틸컷 외에 '실제 역사적 인물의 사진', '감독의 전작 포스터', '원작 책 표지' 등 문맥상 부가적인 정보 사진이 들어가면 좋은 위치에는 언제든지 `<p style="text-align: center; color: #888; font-size: 14px; background: #eee; padding: 10px;">{{사진: 필요한 실제 사진/상황에 대한 구체적 설명}}</p>` 코드를 사용하여 회색 박스 자리를 자유롭게 만들어 주세요."""
         else:
-            intro_guideline = f"- [서론]: '안녕하세요, 가을바람이~' 같은 상투적이고 진부한 인사말은 절대 쓰지 마세요. {time_context} 대신 영화를 처음 보았을 때의 강렬한 첫인상이나 핵심 주제로 곧바로 글을 시작하세요. 서론 중간쯤에 [관람 인증샷] HTML 코드를 전체 글의 두 번째 이미지로 자연스럽게 삽입하고, 이어서 포스팅 목적을 밝히세요."
+            # 💡 [포스팅 계기/이유]를 반영하라는 지시 추가
+            intro_guideline = f"- [서론]: '안녕하세요, 가을바람이~' 같은 상투적이고 진부한 인사말은 절대 쓰지 마세요. {time_context} 대신 하단에 제공되는 [포스팅 계기/이유]를 바탕으로 영화를 관람하게 된 배경이나 강렬한 첫인상으로 곧바로 글을 시작하세요. 서론 중간쯤에 [관람 인증샷] HTML 코드를 전체 글의 두 번째 이미지로 자연스럽게 삽입하고, 이어서 포스팅 목적을 밝히세요."
             media_guideline = """- 하단에 제공되는 이미지 HTML 코드 목록([메인 포스터], [관람 인증샷], [스틸컷 1~N개]) 전체를 무조건 한 번씩 본문에 1글자도 수정하지 말고 그대로 복사해서 배치해야 합니다.
             - 제미나이 임의로 이미지 태그를 줄이거나 생략하지 마세요. 제공된 코드는 반드시 모두 사용해야 합니다."""
 
@@ -115,7 +117,7 @@ class PromptBuilder:
         {reference_posts}
         """
 
-    def build_preview_prompt(self, details, point, latest_news="", reference_posts=""):
+    def build_preview_prompt(self, details, point, reason="", latest_news="", reference_posts=""):
         base = self._get_base_guideline(post_type="preview")
         ref_prompt = self._get_reference_prompt(reference_posts)
         title = details.get('title', '')
@@ -132,8 +134,11 @@ class PromptBuilder:
         - 출연: {details.get('actors', '')}
         - 줄거리: {details.get('overview', '')}
         
-        [핵심 주제 및 강조 포인트 (🚨가장 중요🚨)]
-        - 사용자의 요청: "{point}"
+        [핵심 주제 및 강조 포인트]
+        - {point}
+
+        [포스팅 계기/이유 (🚨서론에 반드시 자연스럽게 반영할 것)]
+        - {reason}
 
         [최신 네이버 뉴스 동향]
         {latest_news}
@@ -147,42 +152,6 @@ class PromptBuilder:
         [특이사항]
         - 반드시 제공된 [영화 실제 데이터]를 바탕으로 작성하여 거짓 정보(할루시네이션)를 만들지 마세요.
         - [최신 네이버 뉴스 동향]의 내용을 본문에 반영하되, 출처를 암시하는 단어는 절대 쓰지 마세요.
-        
-        {base}
-        """
-
-    def build_review_prompt(self, details, comment, latest_news="", reference_posts=""):
-        base = self._get_base_guideline(post_type="review")
-        ref_prompt = self._get_reference_prompt(reference_posts)
-        title = details.get('title', '')
-        poster_html, stills_prompt_text, ticket_html = self._generate_media_prompts(details, is_preview=False)
-
-        return f"""
-        당신은 네이버 영화 인플루언서 'MK'입니다. 영화를 직접 관람한 후 작성하는 상세 리뷰 원고를 작성하세요.
-        
-        [영화 실제 데이터]
-        - 제목: {title}
-        - 개봉일: {details.get('release_date', '')}
-        - 장르: {details.get('genres', '')}
-        - 감독: {details.get('director', '')}
-        - 출연: {details.get('actors', '')}
-        - 줄거리: {details.get('overview', '')}
-        
-        [나의 주관적 감상평]
-        {comment}
-
-        [최신 네이버 뉴스 동향]
-        {latest_news}
-        
-        {ref_prompt}
-
-        [제공되는 실제 이미지 HTML 코드]
-        - [메인 포스터]: {poster_html}
-        - [관람 인증샷]: {ticket_html}
-{stills_prompt_text}
-        
-        [특이사항]
-        - 감상평에 담긴 저의 솔직한 감정을 본문에 자연스럽게 녹여내 주세요.
         
         {base}
         """
