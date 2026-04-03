@@ -2,7 +2,6 @@ from datetime import datetime
 
 class DailyPromptBuilder:
     def __init__(self):
-        # 💡 현재 시간/계절 정보 세팅 (prompt_builder와 동일)
         self.current_date = datetime.now()
         self.current_month = self.current_date.month
         self.current_year = self.current_date.year
@@ -17,7 +16,6 @@ class DailyPromptBuilder:
             self.season = "겨울"
 
     def _get_base_guideline(self):
-        """prompt_builder.py의 어조, 가독성, SEO 지침을 그대로 가져옴"""
         time_context = f"현재 시점은 {self.current_year}년 {self.current_month}월({self.season})입니다."
         
         return f"""
@@ -31,7 +29,7 @@ class DailyPromptBuilder:
 
         2. 전체 분량 및 가독성 (Layout & Readability):
             - 정보의 밀도를 높여 공백 제외 1,500 ~ 2,000자 내외로 작성하세요. (절대 2,000자 초과 금지)
-            - 모바일 가독성을 위해 3~4줄마다 반드시 문단을 나누고(<p> 태그), 문단 사이에 빈 줄(<p style="text-align: center;">&nbsp;</p>)을 삽입하세요.
+            - 💡 [레이아웃 학습]: 단순히 기계적으로 단락을 나누지 마세요. 하단에 제공될 [나의 과거 레퍼런스 글]의 시각적인 호흡을 관찰하고, 그곳에 쓰인 문단 사이의 빈 줄(<p style="text-align: center;">&nbsp;</p>) 활용 방식을 새 글에도 똑같이 적용하세요.
 
         3. SEO (검색 최적화):
             - 본문 서두와 제목에 메인 키워드를 자연스럽게 배치하세요.
@@ -40,13 +38,13 @@ class DailyPromptBuilder:
         """
 
     def _get_reference_prompt(self, reference_posts):
-        """MK 문체 복제 지침 (prompt_builder.py와 동일)"""
         if not reference_posts:
             return ""
         return f"""
-        [🚨 절대 준수: MK 문체 완벽 복제 지침]
-        당신은 AI의 기계적인 작문 습관을 버리고, 제공된 레퍼런스의 '말투', '단어 선택', '문장 끝맺음'을 100% 복제하세요.
+        [🚨 절대 준수: MK 문체 및 '시각적 구조' 완벽 복제 지침]
+        당신은 AI의 빽빽하고 기계적인 작문 습관을 버려야 합니다. 제공된 레퍼런스의 '말투'와 '단어 선택'뿐만 아니라 **단락을 나누는 방식(엔터 빈도)과 시각적인 호흡**까지 100% 복제하세요.
 
+        * ⭕ 시각적 리듬 복제: 레퍼런스에서 한두 문장 만에 줄바꿈(엔터)을 하여 여백을 주었다면, 새 글에서도 그 짧고 속도감 있는 문단 구조를 똑같이 따라 하세요. 문장이 길어지기 전에 <p> 태그를 닫고 새로 열어주는 글쓴이 특유의 엔터 타이밍을 완벽히 파악하세요.
         * ❌ AI 금지어: "결론적으로", "요약하자면", "의 향연", "할 수밖에 없습니다", "과언이 아닙니다", "흥미로운".
         
         [나의 과거 레퍼런스 글]
@@ -68,7 +66,7 @@ class DailyPromptBuilder:
 
         [🚨 초강력 지침: 노트북LM 모드]
         - 외부 검색을 차단하고 오직 아래 제공된 [원본 데이터(PDF)]의 내용만 사용하세요.
-        - 본론 구성: 소제목(H2, H3)은 딱 3개만 사용하고, 소제목당 문단은 2개를 넘기지 마세요.
+        - 본론 구성: 소제목(H2, H3)은 딱 3개만 사용하세요.
 
         [🖼️ 이미지 배치 가이드]
         - 본문 흐름에 맞게 최소 5곳에 아래 코드를 삽입하세요:
