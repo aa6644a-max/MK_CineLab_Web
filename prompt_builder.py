@@ -1,19 +1,41 @@
 import os
 import webbrowser
+from datetime import datetime
 
 class PromptBuilder:
+    def __init__(self):
+        # 💡 객체 생성 시 현재 시간/계절 정보를 미리 세팅
+        self.current_date = datetime.now()
+        self.current_month = self.current_date.month
+        self.current_year = self.current_date.year
+        
+        # 계절 판단 로직
+        if 3 <= self.current_month <= 5:
+            self.season = "봄"
+        elif 6 <= self.current_month <= 8:
+            self.season = "여름"
+        elif 9 <= self.current_month <= 11:
+            self.season = "가을"
+        else:
+            self.season = "겨울"
+
     def _get_base_guideline(self, post_type="review"):
+        # 💡 현재 시점 텍스트 생성
+        time_context = f"현재 시점은 {self.current_year}년 {self.current_month}월({self.season})입니다."
+
         if post_type == "preview":
-            intro_guideline = "- [서론]: 콘텐츠를 다루게 된 계기, 포스팅 목적(무엇에 집중해서 알아볼 것인지)을 명확히 밝히세요. (개봉 전 프리뷰이므로 관람 인증샷은 들어가지 않습니다.)"
+            intro_guideline = f"- [서론]: 진부한 날씨 인사말('~하는 요즘')은 생략하세요. {time_context} 계절감을 살짝만 녹이거나, 곧바로 콘텐츠를 다루게 된 계기, 포스팅 목적을 명확히 밝히세요. (개봉 전 프리뷰이므로 관람 인증샷은 들어가지 않습니다.)"
             media_guideline = """- 제공된 [메인 포스터]와 [스틸컷 1~N개] HTML 코드는 본문에 모두 1번씩 그대로 복사하여 삽입해야 합니다.
             - 💡 [융통성 발휘]: 개봉 전 프리뷰이므로, 제공된 영화 스틸컷 외에 '실제 역사적 인물의 사진', '감독의 전작 포스터', '원작 책 표지' 등 문맥상 부가적인 정보 사진이 들어가면 좋은 위치에는 언제든지 `<p style="text-align: center; color: #888; font-size: 14px; background: #eee; padding: 10px;">{{사진: 필요한 실제 사진/상황에 대한 구체적 설명}}</p>` 코드를 사용하여 회색 박스 자리를 자유롭게 만들어 주세요."""
         else:
-            intro_guideline = "- [서론]: 콘텐츠를 보게 된 계기나 첫인상을 적고, 그 직후(서론 중간)에 [관람 인증샷] HTML 코드를 전체 글의 두 번째 이미지로 자연스럽게 삽입하세요. 그 후 영화의 기본 정보 요약, 포스팅 목적을 밝히세요."
+            intro_guideline = f"- [서론]: '안녕하세요, 가을바람이~' 같은 상투적이고 진부한 인사말은 절대 쓰지 마세요. {time_context} 대신 영화를 처음 보았을 때의 강렬한 첫인상이나 핵심 주제로 곧바로 글을 시작하세요. 서론 중간쯤에 [관람 인증샷] HTML 코드를 전체 글의 두 번째 이미지로 자연스럽게 삽입하고, 이어서 포스팅 목적을 밝히세요."
             media_guideline = """- 하단에 제공되는 이미지 HTML 코드 목록([메인 포스터], [관람 인증샷], [스틸컷 1~N개]) 전체를 무조건 한 번씩 본문에 1글자도 수정하지 말고 그대로 복사해서 배치해야 합니다.
             - 제미나이 임의로 이미지 태그를 줄이거나 생략하지 마세요. 제공된 코드는 반드시 모두 사용해야 합니다."""
 
         return f"""
         [작성 지침]
+        {time_context} 
+
         1. 어조 및 페르소나 (Tone of Voice):
             - 정중하고 친근한 경어체("~습니다", "~해요", "~죠")를 자연스럽게 섞어 쓰세요.
             - 확정적 표현 대신 조심스러운 분석("~이지 않을까 싶어요", "~라고 생각됩니다", "~인 듯 보이기도 하며")을 사용하여 독자의 공감을 유도하세요.
@@ -81,6 +103,12 @@ class PromptBuilder:
         당신은 AI의 기계적인 작문 습관을 모두 버리고, 무조건 이 레퍼런스의 '말투', '단어 선택', '문장 끝맺음', '비유 방식'을 100% 똑같이 흉내 내서 빙의해야 합니다.
 
         * ❌ AI 금지어 (절대 사용 금지): "결론적으로", "요약하자면", "이 영화는 ~라는 점에서 큰 의미를 가집니다", "~의 향연", "~할 수밖에 없습니다", "과언이 아닙니다", "시각적 즐거움", "흥미로운".
+        
+        * 🚨 🚨 [초강력 경고: 내용 인용 금지] 🚨 🚨
+        레퍼런스 글에 등장하는 **과거의 영화 제목, 배우 이름, 특정 사건 내용 등을 절대로, 단 하나도 새 글에 가져오거나 언급하지 마세요.**
+        (예: 레퍼런스에 <라라랜드> 이야기가 있다고 해서 새 리뷰에 "지난번 라라랜드 리뷰처럼..." 이라고 쓰면 절대 안 됩니다.)
+        오직 **"말투와 글을 전개하는 방식"**이라는 껍데기만 훔쳐오고, 알맹이는 완전히 새로운 영화에 맞춰서 작성해야 합니다.
+
         * ⭕ 강제 사항: 레퍼런스 글에서 보여지는 문장 호흡, 감정적인 형용사, 접속사 사용 스타일을 분석하여 새 글에 그대로 적용하세요. 내용만 새 영화로 바꿀 뿐, 글쓴이가 완전히 '동일 인물'이라고 느껴져야 합니다.
 
         [나의 과거 레퍼런스 글]
@@ -194,12 +222,16 @@ class PromptBuilder:
         출력 형식: 설명이나 인사말 없이 오직 변환된 HTML 본문 코드만 출력하세요. (```html 마크다운은 제외할 것)
         """
 
-    # 💡 5번째 탭용: 200자 내외 제한 규칙 추가 완료!
     def build_curation_prompt(self, theme, movies_data_text, reference_posts=""):
         ref_prompt = self._get_reference_prompt(reference_posts)
         
+        # 💡 큐레이션용 시간 컨텍스트 추가
+        time_context = f"현재 시점은 {self.current_year}년 {self.current_month}월({self.season})입니다."
+        
         return f"""
         당신은 네이버 영화 인플루언서 'MK'입니다. 여러 영화를 묶어서 소개하는 '영화 큐레이션(리스트형)' 블로그 포스팅을 작성하세요.
+
+        {time_context}
 
         [포스팅 메인 테마 및 요청사항]
         - 테마: {theme}
@@ -216,7 +248,7 @@ class PromptBuilder:
         [🚨 절대 준수: MK CINELAB 큐레이션 HTML 레이아웃]
         아래의 HTML 구조를 100% 동일하게 따라야 합니다. 제공된 영화 목록의 개수만큼 <영화 섹션>을 반복해서 생성하세요.
 
-        <p>어느덧 [계절/시기]가 다가옵니다. [제시된 테마에 맞춰서 MK 특유의 다정하고 감성적인 서론 인사말을 간결하게 작성하세요. 2문장 내외]</p>
+        <p>{self.season}의 정취가 느껴지는 요즘, [제시된 테마에 맞춰서 MK 특유의 다정하고 감성적인 서론 인사말을 간결하게 작성하세요. 2문장 내외]</p>
         <p style="text-align: center;">&nbsp;</p>
 
         <h2 style="border-bottom: 2px solid #333; padding-bottom: 5px;">[영화 제목]</h2>
