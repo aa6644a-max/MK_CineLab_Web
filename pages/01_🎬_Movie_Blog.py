@@ -10,11 +10,12 @@ from rss_client import RSSClient
 
 st.set_page_config(page_title="MK CINELAB", page_icon="🎬", layout="centered")
 
-@st.cache_resource
-def init_engines():
+# 🚨 해결의 핵심: 함수 이름을 v3로 변경하여 강제 캐시 초기화!
+@st.cache_resource(show_spinner=False)
+def init_engines_v3():
     return TMDBClient(), GeminiClient(), PromptBuilder(), HTMLFormatter(), NaverClient(), DBManager(), RSSClient()
 
-tmdb, gemini, builder, formatter, naver, db, rss = init_engines()
+tmdb, gemini, builder, formatter, naver, db, rss = init_engines_v3()
 
 st.title("🎬 MK CINELAB 블로그 자동화")
 st.markdown("---")
