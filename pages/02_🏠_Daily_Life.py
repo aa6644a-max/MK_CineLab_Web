@@ -1,5 +1,5 @@
 import streamlit as st
-import streamlit.components.v1 as components
+#import streamlit.components.v1 as components
 import pdfplumber  
 from DailyPromptBuilder import DailyPromptBuilder
 from gemini_client import GeminiClient
@@ -103,6 +103,6 @@ with tab1:
         res_tab1, res_tab2 = st.tabs(["👁️ 블로그 미리보기", "📄 HTML 코드"])
         with res_tab1:
             st.info("외부 정보 없이 민규님이 주신 자료로만 구성된 미리보기입니다.")
-            components.html(st.session_state.daily_html, height=800, scrolling=True)
+            st.html(st.session_state.daily_html)
         with res_tab2:
             st.code(st.session_state.daily_html, language="html")
