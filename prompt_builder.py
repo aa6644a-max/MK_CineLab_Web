@@ -47,7 +47,8 @@ class PromptBuilder:
               1. "최근 영화계에서 [관련 뉴스 주제]에 관한 흥미로운 소식을 접했습니다." 혹은 이와 유사하게 시작하세요.
               2. "그래서 오늘은 이 이슈가 어떤 의미를 가지는지 함께 알아보려 합니다."로 본론을 여세요.
               3. 🚨 절대 "안녕하세요", "반갑습니다", "MK입니다" 같은 상투적인 인사말은 금지입니다."""
-            media_guideline = "- 본문에 적절한 이미지가 들어갈 자리에 `<p style="text-align: center; color: #888; font-size: 14px; background: #eee; padding: 10px;">{{사진: 문맥에 맞는 사진 설명}}</p>` 코드를 삽입하세요."
+            # ✅ 이 부분의 따옴표 충돌 문제를 수정했습니다 (""" 사용)
+            media_guideline = """- 본문에 적절한 이미지가 들어갈 자리에 `<p style="text-align: center; color: #888; font-size: 14px; background: #eee; padding: 10px;">{{사진: 문맥에 맞는 사진 설명}}</p>` 코드를 삽입하세요."""
 
         return f"""
         [작성 지침]
