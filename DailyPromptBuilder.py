@@ -1,26 +1,24 @@
-from datetime import datetime
+from BasePromptBuilder import BasePromptBuilder # 💡 베이스 빌더 불러오기
 
-class DailyPromptBuilder:
+# 💡 BasePromptBuilder를 상속받습니다.
+class DailyPromptBuilder(BasePromptBuilder):
     def __init__(self):
-        self.current_date = datetime.now()
-        self.current_month = self.current_date.month
-        self.current_year = self.current_date.year
-        
-        if 3 <= self.current_month <= 5:
-            self.season = "봄"
-        elif 6 <= self.current_month <= 8:
-            self.season = "여름"
-        elif 9 <= self.current_month <= 11:
-            self.season = "가을"
-        else:
-            self.season = "겨울"
+        super().__init__() # 💡 부모의 날짜/계절 계산 로직을 그대로 가져옵니다 (중복 코드 삭제)
 
     def _get_base_guideline(self):
         time_context = f"현재 시점은 {self.current_year}년 {self.current_month}월({self.season})입니다."
         
+        # 💡 디자인 가이드와 공통 제약사항 호출 (일상 기록 컬러: 다크 그린)
+        design_system = self._get_design_system(brand_color="#2e7d32")
+        common_constraints = self._get_common_constraints()
+        
         return f"""
         [작성 지침]
         {time_context}
+
+        {design_system}
+        
+        {common_constraints}
 
         1. 어조 및 페르소나 (Tone of Voice):
             - 정중하고 친근한 경어체("~습니다", "~해요", "~죠")를 자연스럽게 섞어 쓰세요.
@@ -29,7 +27,6 @@ class DailyPromptBuilder:
 
         2. 전체 분량 및 가독성 (Layout & Readability):
             - 정보의 밀도를 높여 공백 제외 1,500 ~ 2,000자 내외로 작성하세요. (절대 2,000자 초과 금지)
-            - 💡 [레이아웃 학습]: 단순히 기계적으로 단락을 나누지 마세요. 하단에 제공될 [나의 과거 레퍼런스 글]의 시각적인 호흡을 관찰하고, 그곳에 쓰인 문단 사이의 빈 줄(<p style="text-align: center;">&nbsp;</p>) 활용 방식을 새 글에도 똑같이 적용하세요.
 
         3. SEO (검색 최적화):
             - 본문 서두와 제목에 메인 키워드를 자연스럽게 배치하세요.
