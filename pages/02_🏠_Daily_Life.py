@@ -286,15 +286,22 @@ with tab2:
                 st.session_state.photo_copy_html = formatter.wrap_in_table(f"{photo_category} 기록", copy_html_raw)
                 st.success("사진 기반 맞춤형 포스팅 생성이 완료되었습니다!")
 
-    # 💡 렌더링 탭 업데이트 (미리보기용과 복사용 분리)
+   # 💡 렌더링 탭 업데이트 (3개로 분리)
     if st.session_state.get("photo_preview_html"):
         st.markdown("---")
-        res_tab1, res_tab2 = st.tabs(["👁️ 블로그 미리보기", "📄 HTML 코드 (복사용)"])
+        res_tab1, res_tab2, res_tab3 = st.tabs(["👁️ 완벽 미리보기", "📋 블로그 복사용 화면", "📄 HTML 원본 코드"])
         
         with res_tab1:
-            st.info("✨ 방금 올리신 실제 사진들이 적용된 완벽한 미리보기입니다!")
-            show_isolated_html(st.session_state.photo_preview_html)
+            st.info("✨ 실제 사진들이 적용된 완벽한 미리보기입니다. (눈으로만 확인하세요!)")
+            clean_html = st.session_state.photo_preview_html.replace("```html\n", "").replace("```html", "").replace("```", "")
+            components.html(clean_html, height=1000, scrolling=True)
             
         with res_tab2:
-            st.warning("네이버 블로그는 사진 코드(Base64) 복붙을 차단하므로 코드가 깨지지 않게 텍스트로 치환해두었습니다. 복사 후 붉은 글씨 위치에 사진을 넣어주세요!")
+            st.success("💡 [여기서 드래그 복사!] 아래 보이는 글을 마우스로 쭉 드래그해서 복사(Ctrl+C)한 뒤, 네이버 블로그 에디터에 바로 붙여넣기(Ctrl+V) 하세요!")
+            # iframe에 갇혀있으면 마우스 드래그 복사가 불편하므로, st.markdown으로 화면에 직접 뿌려줍니다.
+            clean_copy_html = st.session_state.photo_copy_html.replace("```html\n", "").replace("```html", "").replace("```", "")
+            st.markdown(clean_copy_html, unsafe_allow_html=True)
+
+        with res_tab3:
+            st.warning("티스토리 등 HTML 소스코드 직접 입력이 가능한 곳을 위한 예비용 코드입니다.")
             st.code(st.session_state.photo_copy_html, language="html")
