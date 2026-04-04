@@ -1,7 +1,8 @@
 import streamlit as st
 import base64
-import re  # 💡 정규식(이미지 태그 치환)을 위해 추가된 모듈
+import re  
 import pdfplumber  
+import streamlit.components.v1 as components # 💡 주석이었던 이 부분을 활성화합니다!
 from DailyPromptBuilder import DailyPromptBuilder
 from gemini_client import GeminiClient
 from rss_client import RSSClient
@@ -9,10 +10,11 @@ from html_formatter import HTMLFormatter
 from naver_client import NaverClient  
 
 def show_isolated_html(html_str):
-    b64 = base64.b64encode(html_str.encode('utf-8')).decode('utf-8')
-    iframe_html = f'<iframe src="data:text/html;charset=utf-8;base64,{b64}" width="100%" height="800" style="border:none;"></iframe>'
+    # 💡 AI가 가끔 넣는 불필요한 마크다운 기호를 깔끔하게 제거
+    clean_html = html_str.replace("```html\n", "").replace("```html", "").replace("```", "")
     
-    st.markdown(iframe_html, unsafe_allow_html=True)
+    # 💡 용량 제한이 있는 기존 iframe 방식 대신, 공식 components를 사용하여 안전하게 띄웁니다.
+    components.html(clean_html, height=1000, scrolling=True)
 
 # 페이지 기본 설정
 st.set_page_config(page_title="일상 & 현장 기록", page_icon="🏠", layout="centered")
