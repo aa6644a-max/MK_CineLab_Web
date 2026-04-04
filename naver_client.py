@@ -49,3 +49,27 @@ class NaverClient:
             print(f"네이버 API 에러 발생: {e}")
             
         return "뉴스 검색에 실패했습니다."
+            
+    def search_local_place(self, query, display=5):
+        """키워드로 네이버 지역(장소)을 검색하여 결과를 반환합니다."""
+        url = "https://openapi.naver.com/v1/search/local.json"
+        
+        headers = {
+            "X-Naver-Client-Id": self.client_id,
+            "X-Naver-Client-Secret": self.client_secret
+        }
+        
+        params = {
+            "query": query,
+            "display": display 
+        }
+
+        try:
+            response = requests.get(url, headers=headers, params=params, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return {"error": f"네이버 API 에러 발생: 상태 코드 {response.status_code}"}
+                
+        except Exception as e:
+            return {"error": f"지역 검색 실패: {e}"}

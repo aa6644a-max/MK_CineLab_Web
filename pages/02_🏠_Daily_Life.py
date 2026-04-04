@@ -6,6 +6,7 @@ from DailyPromptBuilder import DailyPromptBuilder
 from gemini_client import GeminiClient
 from rss_client import RSSClient
 from html_formatter import HTMLFormatter
+from naver_client import NaverClient  # 💡 네이버 클라이언트 추가
 
 def show_isolated_html(html_str):
     b64 = base64.b64encode(html_str.encode('utf-8')).decode('utf-8')
@@ -19,9 +20,11 @@ st.set_page_config(page_title="일상 & 현장 기록", page_icon="🏠", layout
 # 엔진 초기화
 @st.cache_resource(show_spinner=False)
 def init_daily_engines():
-    return DailyPromptBuilder(), GeminiClient(), RSSClient(), HTMLFormatter()
+    # 💡 NaverClient 객체 생성 추가
+    return DailyPromptBuilder(), GeminiClient(), RSSClient(), HTMLFormatter(), NaverClient()
 
-daily_builder, gemini, rss, formatter = init_daily_engines()
+# 💡 naver_client 변수 할당 추가
+daily_builder, gemini, rss, formatter, naver_client = init_daily_engines()
 
 st.title("🏠 민규의 일상 & 현장 기록")
 st.markdown("---")
@@ -117,6 +120,7 @@ with tab1:
         with res_tab2:
             st.code(st.session_state.daily_html, language="html")
 
+
 # ==========================================
 # [TAB 2] 💡 신규 추가: 사진 기반 포스팅 UI
 # ==========================================
@@ -124,14 +128,62 @@ with tab2:
     st.subheader("📸 사진 기반 일상/맛집/현장 포스팅")
     st.write("순서대로 사진을 업로드하고 짧은 캡션을 달아주세요. 알아서 흐름에 맞는 포스팅을 써드립니다.")
 
-    # 1. 장소 검색 (현재는 UI만)
+    # 💡 세션 스테이트 초기화 (장소 검색 결과 저장용)
+    if "place_search_results" not in st.session_state: st.session_state.place_search_results = None
+    if "selected_place" not in st.session_state: st.session_state.selected_place = None
+
+    # 1. 장소 검색
     st.markdown("#### 📍 1. 장소 정보 입력 (선택)")
     col_search, col_btn = st.columns([4, 1])
     with col_search:
         search_query = st.text_input("상호명 또는 장소 검색", placeholder="예: 남산동 카페, 무촌리 현장 등", label_visibility="collapsed")
     with col_btn:
-        st.button("네이버 검색", key="search_place_btn", use_container_width=True)
-    st.info("※ 네이버 API 장소 검색 연동은 다음 단계에서 연결할 예정입니다!")
+        search_place_btn = st.button("네이버 검색", key="search_place_btn", use_container_width=True)
+    
+    # 💡 네이버 검색 버튼 클릭 시 로직
+    if search_place_btn and search_query:
+        with st.spinner("네이버 지도를 뒤지는 중..."):
+            results = naver_client.search_local_place(search_query)
+            if "error" in results:
+                st.error(results["error"])
+            elif results.get("items"):
+                st.session_state.place_search_results = results["items"]
+                st.session_state.selected_place = None # 새 검색 시 기존 선택 초기화
+            else:
+                st.warning("검색 결과가 없습니다. 검색어를 바꿔보세요!")
+
+    # 💡 검색 결과 리스트업
+    if st.session_state.place_search_results and not st.session_state.selected_place:
+        st.markdown("##### 📌 어느 곳인가요? (검색 결과)")
+        for i, item in enumerate(st.session_state.place_search_results):
+            # 네이버 API는 검색어에 <b> 태그를 달아주므로 제거
+            title = item['title'].replace('<b>', '').replace('</b>', '')
+            category = item['category']
+            address = item['roadAddress'] or item['address'] # 도로명 주소 우선, 없으면 지번
+            
+            col_info, col_sel = st.columns([5, 1])
+            with col_info:
+                st.write(f"**{title}** \n<small>{category} | 📍 {address}</small>", unsafe_allow_html=True)
+            with col_sel:
+                # 선택 버튼 누르면 세션에 저장하고 화면 새로고침
+                if st.button("선택", key=f"sel_place_{i}", use_container_width=True):
+                    st.session_state.selected_place = {
+                        "title": title,
+                        "category": category,
+                        "address": address,
+                        "link": item.get('link', '')
+                    }
+                    st.session_state.place_search_results = None
+                    st.rerun()
+        st.markdown("---")
+
+    # 💡 장소가 선택되었을 때의 UI
+    if st.session_state.selected_place:
+        p = st.session_state.selected_place
+        st.success(f"✅ **{p['title']}** 장소가 선택되었습니다! (📍 {p['address']})")
+        if st.button("장소 다시 검색하기", key="reset_place_btn", size="small"):
+            st.session_state.selected_place = None
+            st.rerun()
 
     st.markdown("---")
 
