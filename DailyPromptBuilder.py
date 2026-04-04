@@ -1,14 +1,12 @@
-from BasePromptBuilder import BasePromptBuilder # 💡 베이스 빌더 불러오기
+from BasePromptBuilder import BasePromptBuilder 
 
-# 💡 BasePromptBuilder를 상속받습니다.
 class DailyPromptBuilder(BasePromptBuilder):
     def __init__(self):
-        super().__init__() # 💡 부모의 날짜/계절 계산 로직을 그대로 가져옵니다 (중복 코드 삭제)
+        super().__init__() 
 
     def _get_base_guideline(self):
         time_context = f"현재 시점은 {self.current_year}년 {self.current_month}월({self.season})입니다."
         
-        # 💡 디자인 가이드와 공통 제약사항 호출 (일상 기록 컬러: 다크 그린)
         design_system = self._get_design_system(brand_color="#2e7d32")
         common_constraints = self._get_common_constraints()
         
@@ -80,4 +78,45 @@ class DailyPromptBuilder(BasePromptBuilder):
         {base}
 
         출력 형식: 오직 HTML 본문 코드만 출력하세요. 맨 마지막 줄에 HTML 주석() 형식으로 매력적인 제목 5개를 제안하세요.
+        """
+
+    # ==========================================
+    # 💡 신규 추가: 사진 기반 일상/맛집 전용 프롬프트
+    # ==========================================
+    def build_photo_post_prompt(self, category, vibe, place_info_text, photo_contexts_text, reference_posts=""):
+        common_constraints = self._get_common_constraints()
+        ref_prompt = self._get_reference_prompt(reference_posts)
+        
+        return f"""
+        당신은 네이버 인플루언서 'MK'입니다. 사용자가 직접 찍어 올린 [사진]들과 [짧은 메모]를 바탕으로 생생한 '{category}' 블로그 포스팅을 작성해야 합니다.
+
+        [기록 기본 설정]
+        - 포스팅 주제: {category}
+        - 글의 전반적인 감성/어조: {vibe} 분위기로 작성
+
+        {place_info_text}
+
+        [📸 제공된 사진 및 사용자 메모]
+        당신에게는 실제 이미지 파일들이 순서대로 제공되었습니다. 
+        아래는 사용자가 각 이미지에 순서대로 남긴 짧은 메모입니다. 이미지의 시각적 정보(Vision)와 사용자의 메모를 결합하여 풍성한 문단을 만들어내세요.
+        
+        {photo_contexts_text}
+
+        [🎨 네이버 블로그 특화 디자인 가이드 (절대 준수)]
+        1. 폰트: 기본 폰트는 `<div style="font-family: 'Nanum Gothic', '나눔고딕', sans-serif; color: #333; line-height: 1.8;">` 로 전체를 감싸세요.
+        2. 공백: 문단 사이 여유 공간은 `<p style="text-align: center;">&nbsp;</p>`를 사용하세요.
+        3. 소제목: 네이버 인용구 느낌으로 `<h3 style="font-size: 20px; font-weight: 700; background-color: #f7f7f7; padding: 12px 20px; border-radius: 8px; margin: 30px 0 15px;">✅ [소제목]</h3>` 형태를 사용하세요.
+        4. 구분선: 내용 전환 시 네이버 스티커 느낌의 `<div style="height: 2px; background: linear-gradient(to right, #ffffff, #a5d6a7, #ffffff); margin: 50px 0;"></div>` 를 사용하세요.
+        5. 태그: 글의 마지막에 `<span style="display: inline-block; background-color: #f0f0f0; padding: 8px 15px; border-radius: 20px; margin: 5px; font-size: 14px; font-weight: bold;">#키워드</span>` 형식으로 해시태그 5개를 나열하세요.
+
+        [🚨 작성 지침]
+        {common_constraints}
+        - 글의 전개는 사용자가 제공한 사진 순서를 그대로 따르세요.
+        - 본문 중 해당 사진이 보여야 할 위치(문단 사이)에는 반드시 아래 형식의 붉은색 텍스트를 삽입하세요. (이 코드를 기준으로 나중에 실제 이미지가 치환됩니다.)
+          <p style="text-align: center; color: #e53e3e; font-weight: bold;">{{사진 : [사용자 메모 요약] - 대상사진 : [사진 속 시각 정보 분석 내용]}}</p>
+        
+        {ref_prompt}
+
+        출력 형식: 설명이나 인사말 없이 오직 완성된 HTML 본문 코드만 출력하세요. (```html 마크다운 기호 제외). 
+        맨 마지막 줄에 HTML 주석() 형식으로 매력적인 제목 5개를 제안하세요.
         """

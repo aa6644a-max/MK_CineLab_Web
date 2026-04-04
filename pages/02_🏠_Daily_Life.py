@@ -238,9 +238,53 @@ with tab2:
     st.write("") # 여백
     generate_photo_btn = st.button("📸 사진 포스팅 생성", type="primary", use_container_width=True)
 
+    st.write("") # 여백
+    generate_photo_btn = st.button("📸 사진 포스팅 생성", type="primary", use_container_width=True)
+
+    # 💡 여기서부터 변경: 버튼을 눌렀을 때의 실제 동작 로직 추가
     if generate_photo_btn:
         if not uploaded_photos:
             st.warning("먼저 사진을 업로드해 주세요!")
         else:
-            # TODO: 다음 단계에서 Gemini 멀티모달 프롬프트 연동
-            st.success("로직 연결은 다음 단계에서 진행됩니다! UI 레이아웃이 마음에 드는지 확인해 주세요 😉")
+            with st.spinner("사진과 메모를 분석하여 포스팅을 작성 중입니다... (사진이 많을수록 시간이 조금 걸려요)"):
+                # 1. 장소 정보 텍스트화 (선택사항)
+                place_info_text = ""
+                if st.session_state.selected_place:
+                    p = st.session_state.selected_place
+                    place_info_text = f"[장소 정보]\n- 상호명: {p['title']}\n- 주소: {p['address']}\n- 카테고리: {p['category']}"
+                
+                # 2. 사진 메모 텍스트화
+                photo_contexts_text = ""
+                for i, ctx in enumerate(photo_contexts):
+                    # ctx['caption']은 사용자가 입력한 짧은 메모입니다.
+                    photo_contexts_text += f"- 사진 {i+1} 메모: {ctx['caption']}\n"
+                
+                # 3. 레퍼런스 포스팅 가져오기 (문체 복제용)
+                reference_posts = rss.get_latest_posts_text(limit=3)
+
+                # 4. 프롬프트 빌더 호출 (DailyPromptBuilder의 새 함수)
+                prompt = daily_builder.build_photo_post_prompt(
+                    category=photo_category,
+                    vibe=photo_vibe,
+                    place_info_text=place_info_text,
+                    photo_contexts_text=photo_contexts_text,
+                    reference_posts=reference_posts
+                )
+
+                # 5. Gemini API 호출 (텍스트 프롬프트 + 실제 사진 파일 리스트 함께 전송!)
+                result = gemini.generate_post(prompt, images=uploaded_photos)
+                
+                # 6. HTML 래핑 및 결과 저장
+                final_html = formatter.wrap_in_table(f"{photo_category} 기록", result)
+                st.session_state.photo_html = final_html
+                st.success("사진 기반 맞춤형 포스팅 생성이 완료되었습니다!")
+
+    # 💡 결과물 출력 영역 추가
+    if st.session_state.photo_html:
+        st.markdown("---")
+        res_tab1, res_tab2 = st.tabs(["👁️ 블로그 미리보기", "📄 HTML 코드"])
+        with res_tab1:
+            st.info("사진이 들어가야 할 위치는 빨간색 텍스트(예: {사진 : 솥밥...})로 표시됩니다. 복사 후 실제 사진을 넣어주세요!")
+            show_isolated_html(st.session_state.photo_html)
+        with res_tab2:
+            st.code(st.session_state.photo_html, language="html")
