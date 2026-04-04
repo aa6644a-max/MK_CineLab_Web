@@ -133,15 +133,33 @@ with tab2:
 
     # 1. 장소 검색
     st.markdown("#### 📍 1. 장소 정보 입력 (선택)")
-    col_search, col_btn = st.columns([4, 1])
+    col_region, col_search, col_btn = st.columns([1.5, 3, 1])
+    
+    with col_region:
+        # 자주 가는 지역을 프리셋으로 세팅
+        region_option = st.selectbox(
+            "지역 선택", 
+            options=["대구 남산동", "대구 전역", "경남 거창", "거창 무촌리", "직접 입력"],
+            label_visibility="collapsed"
+        )
+        
     with col_search:
-        search_query = st.text_input("상호명 또는 장소 검색", placeholder="예: 남산동 카페, 무촌리 현장 등", label_visibility="collapsed")
+        if region_option == "직접 입력":
+            search_query = st.text_input("검색어", placeholder="지역명 + 상호명 (예: 부산 서면 카페)", label_visibility="collapsed")
+            target_region = ""
+        else:
+            search_query = st.text_input("상호명 검색", placeholder="예: 스타벅스, 철물점 등", label_visibility="collapsed")
+            target_region = region_option
+
     with col_btn:
         search_place_btn = st.button("네이버 검색", key="search_place_btn", use_container_width=True)
     
     if search_place_btn and search_query:
-        with st.spinner("네이버 지도를 뒤지는 중..."):
-            results = naver_client.search_local_place(search_query)
+        # 지역명과 상호명 결합
+        final_query = f"{target_region} {search_query}".strip()
+        
+        with st.spinner(f"'{final_query}'(으)로 네이버 지도를 뒤지는 중..."):
+            results = naver_client.search_local_place(final_query)
             if "error" in results:
                 st.error(results["error"])
             elif results.get("items"):
@@ -150,26 +168,30 @@ with tab2:
             else:
                 st.warning("검색 결과가 없습니다. 검색어를 바꿔보세요!")
 
+    # 💡 검색 결과 UI (스크롤 컨테이너 적용)
     if st.session_state.place_search_results and not st.session_state.selected_place:
         st.markdown("##### 📌 어느 곳인가요? (검색 결과)")
-        for i, item in enumerate(st.session_state.place_search_results):
-            title = item['title'].replace('<b>', '').replace('</b>', '')
-            category = item['category']
-            address = item['roadAddress'] or item['address'] 
-            
-            col_info, col_sel = st.columns([5, 1])
-            with col_info:
-                st.write(f"**{title}** \n<small>{category} | 📍 {address}</small>", unsafe_allow_html=True)
-            with col_sel:
-                if st.button("선택", key=f"sel_place_{i}", use_container_width=True):
-                    st.session_state.selected_place = {
-                        "title": title,
-                        "category": category,
-                        "address": address,
-                        "link": item.get('link', '')
-                    }
-                    st.session_state.place_search_results = None
-                    st.rerun()
+        
+        # height 값을 조절하여 스크롤 상자의 높이를 설정할 수 있습니다.
+        with st.container(height=300):
+            for i, item in enumerate(st.session_state.place_search_results):
+                title = item['title'].replace('<b>', '').replace('</b>', '')
+                category = item['category']
+                address = item['roadAddress'] or item['address'] 
+                
+                col_info, col_sel = st.columns([5, 1])
+                with col_info:
+                    st.write(f"**{title}** \n<small>{category} | 📍 {address}</small>", unsafe_allow_html=True)
+                with col_sel:
+                    if st.button("선택", key=f"sel_place_{i}", use_container_width=True):
+                        st.session_state.selected_place = {
+                            "title": title,
+                            "category": category,
+                            "address": address,
+                            "link": item.get('link', '')
+                        }
+                        st.session_state.place_search_results = None
+                        st.rerun()
         st.markdown("---")
 
     if st.session_state.selected_place:
