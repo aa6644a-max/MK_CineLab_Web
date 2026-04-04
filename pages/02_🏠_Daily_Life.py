@@ -181,7 +181,7 @@ with tab2:
     if st.session_state.selected_place:
         p = st.session_state.selected_place
         st.success(f"✅ **{p['title']}** 장소가 선택되었습니다! (📍 {p['address']})")
-        if st.button("장소 다시 검색하기", key="reset_place_btn", size="small"):
+        if st.button("장소 다시 검색하기", key="reset_place_btn"):
             st.session_state.selected_place = None
             st.rerun()
 
