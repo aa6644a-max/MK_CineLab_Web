@@ -294,14 +294,20 @@ with tab2:
         with res_tab1:
             st.info("✨ 실제 사진들이 적용된 완벽한 미리보기입니다. (눈으로만 확인하세요!)")
             clean_html = st.session_state.photo_preview_html.replace("```html\n", "").replace("```html", "").replace("```", "")
+            # 💡 영화용 텍스트를 일상/현장용으로 자연스럽게 치환
+            clean_html = clean_html.replace("MK CINELAB PREVIEW", "MK DAILY RECORD").replace("다른 영화 이야기가", "다른 일상/현장 이야기가")
+            
             components.html(clean_html, height=1000, scrolling=True)
             
         with res_tab2:
-            st.success("💡 [여기서 드래그 복사!] 아래 보이는 글을 마우스로 쭉 드래그해서 복사(Ctrl+C)한 뒤, 네이버 블로그 에디터에 바로 붙여넣기(Ctrl+V) 하세요!")
-            # iframe에 갇혀있으면 마우스 드래그 복사가 불편하므로, st.markdown으로 화면에 직접 뿌려줍니다.
+            st.success("💡 [여기서 드래그 복사!] 아래 회색 네모 박스 안의 내용을 마우스로 쭉 드래그해서 복사(Ctrl+C)한 뒤, 네이버 블로그 에디터에 바로 붙여넣기(Ctrl+V) 하세요!")
             clean_copy_html = st.session_state.photo_copy_html.replace("```html\n", "").replace("```html", "").replace("```", "")
-            st.markdown(clean_copy_html, unsafe_allow_html=True)
+            clean_copy_html = clean_copy_html.replace("MK CINELAB PREVIEW", "MK DAILY RECORD").replace("다른 영화 이야기가", "다른 일상/현장 이야기가")
+            
+            # 💡 st.markdown 대신 components.html을 사용하여 코드가 아닌 완벽한 결과물(디자인)로 출력되게 수정!
+            components.html(clean_copy_html, height=1000, scrolling=True)
 
         with res_tab3:
             st.warning("티스토리 등 HTML 소스코드 직접 입력이 가능한 곳을 위한 예비용 코드입니다.")
-            st.code(st.session_state.photo_copy_html, language="html")
+            clean_code_html = st.session_state.photo_copy_html.replace("MK CINELAB PREVIEW", "MK DAILY RECORD").replace("다른 영화 이야기가", "다른 일상/현장 이야기가")
+            st.code(clean_code_html, language="html")
