@@ -18,7 +18,7 @@ def show_isolated_html(html_str):
     
     # 💡 새로운 코드 (이걸로 교체!)
     st.markdown(iframe_html, unsafe_allow_html=True)
-    
+
 st.set_page_config(page_title="MK CINELAB", page_icon="🎬", layout="centered")
 
 # 🚨 해결의 핵심: 함수 이름을 v3로 변경하여 강제 캐시 초기화!
@@ -89,7 +89,7 @@ with tab1:
                 st.toast("✅ DB에 저장되었습니다!", icon="🎉")
         sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
         with sub_tab1: st.code(st.session_state.rev_data['html'], language='html')
-        with sub_tab2: show_isolated_html(st.session_state.rev_data['html'])
+        with sub_tab2: show_isolated_html(st.session_state.pre_data['html'])
 
 # --- Tab 2: 개봉 프리뷰 ---
 with tab2:
@@ -125,7 +125,7 @@ with tab2:
                 st.toast("✅ DB에 저장되었습니다!", icon="🎉")
         sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
         with sub_tab1: st.code(st.session_state.pre_data['html'], language='html')
-        with sub_tab2: show_isolated_html(st.session_state.rev_data['html'])
+        with sub_tab2: show_isolated_html(st.session_state.pre_data['html'])
 
 # --- Tab 3: 영화 뉴스 ---
 with tab3:
@@ -148,7 +148,7 @@ with tab3:
                 st.toast("✅ DB에 저장되었습니다!", icon="🎉")
         sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
         with sub_tab1: st.code(st.session_state.news_data['html'], language='html')
-        with sub_tab2: show_isolated_html(st.session_state.rev_data['html'])
+        with sub_tab2: show_isolated_html(st.session_state.pre_data['html'])
 
 # --- Tab 4: 큐레이션 리스트 ---
 with tab4:
@@ -212,7 +212,7 @@ with tab4:
 
         sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
         with sub_tab1: st.code(st.session_state.cur_data['html'], language='html')
-        with sub_tab2: show_isolated_html(st.session_state.rev_data['html'])
+        with sub_tab2: show_isolated_html(st.session_state.pre_data['html'])
 
 # --- Tab 5: 내 글 직접 등록 ---
 with tab5:
