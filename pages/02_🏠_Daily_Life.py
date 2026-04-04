@@ -1,12 +1,11 @@
 import streamlit as st
 import base64
-#import streamlit.components.v1 as components
 import pdfplumber  
 from DailyPromptBuilder import DailyPromptBuilder
 from gemini_client import GeminiClient
 from rss_client import RSSClient
 from html_formatter import HTMLFormatter
-from naver_client import NaverClient  # 💡 네이버 클라이언트 추가
+from naver_client import NaverClient  
 
 def show_isolated_html(html_str):
     b64 = base64.b64encode(html_str.encode('utf-8')).decode('utf-8')
@@ -20,10 +19,8 @@ st.set_page_config(page_title="일상 & 현장 기록", page_icon="🏠", layout
 # 엔진 초기화
 @st.cache_resource(show_spinner=False)
 def init_daily_engines():
-    # 💡 NaverClient 객체 생성 추가
     return DailyPromptBuilder(), GeminiClient(), RSSClient(), HTMLFormatter(), NaverClient()
 
-# 💡 naver_client 변수 할당 추가
 daily_builder, gemini, rss, formatter, naver_client = init_daily_engines()
 
 st.title("🏠 민규의 일상 & 현장 기록")
@@ -93,7 +90,7 @@ with tab1:
                         st.error(f"{file.name} 읽기 오류: {e}")
 
                 if not combined_text.strip():
-                    st.error("PDF에서텍스트를 추출할 수 없습니다. 이미지로 된 PDF인지 확인해 주세요.")
+                    st.error("PDF에서 텍스트를 추출할 수 없습니다. 이미지로 된 PDF인지 확인해 주세요.")
                 else:
                     reference_posts = rss.get_latest_posts_text(limit=3)
                     
@@ -120,15 +117,13 @@ with tab1:
         with res_tab2:
             st.code(st.session_state.daily_html, language="html")
 
-
 # ==========================================
-# [TAB 2] 💡 신규 추가: 사진 기반 포스팅 UI
+# [TAB 2] 💡 사진 기반 포스팅 UI
 # ==========================================
 with tab2:
     st.subheader("📸 사진 기반 일상/맛집/현장 포스팅")
     st.write("순서대로 사진을 업로드하고 짧은 캡션을 달아주세요. 알아서 흐름에 맞는 포스팅을 써드립니다.")
 
-    # 💡 세션 스테이트 초기화 (장소 검색 결과 저장용)
     if "place_search_results" not in st.session_state: st.session_state.place_search_results = None
     if "selected_place" not in st.session_state: st.session_state.selected_place = None
 
@@ -140,7 +135,6 @@ with tab2:
     with col_btn:
         search_place_btn = st.button("네이버 검색", key="search_place_btn", use_container_width=True)
     
-    # 💡 네이버 검색 버튼 클릭 시 로직
     if search_place_btn and search_query:
         with st.spinner("네이버 지도를 뒤지는 중..."):
             results = naver_client.search_local_place(search_query)
@@ -148,24 +142,21 @@ with tab2:
                 st.error(results["error"])
             elif results.get("items"):
                 st.session_state.place_search_results = results["items"]
-                st.session_state.selected_place = None # 새 검색 시 기존 선택 초기화
+                st.session_state.selected_place = None 
             else:
                 st.warning("검색 결과가 없습니다. 검색어를 바꿔보세요!")
 
-    # 💡 검색 결과 리스트업
     if st.session_state.place_search_results and not st.session_state.selected_place:
         st.markdown("##### 📌 어느 곳인가요? (검색 결과)")
         for i, item in enumerate(st.session_state.place_search_results):
-            # 네이버 API는 검색어에 <b> 태그를 달아주므로 제거
             title = item['title'].replace('<b>', '').replace('</b>', '')
             category = item['category']
-            address = item['roadAddress'] or item['address'] # 도로명 주소 우선, 없으면 지번
+            address = item['roadAddress'] or item['address'] 
             
             col_info, col_sel = st.columns([5, 1])
             with col_info:
                 st.write(f"**{title}** \n<small>{category} | 📍 {address}</small>", unsafe_allow_html=True)
             with col_sel:
-                # 선택 버튼 누르면 세션에 저장하고 화면 새로고침
                 if st.button("선택", key=f"sel_place_{i}", use_container_width=True):
                     st.session_state.selected_place = {
                         "title": title,
@@ -177,7 +168,6 @@ with tab2:
                     st.rerun()
         st.markdown("---")
 
-    # 💡 장소가 선택되었을 때의 UI
     if st.session_state.selected_place:
         p = st.session_state.selected_place
         st.success(f"✅ **{p['title']}** 장소가 선택되었습니다! (📍 {p['address']})")
@@ -200,7 +190,6 @@ with tab2:
     if uploaded_photos:
         st.caption(f"총 {len(uploaded_photos)}장의 사진이 업로드되었습니다.")
         
-        # 각 사진마다 썸네일과 텍스트 입력칸을 병렬 배치
         for i, photo in enumerate(uploaded_photos):
             col_img, col_text = st.columns([1, 3])
             
@@ -235,34 +224,27 @@ with tab2:
             key="photo_vibe"
         )
 
-    st.write("") # 여백
+    st.write("") 
+    
+    # 💡 에러의 원인이었던 버튼! 이제 오직 딱 한 번만 등장합니다.
     generate_photo_btn = st.button("📸 사진 포스팅 생성", type="primary", use_container_width=True)
 
-    st.write("") # 여백
-    generate_photo_btn = st.button("📸 사진 포스팅 생성", type="primary", use_container_width=True)
-
-    # 💡 여기서부터 변경: 버튼을 눌렀을 때의 실제 동작 로직 추가
     if generate_photo_btn:
         if not uploaded_photos:
             st.warning("먼저 사진을 업로드해 주세요!")
         else:
             with st.spinner("사진과 메모를 분석하여 포스팅을 작성 중입니다... (사진이 많을수록 시간이 조금 걸려요)"):
-                # 1. 장소 정보 텍스트화 (선택사항)
                 place_info_text = ""
                 if st.session_state.selected_place:
                     p = st.session_state.selected_place
                     place_info_text = f"[장소 정보]\n- 상호명: {p['title']}\n- 주소: {p['address']}\n- 카테고리: {p['category']}"
                 
-                # 2. 사진 메모 텍스트화
                 photo_contexts_text = ""
                 for i, ctx in enumerate(photo_contexts):
-                    # ctx['caption']은 사용자가 입력한 짧은 메모입니다.
                     photo_contexts_text += f"- 사진 {i+1} 메모: {ctx['caption']}\n"
                 
-                # 3. 레퍼런스 포스팅 가져오기 (문체 복제용)
                 reference_posts = rss.get_latest_posts_text(limit=3)
 
-                # 4. 프롬프트 빌더 호출 (DailyPromptBuilder의 새 함수)
                 prompt = daily_builder.build_photo_post_prompt(
                     category=photo_category,
                     vibe=photo_vibe,
@@ -271,15 +253,12 @@ with tab2:
                     reference_posts=reference_posts
                 )
 
-                # 5. Gemini API 호출 (텍스트 프롬프트 + 실제 사진 파일 리스트 함께 전송!)
                 result = gemini.generate_post(prompt, images=uploaded_photos)
                 
-                # 6. HTML 래핑 및 결과 저장
                 final_html = formatter.wrap_in_table(f"{photo_category} 기록", result)
                 st.session_state.photo_html = final_html
                 st.success("사진 기반 맞춤형 포스팅 생성이 완료되었습니다!")
 
-    # 💡 결과물 출력 영역 추가
     if st.session_state.photo_html:
         st.markdown("---")
         res_tab1, res_tab2 = st.tabs(["👁️ 블로그 미리보기", "📄 HTML 코드"])
