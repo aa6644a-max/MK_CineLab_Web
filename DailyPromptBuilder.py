@@ -80,9 +80,6 @@ class DailyPromptBuilder(BasePromptBuilder):
         출력 형식: 오직 HTML 본문 코드만 출력하세요. 맨 마지막 줄에 HTML 주석() 형식으로 매력적인 제목 5개를 제안하세요.
         """
 
-    # ==========================================
-    # 💡 신규 추가: 사진 기반 일상/맛집 전용 프롬프트
-    # ==========================================
     def build_photo_post_prompt(self, category, vibe, place_info_text, photo_contexts_text, reference_posts=""):
         common_constraints = self._get_common_constraints()
         ref_prompt = self._get_reference_prompt(reference_posts)
