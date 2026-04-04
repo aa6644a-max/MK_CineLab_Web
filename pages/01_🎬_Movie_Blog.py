@@ -125,7 +125,7 @@ with tab2:
                 st.toast("✅ DB에 저장되었습니다!", icon="🎉")
         sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
         with sub_tab1: st.code(st.session_state.pre_data['html'], language='html')
-        with sub_tab2: show_isolated_html(st.session_state.news_data['html'])
+        with sub_tab2: show_isolated_html(st.session_state.pre_data['html'])
 
 # --- Tab 3: 영화 뉴스 ---
 with tab3:
@@ -148,7 +148,7 @@ with tab3:
                 st.toast("✅ DB에 저장되었습니다!", icon="🎉")
         sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
         with sub_tab1: st.code(st.session_state.news_data['html'], language='html')
-        with sub_tab2: show_isolated_html(st.session_state.cur_data['html'])
+        with sub_tab2: show_isolated_html(st.session_state.news_data['html'])
 
 # --- Tab 4: 큐레이션 리스트 ---
 with tab4:
@@ -212,7 +212,7 @@ with tab4:
 
         sub_tab1, sub_tab2 = st.tabs(["📄 HTML 코드", "👁️ 블로그 미리보기"])
         with sub_tab1: st.code(st.session_state.cur_data['html'], language='html')
-        with sub_tab2: show_isolated_html(st.session_state.pre_data['html'])
+        with sub_tab2: show_isolated_html(st.session_state.cur_data['html'])
 
 # --- Tab 5: 내 글 직접 등록 ---
 with tab5:
