@@ -136,26 +136,34 @@ with tab2:
     col_region, col_search, col_btn = st.columns([1.5, 3, 1])
     
     with col_region:
-        # 자주 가는 지역을 프리셋으로 세팅
+        # 💡 전국 17개 광역시/도 + 직접 입력으로 리스트업
+        region_list = [
+            "직접 입력", 
+            "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", 
+            "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"
+        ]
         region_option = st.selectbox(
             "지역 선택", 
-            options=["대구 남산동", "대구 전역", "경남 거창", "거창 무촌리", "직접 입력"],
+            options=region_list,
+            # 편의를 위해 '대구'를 기본값으로 두려면 index=3을 설정해도 좋습니다. (현재는 '직접 입력'이 기본)
+            index=0, 
             label_visibility="collapsed"
         )
         
     with col_search:
         if region_option == "직접 입력":
-            search_query = st.text_input("검색어", placeholder="지역명 + 상호명 (예: 부산 서면 카페)", label_visibility="collapsed")
+            search_query = st.text_input("검색어", placeholder="지역명 + 상호명 (예: 제주 애월읍 카페)", label_visibility="collapsed")
             target_region = ""
         else:
-            search_query = st.text_input("상호명 검색", placeholder="예: 스타벅스, 철물점 등", label_visibility="collapsed")
+            # 💡 선택한 광역시/도와 어울리게 검색창 힌트 변경
+            search_query = st.text_input("상호명 검색", placeholder=f"예: 남산동 스타벅스, 무촌리 철물점 등", label_visibility="collapsed")
             target_region = region_option
 
     with col_btn:
         search_place_btn = st.button("네이버 검색", key="search_place_btn", use_container_width=True)
     
     if search_place_btn and search_query:
-        # 지역명과 상호명 결합
+        # 지역명과 상호명 결합 (예: "대구" + "남산동 스타벅스")
         final_query = f"{target_region} {search_query}".strip()
         
         with st.spinner(f"'{final_query}'(으)로 네이버 지도를 뒤지는 중..."):
@@ -168,11 +176,9 @@ with tab2:
             else:
                 st.warning("검색 결과가 없습니다. 검색어를 바꿔보세요!")
 
-    # 💡 검색 결과 UI (스크롤 컨테이너 적용)
+    # 💡 검색 결과 UI (스크롤 컨테이너)
     if st.session_state.place_search_results and not st.session_state.selected_place:
         st.markdown("##### 📌 어느 곳인가요? (검색 결과)")
-        
-        # height 값을 조절하여 스크롤 상자의 높이를 설정할 수 있습니다.
         with st.container(height=300):
             for i, item in enumerate(st.session_state.place_search_results):
                 title = item['title'].replace('<b>', '').replace('</b>', '')
