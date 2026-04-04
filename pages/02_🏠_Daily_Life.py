@@ -1,5 +1,6 @@
 import streamlit as st
 import base64
+import re  # 💡 정규식(이미지 태그 치환)을 위해 추가된 모듈
 import pdfplumber  
 from DailyPromptBuilder import DailyPromptBuilder
 from gemini_client import GeminiClient
@@ -30,7 +31,8 @@ st.markdown("---")
 tab1, tab2 = st.tabs(["📄 PDF 요약 포스팅", "📸 사진 기반 포스팅"])
 
 if "daily_html" not in st.session_state: st.session_state.daily_html = None
-if "photo_html" not in st.session_state: st.session_state.photo_html = None
+if "photo_preview_html" not in st.session_state: st.session_state.photo_preview_html = None
+if "photo_copy_html" not in st.session_state: st.session_state.photo_copy_html = None
 
 # ==========================================
 # [TAB 1] 기존 PDF 요약 포스팅 (그대로 유지)
@@ -225,10 +227,9 @@ with tab2:
         )
 
     st.write("") 
-    
-    # 💡 에러의 원인이었던 버튼! 이제 오직 딱 한 번만 등장합니다.
     generate_photo_btn = st.button("📸 사진 포스팅 생성", type="primary", use_container_width=True)
 
+    # 💡 이미지 Base64 치환 로직이 포함된 새로운 블록
     if generate_photo_btn:
         if not uploaded_photos:
             st.warning("먼저 사진을 업로드해 주세요!")
@@ -253,17 +254,45 @@ with tab2:
                     reference_posts=reference_posts
                 )
 
+                # 1. AI에게 글 생성 요청
                 result = gemini.generate_post(prompt, images=uploaded_photos)
                 
-                final_html = formatter.wrap_in_table(f"{photo_category} 기록", result)
-                st.session_state.photo_html = final_html
+                # 2. 미리보기용 HTML 생성 (Base64 실제 이미지 데이터 주입!)
+                preview_html_raw = result
+                for i, photo in enumerate(uploaded_photos):
+                    photo.seek(0)
+                    b64_data = base64.b64encode(photo.read()).decode('utf-8')
+                    mime_type = photo.type if hasattr(photo, 'type') else 'image/jpeg'
+                    # AI가 생성한 [PHOTO_1] 위치에 실제 데이터 삽입
+                    preview_html_raw = preview_html_raw.replace(f"[PHOTO_{i+1}]", f"data:{mime_type};base64,{b64_data}")
+                
+                st.session_state.photo_preview_html = formatter.wrap_in_table(f"{photo_category} 기록", preview_html_raw)
+
+                # 3. 코드 복사용 HTML 생성 (네이버 호환용 빨간 텍스트로 치환)
+                copy_html_raw = result
+                for i in range(len(uploaded_photos)):
+                    # img 태그 전체를 찾아서 빨간 안내 텍스트로 변경
+                    pattern = r'<div[^>]*>\s*<img[^>]*src="\[PHOTO_' + str(i+1) + r'\]"[^>]*>\s*</div>'
+                    replacement = f'<p style="text-align: center; color: #e53e3e; font-weight: bold; margin: 30px 0;">[📸 블로그 에디터에서 이곳에 사진 {i+1}을 직접 업로드해주세요]</p>'
+                    
+                    if re.search(pattern, copy_html_raw):
+                        copy_html_raw = re.sub(pattern, replacement, copy_html_raw)
+                    else:
+                        fallback_pattern = r'<img[^>]*src="\[PHOTO_' + str(i+1) + r'\]"[^>]*>'
+                        copy_html_raw = re.sub(fallback_pattern, replacement, copy_html_raw)
+
+                st.session_state.photo_copy_html = formatter.wrap_in_table(f"{photo_category} 기록", copy_html_raw)
                 st.success("사진 기반 맞춤형 포스팅 생성이 완료되었습니다!")
 
-    if st.session_state.photo_html:
+    # 💡 렌더링 탭 업데이트 (미리보기용과 복사용 분리)
+    if st.session_state.get("photo_preview_html"):
         st.markdown("---")
-        res_tab1, res_tab2 = st.tabs(["👁️ 블로그 미리보기", "📄 HTML 코드"])
+        res_tab1, res_tab2 = st.tabs(["👁️ 블로그 미리보기", "📄 HTML 코드 (복사용)"])
+        
         with res_tab1:
-            st.info("사진이 들어가야 할 위치는 빨간색 텍스트(예: {사진 : 솥밥...})로 표시됩니다. 복사 후 실제 사진을 넣어주세요!")
-            show_isolated_html(st.session_state.photo_html)
+            st.info("✨ 방금 올리신 실제 사진들이 적용된 완벽한 미리보기입니다!")
+            show_isolated_html(st.session_state.photo_preview_html)
+            
         with res_tab2:
-            st.code(st.session_state.photo_html, language="html")
+            st.warning("네이버 블로그는 사진 코드(Base64) 복붙을 차단하므로 코드가 깨지지 않게 텍스트로 치환해두었습니다. 복사 후 붉은 글씨 위치에 사진을 넣어주세요!")
+            st.code(st.session_state.photo_copy_html, language="html")

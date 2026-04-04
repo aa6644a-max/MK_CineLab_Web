@@ -109,8 +109,9 @@ class DailyPromptBuilder(BasePromptBuilder):
         [🚨 작성 지침]
         {common_constraints}
         - 글의 전개는 사용자가 제공한 사진 순서를 그대로 따르세요.
-        - 본문 중 해당 사진이 보여야 할 위치(문단 사이)에는 반드시 아래 형식의 붉은색 텍스트를 삽입하세요. (이 코드를 기준으로 나중에 실제 이미지가 치환됩니다.)
-          <p style="text-align: center; color: #e53e3e; font-weight: bold;">{{사진 : [사용자 메모 요약] - 대상사진 : [사진 속 시각 정보 분석 내용]}}</p>
+        - 본문 중 해당 사진이 보여야 할 위치(문단 사이)에는 반드시 아래 형식의 이미지 태그를 삽입하세요.
+          <div style="text-align: center; margin: 25px 0;"><img src="[PHOTO_번호]" alt="[사진 속 시각 정보 분석 내용]" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"></div>
+        - 여기서 '번호'는 제공된 사진의 순서(1부터 시작)와 일치해야 합니다. (예: 첫 번째 사진은 [PHOTO_1], 두 번째는 [PHOTO_2])
         
         {ref_prompt}
 
