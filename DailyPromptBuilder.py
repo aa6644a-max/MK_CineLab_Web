@@ -81,7 +81,8 @@ class DailyPromptBuilder(BasePromptBuilder):
         """
 
     def build_photo_post_prompt(self, category, vibe, place_info_text, photo_contexts_text, reference_posts=""):
-        common_constraints = self._get_common_constraints()
+        # 💡 수정된 부분 1: 공통 제약사항만 부르던 것을, 가독성/분량/디자인이 모두 담긴 베이스 지침 전체로 변경!
+        base_guideline = self._get_base_guideline()
         ref_prompt = self._get_reference_prompt(reference_posts)
         
         return f"""
@@ -99,19 +100,19 @@ class DailyPromptBuilder(BasePromptBuilder):
         
         {photo_contexts_text}
 
-        [🎨 네이버 블로그 특화 디자인 가이드 (절대 준수)]
-        1. 폰트: 기본 폰트는 `<div style="font-family: 'Nanum Gothic', '나눔고딕', sans-serif; color: #333; line-height: 1.8;">` 로 전체를 감싸세요.
-        2. 공백: 문단 사이 여유 공간은 `<p style="text-align: center;">&nbsp;</p>`를 사용하세요.
-        3. 소제목: 네이버 인용구 느낌으로 `<h3 style="font-size: 20px; font-weight: 700; background-color: #f7f7f7; padding: 12px 20px; border-radius: 8px; margin: 30px 0 15px;">✅ [소제목]</h3>` 형태를 사용하세요.
-        4. 구분선: 내용 전환 시 네이버 스티커 느낌의 `<div style="height: 2px; background: linear-gradient(to right, #ffffff, #a5d6a7, #ffffff); margin: 50px 0;"></div>` 를 사용하세요.
-        5. 태그: 글의 마지막에 `<span style="display: inline-block; background-color: #f0f0f0; padding: 8px 15px; border-radius: 20px; margin: 5px; font-size: 14px; font-weight: bold;">#키워드</span>` 형식으로 해시태그 5개를 나열하세요.
+        ======================================
+        💡 [MK CINELAB 베이스 지침 절대 적용]
+        {base_guideline}
+        ======================================
 
-        [🚨 작성 지침]
-        {common_constraints}
-        - 글의 전개는 사용자가 제공한 사진 순서를 그대로 따르세요.
-        - 본문 중 해당 사진이 보여야 할 위치(문단 사이)에는 반드시 아래 형식의 이미지 태그를 삽입하세요.
-          <div style="text-align: center; margin: 25px 0;"><img src="[PHOTO_번호]" alt="[사진 속 시각 정보 분석 내용]" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"></div>
-        - 여기서 '번호'는 제공된 사진의 순서(1부터 시작)와 일치해야 합니다. (예: 첫 번째 사진은 [PHOTO_1], 두 번째는 [PHOTO_2])
+        [🎨 사진 포스팅 특화 가이드 (베이스 지침과 함께 적용)]
+        1. 전체 폰트: 기본 폰트는 `<div style="font-family: 'Nanum Gothic', '나눔고딕', sans-serif; color: #333; line-height: 1.8;">` 로 전체를 감싸세요.
+        2. 이미지 삽입 위치 (절대 준수): 
+           - 글의 전개는 사용자가 제공한 사진 순서를 그대로 따르세요.
+           - 본문 중 해당 사진이 보여야 할 위치(문단 사이)에는 반드시 아래 형식의 이미지 태그를 삽입하세요.
+             <div style="text-align: center; margin: 25px 0;"><img src="[PHOTO_번호]" alt="[사진 속 시각 정보 분석 내용]" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"></div>
+           - 여기서 '번호'는 제공된 사진의 순서(1부터 시작)와 일치해야 합니다. (예: 첫 번째 사진은 [PHOTO_1])
+        3. 내용 구분선: 문단 내용이 크게 전환될 때 네이버 스티커 느낌의 `<div style="height: 2px; background: linear-gradient(to right, #ffffff, #a5d6a7, #ffffff); margin: 50px 0;"></div>` 를 한두 번 적절히 사용하세요.
         
         {ref_prompt}
 
