@@ -117,7 +117,7 @@ st.markdown("현재 극장가 트렌드를 확인하고, 원하는 영화의 상
 tab_boxoffice, tab_search = st.tabs(["🏆 일별 박스오피스", "🔍 영화 상세 검색"])
 
 # ==========================================
-# 탭 1: 일별 박스오피스
+# 탭 1: 일별 박스오피스 (모바일 카드 UI 적용)
 # ==========================================
 with tab_boxoffice:
     yesterday_str = (datetime.now() - timedelta(days=1)).strftime('%Y년 %m월 %d일')
@@ -128,28 +128,42 @@ with tab_boxoffice:
         box_office_data = fetch_daily_boxoffice()
         
     if box_office_data:
-        # 데이터프레임으로 변환하여 표출
-        df_list = []
+        st.info("💡 순위를 확인한 후, **[영화 상세 검색]** 탭에서 영화 제목을 검색해 보세요!")
+        
+        # 데이터프레임 대신 개별 컨테이너(카드 형태)로 모바일 가독성 확보
         for movie in box_office_data:
-            df_list.append({
-                "순위": f"{movie['rank']}위",
-                "순위 증감": f"{int(movie['rankInten']):+d}" if int(movie['rankInten']) != 0 else "-",
-                "영화명": movie['movieNm'],
-                "당일 관객수": f"{int(movie['audiCnt']):,}명",
-                "누적 관객수": f"{int(movie['audiAcc']):,}명",
-                "누적 매출액": format_money(movie['salesAcc']),
-                "개봉일": movie['openDt']
-            })
-        
-        df = pd.DataFrame(df_list)
-        st.dataframe(df, use_container_width=True, hide_index=True)
-        
-        st.info("💡 위 순위표에서 영화 제목을 확인한 후, **[영화 상세 검색]** 탭에서 더 자세한 정보를 검색해 보세요!")
+            with st.container(border=True):
+                # 순위 등락 로직
+                inten = int(movie['rankInten'])
+                if movie['rankOldAndNew'] == 'NEW':
+                    rank_mark = "🆕 NEW"
+                elif inten > 0:
+                    rank_mark = f"🔺 {inten}"
+                elif inten < 0:
+                    rank_mark = f"🔻 {abs(inten)}"
+                else:
+                    rank_mark = "➖"
+
+                # 모바일에서는 비율에 따라 자동으로 예쁘게 줄바꿈/배치됨
+                col1, col2 = st.columns([1, 4])
+                
+                with col1:
+                    rank = int(movie['rank'])
+                    # 1, 2, 3위 메달 아이콘 추가
+                    icon = "🥇" if rank == 1 else "🥈" if rank == 2 else "🥉" if rank == 3 else ""
+                    st.markdown(f"### {icon} {rank}위")
+                    st.caption(rank_mark)
+                    
+                with col2:
+                    st.markdown(f"#### {movie['movieNm']}")
+                    st.markdown(f"👥 **당일 관객:** {int(movie['audiCnt']):,}명 (누적: {int(movie['audiAcc']):,}명)")
+                    st.markdown(f"💰 **누적 매출:** {format_money(movie['salesAcc'])}")
+
     else:
         st.warning("박스오피스 데이터를 불러올 수 없습니다. API 키를 확인해 주세요.")
 
 # ==========================================
-# 탭 2: 영화 상세 검색 (기존 로직)
+# 탭 2: 영화 상세 검색 (기존 로직 유지)
 # ==========================================
 with tab_search:
     st.markdown("정확한 영화 식별을 위해 **검색 후 드롭다운**에서 조회할 영화를 선택해 주세요.")
