@@ -53,6 +53,17 @@ class PromptBuilder(BasePromptBuilder):
         2. 전체 분량 및 구조:
             - 정보의 밀도를 높여 공백 제외 1,500 ~ 2,000자 내외로 작성하세요.
             - [최상단]: 시선 끄는 첫 문장으로 시작하고, 바로 아래에 [메인 포스터] HTML 코드를 삽입하세요. 스포일러 경고 문구도 잊지 마세요.
+            - 🚨 [영화 정보 박스 필수 삽입]: 메인 포스터 바로 밑에는 반드시 아래 HTML 형태의 정보 박스를 삽입하여 영화 기본 정보를 정리하세요. 부족한 정보(러닝타임, 쿠키영상 등)는 스스로 검색하여 정확히 채워 넣으세요.
+              <div style="background-color: #f8f9fa; border-radius: 10px; padding: 20px; border: 1px solid #eee; margin: 20px 0; font-size: 15px; line-height: 1.8;">
+                <p style="margin: 0;">📽️ <b>원제</b> : [원제]</p>
+                <p style="margin: 0;">🎞️ <b>장르</b> : [장르]</p>
+                <p style="margin: 0;">🌍 <b>국가</b> : [제작 국가]</p>
+                <p style="margin: 0;">🎬 <b>감독</b> : [감독]</p>
+                <p style="margin: 0;">⏳ <b>러닝타임</b> : [러닝타임, 예: 125분]</p>
+                <p style="margin: 0;">🔞 <b>관람등급</b> : [등급, 예: 12세 이상 관람가]</p>
+                <p style="margin: 0;">📅 <b>개봉일</b> : [개봉일]</p>
+                <p style="margin: 0;">🍪 <b>쿠키영상</b> : [있음 n개/없음/정보 없음]</p>
+              </div>
             {intro_guideline}
             - [본론]: H2, H3 태그를 활용해 소제목으로 단락을 구분하세요. 내용 흐름에 맞게 아래 제공된 [스틸컷] HTML 코드를 문단 사이사이에 전부 다 빠짐없이 삽입하세요.
             - [결론]: 전체적인 감상을 갈무리하며 나만의 한줄평과 기대평을 직관적으로 제시하세요.
