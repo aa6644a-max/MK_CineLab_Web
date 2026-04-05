@@ -11,7 +11,12 @@ st.set_page_config(page_title="MK CINELAB - 영화 검색", page_icon="🎬", la
 
 # --- 설정 (API 키 관리) ---
 # .env 파일에 KOBIS_API_KEY="본인의키" 형태로 저장되어 있어야 합니다.
-KOBIS_API_KEY = os.getenv("KOBIS_API_KEY")
+if "KOBIS_API_KEY" in st.secrets:
+    # 서버(Streamlit Cloud) 환경일 때
+    KOBIS_API_KEY = st.secrets["KOBIS_API_KEY"]
+else:
+    # 로컬 환경일 때 (.env 파일 사용)
+    KOBIS_API_KEY = os.getenv("KOBIS_API_KEY")
 
 st.title("🎬 MK CINELAB : 영화 데이터베이스 검색")
 st.markdown("영진위(KOBIS) API를 활용하여 대한민국 영화 DB의 표준 정보를 검색합니다.")
