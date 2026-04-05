@@ -33,7 +33,7 @@ with col1:
         
         # 💡 실제 Settings 파일명에 맞춰주세요 (만약 파일명이 다르다면 수정 필요)
         try:
-            st.page_link("pages/00_Settings.py", label="Settings 이동하기", icon="⚙️")
+            st.page_link("pages/00_⚙️_Settings.py", label="Settings 이동하기", icon="⚙️")
         except:
             st.button("⚙️ 파일 경로를 맞춰주세요", disabled=True, use_container_width=True)
 
