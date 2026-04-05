@@ -38,9 +38,7 @@ def fetch_kobis_detail_and_boxoffice(movie_cd):
     except: return {}, None
 
 def fetch_tmdb_data(movie_nm, movie_en, year):
-    """[TMDB] 💡 기존 정보에 'TMDB 평점(vote_avg)'과 '참여 인원(vote_cnt)' 추가 추출"""
     if not TMDB_API_KEY: return None, None, "", 0, 0
-    
     headers = {"Authorization": f"Bearer {TMDB_API_KEY}", "accept": "application/json"}
     queries = [q for q in [movie_nm, movie_en] if q]
     
@@ -62,11 +60,8 @@ def fetch_tmdb_data(movie_nm, movie_en, year):
                         poster = f"https://image.tmdb.org/t/p/w500{detail.get('poster_path')}" if detail.get('poster_path') else None
                         overview = detail.get('overview', "")
                         imdb_id = detail.get('external_ids', {}).get('imdb_id')
-                        
-                        # 💡 TMDB 자체 평점 데이터 확보
                         vote_avg = detail.get('vote_average', 0)
                         vote_cnt = detail.get('vote_count', 0)
-                        
                         return poster, imdb_id, overview, vote_avg, vote_cnt
                 except: continue
     return None, None, "", 0, 0
@@ -90,12 +85,23 @@ def fetch_omdb_ratings(imdb_id):
         return res.get('Ratings', []) if res.get('Response') == 'True' else []
     except: return []
 
+# --- 숫자 포맷팅 헬퍼 함수 ---
+def format_money(amount_str):
+    """긴 매출액을 보기 편하게 억 단위로 변환"""
+    try:
+        amount = int(amount_str)
+        if amount >= 100000000:
+            return f"{amount // 100000000:,}억 {(amount % 100000000) // 10000:,}만 원"
+        return f"₩{amount:,}"
+    except: return "정보 없음"
+
+
 # --- [3] UI 렌더링 ---
 
 st.title("🎬 MK CINELAB : 하이브리드 영화 대시보드")
 st.markdown("정확한 영화 식별을 위해 **검색 후 드롭다운**에서 조회할 영화를 선택해 주세요.")
 
-search_query = st.text_input("🔍 영화 제목 입력", placeholder="예: 파묘, 프로젝트 헤일메리")
+search_query = st.text_input("🔍 영화 제목 입력", placeholder="예: 파묘, 에이리언, 프로젝트 헤일메리")
 
 if search_query:
     movies = fetch_kobis_search(search_query)
@@ -112,7 +118,6 @@ if search_query:
             
             with st.spinner("모든 데이터베이스를 조회 중입니다..."):
                 k_detail, k_stats = fetch_kobis_detail_and_boxoffice(m_cd)
-                # 💡 리턴받는 변수에 tmdb_vote, tmdb_cnt 추가
                 poster_url, imdb_id, tmdb_overview, tmdb_vote, tmdb_cnt = fetch_tmdb_data(m_nm, m_en, m_yr)
                 ratings = fetch_omdb_ratings(imdb_id)
                 final_plot = tmdb_overview if tmdb_overview else fetch_naver_plot_fallback(m_nm)
@@ -127,8 +132,7 @@ if search_query:
                 else:
                     st.warning("🖼️ 포스터 이미지를 찾을 수 없습니다.")
                 
-                st.markdown("### ⭐ 글로벌 평점 리포트")
-                # 💡 로직 변경: OMDB 평점이 있으면 출력, 없으면 TMDB 평점으로 대체!
+                st.markdown("### ⭐ 글로벌 평점")
                 if ratings:
                     for r in ratings:
                         icon = "🍅" if r['Source'] == "Rotten Tomatoes" else ("🎬" if r['Source'] == "Internet Movie Database" else "Ⓜ️")
@@ -159,14 +163,25 @@ if search_query:
                     st.info("등록된 공식 줄거리가 없습니다.")
                 
                 st.markdown("---")
+                
+                # 💡 [핵심 수정 구간] 2열 2행으로 배치하여 글자 짤림 방지
                 st.markdown("#### 📊 영진위 실시간 통계")
                 if k_stats:
                     st.success(f"🔥 현재 박스오피스 **{k_stats['rank']}위** 기록 중!")
-                    s1, s2, s3, s4 = st.columns(4)
-                    s1.metric("누적 관객수", f"{int(k_stats['audiAcc']):,}명", f"+{int(k_stats['audiInten']):,}명")
-                    s2.metric("당일 관객수", f"{int(k_stats['audiCnt']):,}명")
-                    s3.metric("누적 매출액", f"₩{int(k_stats['salesAcc']):,}")
-                    s4.metric("스크린 수", f"{k_stats['scrnCnt']}개")
+                    
+                    # 4개의 컬럼 대신 2개씩 2줄로 배치
+                    row1_col1, row1_col2 = st.columns(2)
+                    with row1_col1:
+                        st.metric("누적 관객수", f"{int(k_stats['audiAcc']):,}명", f"+{int(k_stats['audiInten']):,}명 (전일 대비)")
+                    with row1_col2:
+                        st.metric("당일 관객수", f"{int(k_stats['audiCnt']):,}명")
+                    
+                    row2_col1, row2_col2 = st.columns(2)
+                    with row2_col1:
+                        # 172억 2500만원 형태로 포맷팅해서 자리 차지 줄임
+                        st.metric("누적 매출액", format_money(k_stats['salesAcc']))
+                    with row2_col2:
+                        st.metric("스크린 수", f"{k_stats['scrnCnt']}개")
                 else:
                     st.info("현재 박스오피스 TOP 10 진입작이 아닙니다. (과거 개봉작 또는 상영 전)")
                 
