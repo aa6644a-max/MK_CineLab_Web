@@ -7,8 +7,7 @@ load_dotenv()
 
 st.set_page_config(page_title="MK CINELAB - TMDB 테스트", page_icon="🧪")
 
-# --- API 키 설정 ---
-TMDB_API_KEY = st.secrets.get("TMDB_API_KEY") or os.getenv("TMDB_API_KEY")
+TMDB_API_KEY = (st.secrets.get("TMDB_API_KEY") or os.getenv("TMDB_API_KEY") or "").strip().strip('\'"')
 
 def search_tmdb_only(query):
     # 1단계: 키가 제대로 들어왔는지 확인
