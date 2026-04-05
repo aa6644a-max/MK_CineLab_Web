@@ -18,33 +18,36 @@ NAVER_CLIENT_SECRET = st.secrets.get("NAVER_CLIENT_SECRET") or os.getenv("NAVER_
 
 # --- [2] 데이터 소스별 전담 함수 (검색 매칭률 극대화) ---
 
-def fetch_tmdb_poster(movie_ko, movie_en, year):
-    """[전담: 포스터] 한국어 제목 우선 검색 후, 실패 시 영문 제목으로 백업 검색"""
+def fetch_tmdb_poster(movie_ko, movie_en, year, raw_query):
+    """[전담: 포스터] 검색 후보를 늘리고 언어 장벽을 허문 완벽한 TMDB 검색"""
     if not TMDB_API_KEY: return None, None
     
-    # 검색을 시도할 쿼리 목록 (한국어 -> 영어 순서)
-    queries = [q for q in [movie_ko, movie_en] if q]
-    
+    # 1. 검색어 후보 세팅 (국문 -> 영문 -> 사용자가 직접 입력한 원본 텍스트)
+    queries = []
+    for q in [movie_ko, movie_en, raw_query]:
+        if q and q not in queries:
+            queries.append(q)
+            
     for query in queries:
-        # 1차 시도: 연도 포함 검색 (동명이인 영화 방지)
-        url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={query}&language=ko-KR&year={year}"
-        try:
-            res = requests.get(url).json().get('results', [])
-            
-            # 2차 시도: 연도 제외 검색 (제작/개봉 연도 불일치 극복)
-            if not res: 
-                url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={query}&language=ko-KR"
-                res = requests.get(url).json().get('results', [])
+        # 2. 언어 설정 (한국어로 찾고, 안 되면 영어 세팅으로 재검색)
+        for lang in ["ko-KR", "en-US"]:
+            # 3. 연도 설정 (연도 넣어서 정확히 찾고, 안 되면 연도 빼고 재검색)
+            for y in [year, ""]:
+                url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={query}&language={lang}"
+                if y: url += f"&year={y}"
                 
-            if res:
-                movie_id = res[0]['id']
-                ext_url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={TMDB_API_KEY}&append_to_response=external_ids&language=ko-KR"
-                detail = requests.get(ext_url).json()
-                poster = f"https://image.tmdb.org/t/p/w500{detail.get('poster_path')}" if detail.get('poster_path') else None
-                return poster, detail.get('external_ids', {}).get('imdb_id')
-        except:
-            continue
-            
+                try:
+                    res = requests.get(url).json().get('results', [])
+                    if res:
+                        movie_id = res[0]['id']
+                        # 상세 정보(IMDb ID 포함) 가져오기
+                        ext_url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={TMDB_API_KEY}&append_to_response=external_ids"
+                        detail = requests.get(ext_url).json()
+                        poster = f"https://image.tmdb.org/t/p/w500{detail.get('poster_path')}" if detail.get('poster_path') else None
+                        return poster, detail.get('external_ids', {}).get('imdb_id')
+                except:
+                    continue
+                    
     return None, None
 
 def fetch_naver_plot(movie_nm):
@@ -87,15 +90,15 @@ if query:
         
         if selected:
             m_info = movie_options[selected]
-            # 💡 핵심: 영진위에서 제공하는 '영문 제목(movieNmEn)'도 함께 챙깁니다.
             m_nm, m_en = m_info['movieNm'], m_info.get('movieNmEn', '')
             m_cd, m_yr = m_info['movieCd'], m_info['prdtYear']
             
-            with st.spinner("최적의 글로벌 데이터를 수집 중..."):
-                # 분야별 독립 호출 (한국어, 영문 제목 모두 TMDB에 전달)
-                poster_url, imdb_id = fetch_tmdb_poster(m_nm, m_en, m_yr)
+            with st.spinner("분야별 데이터를 수집 중..."):
+                # 💡 수정된 부분: query(사용자 입력값)를 TMDB 함수에 같이 넘겨줍니다!
+                poster_url, imdb_id = fetch_tmdb_poster(m_nm, m_en, m_yr, query)
                 plot_text = fetch_naver_plot(m_nm)
                 ratings = fetch_omdb_ratings(imdb_id)
+                # ... (아래는 기존과 동일) ...
                 
                 # 영진위 상세/박스오피스 호출
                 detail_url = f"http://www.kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieInfo.json?key={KOBIS_API_KEY}&movieCd={m_cd}"
