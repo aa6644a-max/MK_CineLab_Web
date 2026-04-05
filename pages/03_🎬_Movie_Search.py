@@ -16,10 +16,9 @@ OMDB_API_KEY = (st.secrets.get("OMDB_API_KEY") or os.getenv("OMDB_API_KEY") or "
 NAVER_CLIENT_ID = (st.secrets.get("NAVER_CLIENT_ID") or os.getenv("NAVER_CLIENT_ID") or "").strip().strip('\'"')
 NAVER_CLIENT_SECRET = (st.secrets.get("NAVER_CLIENT_SECRET") or os.getenv("NAVER_CLIENT_SECRET") or "").strip().strip('\'"')
 
-# --- [2] 데이터 통신 함수 (모듈화) ---
+# --- [2] 데이터 통신 함수 ---
 
 def fetch_kobis_search(query):
-    """[영진위] 영화 검색어 기반 목록 조회 (드롭다운용)"""
     if not KOBIS_API_KEY: return []
     url = f"http://www.kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieList.json?key={KOBIS_API_KEY}&movieNm={query}"
     try:
@@ -27,7 +26,6 @@ def fetch_kobis_search(query):
     except: return []
 
 def fetch_kobis_detail_and_boxoffice(movie_cd):
-    """[영진위] 영화 상세 정보 및 실시간 박스오피스 통계 획득"""
     detail_url = f"http://www.kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieInfo.json?key={KOBIS_API_KEY}&movieCd={movie_cd}"
     yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y%m%d')
     box_url = f"http://www.kobis.or.kr/kobisopenapi/webservice/rest/boxoffice/searchDailyBoxOfficeList.json?key={KOBIS_API_KEY}&targetDt={yesterday}"
@@ -40,8 +38,8 @@ def fetch_kobis_detail_and_boxoffice(movie_cd):
     except: return {}, None
 
 def fetch_tmdb_data(movie_nm, movie_en, year):
-    """[TMDB] v4 토큰 인증 기반: 포스터, 완전한 줄거리, IMDb ID 추출"""
-    if not TMDB_API_KEY: return None, None, "TMDB 키 누락"
+    """[TMDB] 💡 기존 정보에 'TMDB 평점(vote_avg)'과 '참여 인원(vote_cnt)' 추가 추출"""
+    if not TMDB_API_KEY: return None, None, "", 0, 0
     
     headers = {"Authorization": f"Bearer {TMDB_API_KEY}", "accept": "application/json"}
     queries = [q for q in [movie_nm, movie_en] if q]
@@ -57,7 +55,6 @@ def fetch_tmdb_data(movie_nm, movie_en, year):
                     res = requests.get(url, headers=headers, params=params).json().get('results', [])
                     if res:
                         movie_id = res[0]['id']
-                        # 상세 정보 호출 (여기서 끊기지 않는 온전한 줄거리 획득)
                         detail_url = f"https://api.themoviedb.org/3/movie/{movie_id}"
                         d_params = {"append_to_response": "external_ids", "language": "ko-KR"}
                         detail = requests.get(detail_url, headers=headers, params=d_params).json()
@@ -65,12 +62,16 @@ def fetch_tmdb_data(movie_nm, movie_en, year):
                         poster = f"https://image.tmdb.org/t/p/w500{detail.get('poster_path')}" if detail.get('poster_path') else None
                         overview = detail.get('overview', "")
                         imdb_id = detail.get('external_ids', {}).get('imdb_id')
-                        return poster, imdb_id, overview
+                        
+                        # 💡 TMDB 자체 평점 데이터 확보
+                        vote_avg = detail.get('vote_average', 0)
+                        vote_cnt = detail.get('vote_count', 0)
+                        
+                        return poster, imdb_id, overview, vote_avg, vote_cnt
                 except: continue
-    return None, None, ""
+    return None, None, "", 0, 0
 
 def fetch_naver_plot_fallback(movie_nm):
-    """[네이버 백업] TMDB 줄거리가 없을 경우에만 작동"""
     if not NAVER_CLIENT_ID: return ""
     url = f"https://openapi.naver.com/v1/search/encyc.json?query={movie_nm}+영화&display=1"
     headers = {"X-Naver-Client-Id": NAVER_CLIENT_ID, "X-Naver-Client-Secret": NAVER_CLIENT_SECRET}
@@ -82,7 +83,6 @@ def fetch_naver_plot_fallback(movie_nm):
     return "등록된 줄거리 정보가 없습니다."
 
 def fetch_omdb_ratings(imdb_id):
-    """[OMDB] 글로벌 평점 추출"""
     if not OMDB_API_KEY or not imdb_id: return []
     url = f"http://www.omdbapi.com/?apikey={OMDB_API_KEY}&i={imdb_id}"
     try:
@@ -95,8 +95,7 @@ def fetch_omdb_ratings(imdb_id):
 st.title("🎬 MK CINELAB : 하이브리드 영화 대시보드")
 st.markdown("정확한 영화 식별을 위해 **검색 후 드롭다운**에서 조회할 영화를 선택해 주세요.")
 
-# 1. 영화 검색 및 드롭다운
-search_query = st.text_input("🔍 영화 제목 입력", placeholder="예: 파묘, 에이리언, 프로젝트 헤일메리")
+search_query = st.text_input("🔍 영화 제목 입력", placeholder="예: 파묘, 프로젝트 헤일메리")
 
 if search_query:
     movies = fetch_kobis_search(search_query)
@@ -104,7 +103,6 @@ if search_query:
     if not movies:
         st.warning(f"영진위 DB에 '{search_query}'에 대한 검색 결과가 없습니다.")
     else:
-        # 드롭다운 리스트 생성
         movie_options = {f"{m['movieNm']} ({m['prdtYear']} | {m['genreAlt']})": m for m in movies}
         selected = st.selectbox("🎯 정확한 영화를 선택하세요", options=["선택 안 함"] + list(movie_options.keys()))
         
@@ -113,20 +111,16 @@ if search_query:
             m_nm, m_en, m_cd, m_yr = m_info['movieNm'], m_info.get('movieNmEn', ''), m_info['movieCd'], m_info['prdtYear']
             
             with st.spinner("모든 데이터베이스를 조회 중입니다..."):
-                # 통합 데이터 수집
                 k_detail, k_stats = fetch_kobis_detail_and_boxoffice(m_cd)
-                poster_url, imdb_id, tmdb_overview = fetch_tmdb_data(m_nm, m_en, m_yr)
+                # 💡 리턴받는 변수에 tmdb_vote, tmdb_cnt 추가
+                poster_url, imdb_id, tmdb_overview, tmdb_vote, tmdb_cnt = fetch_tmdb_data(m_nm, m_en, m_yr)
                 ratings = fetch_omdb_ratings(imdb_id)
-                
-                # 줄거리 결정 로직 ('...' 문제 해결)
                 final_plot = tmdb_overview if tmdb_overview else fetch_naver_plot_fallback(m_nm)
 
             st.divider()
-            
-            # --- 대시보드 레이아웃 (2단 구성) ---
             col1, col2 = st.columns([1, 2.2])
             
-            # [왼쪽 단] 포스터 및 글로벌 평점
+            # [왼쪽 단] 포스터 및 평점
             with col1:
                 if poster_url:
                     st.image(poster_url, use_container_width=True, caption="TMDB Database")
@@ -134,32 +128,30 @@ if search_query:
                     st.warning("🖼️ 포스터 이미지를 찾을 수 없습니다.")
                 
                 st.markdown("### ⭐ 글로벌 평점 리포트")
+                # 💡 로직 변경: OMDB 평점이 있으면 출력, 없으면 TMDB 평점으로 대체!
                 if ratings:
                     for r in ratings:
-                        # 평점 제공처에 따라 다른 시각적 효과 부여
                         icon = "🍅" if r['Source'] == "Rotten Tomatoes" else ("🎬" if r['Source'] == "Internet Movie Database" else "Ⓜ️")
                         st.metric(f"{icon} {r['Source']}", r['Value'])
+                elif tmdb_vote and tmdb_cnt > 0:
+                    st.info("OMDB 공식 평점 대신 TMDB 유저 평점을 제공합니다.")
+                    st.metric("💠 TMDB User Rating", f"{tmdb_vote:.1f} / 10", f"{tmdb_cnt:,} votes")
                 else:
-                    st.info("OMDB에 등록된 평점 정보가 없습니다. (개봉 전 이거나 한국 내수용)")
+                    st.info("등록된 평점 정보가 없습니다. (개봉 전 이거나 데이터 부족)")
 
             # [오른쪽 단] 정보 및 통계
             with col2:
-                # 1. 헤더 (제목 및 기본 정보)
                 st.header(f"{m_nm} ({m_yr})")
                 if m_en: st.caption(f"Original Title: {m_en}")
                 
                 c_head1, c_head2, c_head3 = st.columns(3)
                 c_head1.write(f"⏱ **러닝타임:** {k_detail.get('showTm', '정보없음')}분")
                 c_head2.write(f"🎞 **장르:** {', '.join([g['genreNm'] for g in k_detail.get('genres', [])])}")
-                
-                # 개봉일 포맷팅
                 open_dt = k_detail.get('openDt', '')
                 f_open_dt = f"{open_dt[:4]}-{open_dt[4:6]}-{open_dt[6:]}" if len(open_dt) == 8 else "미정"
                 c_head3.write(f"📅 **개봉일:** {f_open_dt}")
 
                 st.markdown("---")
-                
-                # 2. 완전한 줄거리 (The Plot Issue Fixed)
                 st.markdown("#### 📖 시놉시스 (Synopsis)")
                 if final_plot:
                     st.write(final_plot)
@@ -167,8 +159,6 @@ if search_query:
                     st.info("등록된 공식 줄거리가 없습니다.")
                 
                 st.markdown("---")
-
-                # 3. 영진위 실시간 통계 (Box Office)
                 st.markdown("#### 📊 영진위 실시간 통계")
                 if k_stats:
                     st.success(f"🔥 현재 박스오피스 **{k_stats['rank']}위** 기록 중!")
@@ -181,8 +171,6 @@ if search_query:
                     st.info("현재 박스오피스 TOP 10 진입작이 아닙니다. (과거 개봉작 또는 상영 전)")
                 
                 st.markdown("---")
-
-                # 4. 영화 관련 모든 상세 정보 (Expanders)
                 st.markdown("#### 👥 상세 제작 정보 (KOBIS Database)")
                 
                 with st.expander("🎬 감독 및 주요 출연진"):
