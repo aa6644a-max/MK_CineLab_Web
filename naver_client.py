@@ -7,11 +7,21 @@ load_dotenv()
 
 class NaverClient:
     def __init__(self):
-        # 1. 웹 금고(secrets)에 있으면 가져오고, 없으면 로컬(.env)에서 가져옵니다.
-        if "NAVER_CLIENT_ID" in st.secrets:
-            self.client_id = st.secrets["NAVER_CLIENT_ID"]
-            self.client_secret = st.secrets["NAVER_CLIENT_SECRET"]
-        else:
+        # 기본값은 빈 문자열로 설정
+        self.client_id = ""
+        self.client_secret = ""
+
+        # 1. Streamlit 웹 금고(secrets)에서 먼저 시도
+        try:
+            # .get()을 쓰면 키가 없어도 에러(KeyError)가 나지 않고 None을 반환합니다.
+            self.client_id = st.secrets.get("NAVER_CLIENT_ID", "")
+            self.client_secret = st.secrets.get("NAVER_CLIENT_SECRET", "")
+        except FileNotFoundError:
+            # 로컬 환경 등 secrets.toml 파일이 아예 없는 경우 에러를 무시하고 넘어갑니다.
+            pass
+
+        # 2. 웹 금고에서 값을 못 가져왔다면(빈 문자열이라면) 로컬(.env)에서 가져옵니다.
+        if not self.client_id or not self.client_secret:
             self.client_id = os.getenv("NAVER_CLIENT_ID", "")
             self.client_secret = os.getenv("NAVER_CLIENT_SECRET", "")
 
