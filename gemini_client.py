@@ -23,7 +23,7 @@ class GeminiClient:
 
         self.client = genai.Client(api_key=api_key)
         # gemini-2.5-flash는 멀티모달(텍스트+이미지) 분석을 완벽하게 지원합니다.
-        self.model_name = 'gemini-1.5-flash'
+        self.model_name = 'gemini-2.5-flash' 
 
     # 💡 max_retries=3 파라미터를 추가하여 최대 3번까지 재시도하도록 설정
     def generate_post(self, prompt, images=None, max_retries=3):
