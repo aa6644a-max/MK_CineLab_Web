@@ -18,7 +18,7 @@ st.markdown("""
 # ==========================================
 st.markdown("### 🧭 작업실 바로가기")
 st.write("아래의 버튼을 클릭하거나 왼쪽 사이드바를 통해 원하시는 작업실로 이동하세요!")
-st.write("") # 약간의 여백 추가
+st.write("") 
 
 # 2x2 그리드 형태로 카드 배치
 col1, col2 = st.columns(2)
@@ -29,9 +29,7 @@ with col1:
         st.markdown("### ⚙️ 00 Settings")
         st.write("**데이터 및 취향 관리**")
         st.caption("블로그 원문 데이터를 수집하고, 내 취향 데이터를 관리하는 기본 설정 공간입니다.")
-        st.write("") # 간격 띄우기
-        
-        # 💡 실제 Settings 파일명에 맞춰주세요 (만약 파일명이 다르다면 수정 필요)
+        st.write("") 
         try:
             st.page_link("pages/00_⚙️_Settings.py", label="Settings 이동하기", icon="⚙️")
         except:
@@ -42,7 +40,7 @@ with col2:
         st.markdown("### ✍️ 01 Movie Blog")
         st.write("**영화 리뷰/프리뷰 자동화**")
         st.caption("TMDB와 네이버 뉴스를 바탕으로 영화 관련 포스팅을 자동 생성합니다.")
-        st.write("") # 간격 띄우기
+        st.write("") 
         st.page_link("pages/01_🎬_Movie_Blog.py", label="Movie Blog 이동하기", icon="🚀")
 
 with col3:
@@ -50,7 +48,7 @@ with col3:
         st.markdown("### 📸 02 Daily Life")
         st.write("**일상 & 현장 기록**")
         st.caption("PDF 자료나 현장 사진을 업로드하여 나만의 감성이 담긴 현장 일지를 작성합니다.")
-        st.write("") # 간격 띄우기
+        st.write("") 
         st.page_link("pages/02_🏠_Daily_Life.py", label="Daily Life 이동하기", icon="🚀")
 
 with col4:
@@ -58,11 +56,26 @@ with col4:
         st.markdown("### 🔍 03 Movie Search")
         st.write("**하이브리드 영화 대시보드**")
         st.caption("실시간 박스오피스 순위를 확인하고, 다양한 영화의 상세 정보를 검색합니다.")
-        st.write("") # 간격 띄우기
+        st.write("") 
         st.page_link("pages/03_🎬_Movie_Search.py", label="Movie Search 이동하기", icon="🚀")
 
 # ==========================================
-# 3. 하단 꿀팁
+# 3. 🧪 실험실 (새로 추가된 부분)
+# ==========================================
+st.markdown("---")
+st.markdown("### 🧪 실험실 (Lab)")
+with st.container(border=True):
+    st.markdown("### 🪄 04 AI Photo Curator")
+    st.write("**수십 장의 사진 중 베스트 컷 자동 선별 실험**")
+    st.caption("대량의 현장 사진을 AI가 한 번에 분석하여 기승전결 스토리텔링에 적합한 핵심 사진만 번호로 골라줍니다.")
+    st.write("")
+    try:
+        st.page_link("pages/04_🧪_Lab.py", label="Lab 이동하기", icon="🔬")
+    except:
+        st.button("🔬 pages 폴더 안에 04_🧪_Lab.py 파일을 만들어주세요", disabled=True, use_container_width=True)
+
+# ==========================================
+# 4. 하단 꿀팁
 # ==========================================
 st.markdown("---")
 st.info("💡 **Tip:** 스마트폰 브라우저(웨일, 크롬, 사파리)의 **'홈 화면에 추가'** 기능을 이용하시면 바탕화면 아이콘을 통해 앱처럼 바로 접속하실 수 있습니다!")
