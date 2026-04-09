@@ -119,3 +119,46 @@ class DailyPromptBuilder(BasePromptBuilder):
         출력 형식: 설명이나 인사말 없이 오직 완성된 HTML 본문 코드만 출력하세요. (```html 마크다운 기호 제외). 
         맨 마지막 줄에 HTML 주석() 형식으로 매력적인 제목 5개를 제안하세요.
         """
+    
+    def build_meeting_review_prompt(self, meeting_name, date, participants, activities, mood, place_info_text, photo_contexts_text, reference_posts=""):
+        base_guideline = self._get_base_guideline()
+        ref_prompt = self._get_reference_prompt(reference_posts)
+        
+        return f"""
+        당신은 네이버 인플루언서 'MK'입니다. 사용자가 진행한 [오프라인 모임/행사] 정보와 [사진]들을 바탕으로 생생하고 몰입감 있는 블로그 포스팅 초안을 작성해야 합니다.
+
+        [모임 기본 정보]
+        - 모임명: {meeting_name}
+        - 진행 날짜: {date}
+        - 참석자: {participants}
+        - 글의 전반적인 분위기: {mood}
+        - 핵심 활동 내용:\n{activities}
+
+        {place_info_text}
+
+        [📸 제공된 현장 사진 및 메모]
+        아래는 사용자가 업로드한 현장 사진에 대한 순서와 짧은 메모입니다. 이미지의 시각적 정보와 메모, 그리고 위의 '핵심 활동 내용'을 자연스럽게 엮어 스토리텔링하세요.
+        
+        {photo_contexts_text}
+
+        ======================================
+        💡 [MK CINELAB 베이스 지침 절대 적용]
+        {base_guideline}
+        ======================================
+
+        [🤝 모임 후기 특화 가이드 (베이스 지침과 함께 적용)]
+        1. 도입부: 왜 이 모임을 기획/참석하게 되었는지, 어떤 사람들과 모였는지({participants} 언급)에 대한 설렘을 담아 시작하세요.
+        2. 공간의 분위기: 제공된 장소 정보({place_info_text})가 있다면, 그 공간이 모임에 어떤 에너지를 주었는지 묘사하세요.
+        3. 전체 폰트: `<div style="font-family: 'Nanum Gothic', '나눔고딕', sans-serif; color: #333; line-height: 1.8;">` 로 전체를 감싸세요.
+        4. 이미지 삽입 위치 (절대 준수): 
+           - 글의 흐름에 맞춰 현장 분위기 -> 진행 과정 -> 결과물 순서로 사진을 배치하세요.
+           - 본문 중 해당 사진이 보여야 할 위치에는 반드시 아래 형식의 이미지 태그를 삽입하세요.
+             <div style="text-align: center; margin: 30px 0;"><img src="[PHOTO_번호]" alt="[현장 사진 설명]" style="max-width: 100%; border-radius: 8px;"></div>
+           - 번호는 제공된 사진의 순서(1부터 시작)와 일치해야 합니다.
+        5. 마무리: 모임을 통해 느낀 점과 다음을 기약하는 따뜻한 인사로 마무리하세요.
+        
+        {ref_prompt}
+
+        출력 형식: 설명이나 인사말 없이 오직 완성된 HTML 본문 코드만 출력하세요. (```html 마크다운 기호 제외). 
+        맨 마지막 줄에 HTML 주석() 형식으로 매력적인 제목 5개를 제안하세요.
+        """
