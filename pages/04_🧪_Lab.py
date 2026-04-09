@@ -32,14 +32,15 @@ if uploaded_photos:
     with st.expander("업로드된 원본 사진 전체 보기"):
         cols = st.columns(5)
         for i, photo in enumerate(uploaded_photos):
-            cols[i % 5].image(photo, caption=f"No. {i+1}", use_container_width=True)
+            # 💡 수정 포인트: 컬럼 안에서는 알아서 꽉 차므로 width 설정을 제거했습니다.
+            cols[i % 5].image(photo, caption=f"No. {i+1}")
 
     target_count = st.slider("이 중에서 몇 장을 추려낼까요?", min_value=3, max_value=20, value=7)
     
+    # 💡 수정 포인트: 버튼은 경고가 뜨더라도 안전한 기존 방식(use_container_width)으로 둡니다.
     if st.button("✨ 베스트 컷 자동 선별하기", type="primary", use_container_width=True):
-        with st.spinner(f"AI 에디터가 {len(uploaded_photos)}장의 사진을 눈으로 훑어보며 흐름을 짜는 중입니다... (사진이 많아 10~20초 정도 걸릴 수 있습니다)"):
+        with st.spinner(f"AI 에디터가 {len(uploaded_photos)}장의 사진을 눈으로 훑어보며 흐름을 짜는 중입니다... (10~20초 소요)"):
             
-            # 💡 핵심 프롬프트: AI를 사진 편집자로 세뇌시키고 오직 숫자만 뱉게 만듭니다.
             prompt = f"""
             당신은 매거진의 수석 사진 편집자입니다.
             제가 총 {len(uploaded_photos)}장의 오프라인 모임/행사 사진을 순서대로 제공했습니다.
@@ -86,6 +87,7 @@ if st.session_state.get("selected_photos"):
     
     sel_cols = st.columns(3)
     for idx, (original_idx, photo) in enumerate(zip(st.session_state.selected_indices, st.session_state.selected_photos)):
-        sel_cols[idx % 3].image(photo, caption=f"Original No. {original_idx + 1}", use_container_width=True)
+        # 💡 수정 포인트: 여기도 image 태그에서 width 설정 제거
+        sel_cols[idx % 3].image(photo, caption=f"Original No. {original_idx + 1}")
 
-    st.info("💡 여기서 선별된 사진들이 마음에 든다면, 해당 사진들만 데스크탑에 따로 빼두신 후 **[02 Daily Life]의 모임 후기 탭**에 올려서 자동 포스팅을 진행하시면 완벽합니다!")
+    st.info("💡 여기서 선별된 사진들이 마음에 든다면, 해당 사진들만 따로 빼두신 후 **[02 Daily Life]의 모임 후기 탭**에 올려서 자동 포스팅을 진행하시면 완벽합니다!")
