@@ -16,8 +16,9 @@ class OptimizedPhoto:
         self.type = "image/jpeg"
         self._data = io.BytesIO(byte_data)
         
-    def read(self):
-        return self._data.read()
+    # 💡 수정 포인트: size 파라미터를 추가해서, 시스템이 요청하는 크기만큼 유연하게 읽도록 허용합니다.
+    def read(self, size=-1):
+        return self._data.read(size)
         
     def seek(self, offset):
         self._data.seek(offset)
