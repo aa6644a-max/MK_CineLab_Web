@@ -8,18 +8,52 @@ from rss_client import RSSClient
 from html_formatter import HTMLFormatter
 from naver_client import NaverClient  
 
-# ✅ 수정: height, scrolling 파라미터 추가
+
 def show_isolated_html(html_str, height=1000, scrolling=True):
-    # 💡 AI 마크다운 기호 제거
+    """AI 마크다운 제거 후 base64 iframe으로 렌더링"""
     clean_html = html_str.replace("```html\n", "").replace("```html", "").replace("```", "")
-    
-    # scrolling 옵션을 overflow CSS로 처리
     overflow_style = "auto" if scrolling else "hidden"
-    
-    # 💡 components.html 대신 iframe 주입 방식 사용
     b64 = base64.b64encode(clean_html.encode('utf-8')).decode('utf-8')
     iframe_html = f'<iframe src="data:text/html;charset=utf-8;base64,{b64}" width="100%" height="{height}" style="border:none; overflow:{overflow_style};"></iframe>'
     st.markdown(iframe_html, unsafe_allow_html=True)
+
+
+def sanitize_img_src(html_str, photos, placeholder_prefix="PHOTO"):
+    """
+    ✅ Gemini가 외부 URL(imgur 등)을 img src에 넣는 경우 방어.
+    - [PHOTO_N] 플레이스홀더 → 업로드 사진 base64 치환
+    - 외부 http/https src → 업로드된 사진 순서대로 base64 치환
+    - data:image 는 건드리지 않음
+    """
+    result = html_str
+    b64_list = []
+    for photo in photos:
+        photo.seek(0)
+        b64_data = base64.b64encode(photo.read()).decode('utf-8')
+        mime_type = photo.type if hasattr(photo, 'type') else 'image/jpeg'
+        b64_list.append(f"data:{mime_type};base64,{b64_data}")
+
+    # 1단계: [PHOTO_N] 플레이스홀더 치환
+    for i, b64_src in enumerate(b64_list):
+        result = result.replace(f"[{placeholder_prefix}_{i+1}]", b64_src)
+
+    # 2단계: 남아있는 외부 URL src를 업로드 사진으로 순서대로 교체
+    external_img_pattern = re.compile(
+        r'(<img\b[^>]*?\bsrc=)["\'](?!data:)(https?://[^"\'>\s]+)["\']',
+        re.IGNORECASE
+    )
+    ext_idx = [0]  # nonlocal 대신 리스트로 참조
+    def replace_external(match):
+        if ext_idx[0] < len(b64_list):
+            replacement = f'{match.group(1)}"{b64_list[ext_idx[0]]}"'
+            ext_idx[0] += 1
+            return replacement
+        else:
+            # 사진보다 img 태그가 많으면 투명 1px gif로 대체
+            return f'{match.group(1)}"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"'
+    result = external_img_pattern.sub(replace_external, result)
+    return result
+
 
 # 페이지 기본 설정
 st.set_page_config(page_title="일상 & 현장 기록", page_icon="🏠", layout="centered")
@@ -34,24 +68,21 @@ daily_builder, gemini, rss, formatter, naver_client = init_daily_engines()
 st.title("🏠 민규의 일상 & 현장 기록")
 st.markdown("---")
 
-# ✅ 탭 이름 변경 (3개로 확장)
 tab1, tab2, tab3 = st.tabs(["📄 PDF 요약 포스팅", "📸 사진 기반 포스팅", "🤝 모임 후기 포스팅"])
 
-# 세션 스테이트 초기화 (3개 탭 모두 포함)
+# 세션 스테이트 초기화
 if "daily_html" not in st.session_state: st.session_state.daily_html = None
-
 if "photo_preview_html" not in st.session_state: st.session_state.photo_preview_html = None
 if "photo_copy_html" not in st.session_state: st.session_state.photo_copy_html = None
 if "place_search_results" not in st.session_state: st.session_state.place_search_results = None
 if "selected_place" not in st.session_state: st.session_state.selected_place = None
-
 if "meeting_preview_html" not in st.session_state: st.session_state.meeting_preview_html = None
 if "meeting_copy_html" not in st.session_state: st.session_state.meeting_copy_html = None
 if "meeting_search_results" not in st.session_state: st.session_state.meeting_search_results = None
 if "meeting_selected_place" not in st.session_state: st.session_state.meeting_selected_place = None
 
 # ==========================================
-# [TAB 1] 기존 PDF 요약 포스팅
+# [TAB 1] PDF 요약 포스팅
 # ==========================================
 with tab1:
     st.subheader("📄 PDF 자료 기반 블로그 초안 생성")
@@ -66,18 +97,17 @@ with tab1:
         )
         if uploaded_files:
             st.caption(f"📂 총 {len(uploaded_files)}개의 파일이 선택되었습니다.")
-
         user_context = st.text_area(
             "이 기록에 담고 싶은 상황이나 생각", 
             placeholder="예: 영화 살목지 개봉 전, 실제 장소에 대한 괴담 정보들만 모아서 정리하고 싶습니다. 영화 정보보다는 PDF 속 실화에 집중해 주세요.",
             height=200, key="daily_context"
         )
-
     with col2:
         post_category = st.text_input("포스팅 카테고리 입력", placeholder="예: ☕ 카페 탐방, 🛠️ 현장 일지 등", key="daily_category_input")
         writing_vibe = st.select_slider("글의 감성 농도", options=["담백하게", "차분하게", "다정하게", "감성 가득", "위트 있게"], value="다정하게", key="daily_vibe")
         st.write("---")
-        generate_btn = st.button("✨ MK 스타일 포스팅 생성", type="primary", use_container_width=True)
+        # ✅ use_container_width=True → width='stretch'
+        generate_btn = st.button("✨ MK 스타일 포스팅 생성", type="primary", width='stretch')
 
     if generate_btn:
         if uploaded_files and user_context and post_category:
@@ -89,7 +119,6 @@ with tab1:
                             combined_text += "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
                     except Exception as e:
                         st.error(f"{file.name} 읽기 오류: {e}")
-
                 if not combined_text.strip():
                     st.error("PDF에서 텍스트를 추출할 수 없습니다. 이미지로 된 PDF인지 확인해 주세요.")
                 else:
@@ -99,7 +128,6 @@ with tab1:
                     )
                     result = gemini.generate_post(prompt)
                     final_html = formatter.wrap_in_table(f"{post_category} 기록", result)
-                    
                     st.session_state.daily_html = final_html
                     st.success("노트북LM 스타일의 맞춤형 포스팅 생성이 완료되었습니다!")
         else:
@@ -115,13 +143,12 @@ with tab1:
             st.code(st.session_state.daily_html, language="html")
 
 # ==========================================
-# [TAB 2] 💡 사진 기반 포스팅
+# [TAB 2] 사진 기반 포스팅
 # ==========================================
 with tab2:
     st.subheader("📸 사진 기반 일상/맛집/현장 포스팅")
     st.write("순서대로 사진을 업로드하고 짧은 캡션을 달아주세요. 알아서 흐름에 맞는 포스팅을 써드립니다.")
 
-    # 1. 장소 검색
     st.markdown("#### 📍 1. 장소 정보 입력 (선택)")
     col_region, col_search, col_btn = st.columns([1.5, 3, 1])
     with col_region:
@@ -134,9 +161,9 @@ with tab2:
         else:
             search_query = st.text_input("상호명 검색", placeholder=f"예: 남산동 스타벅스, 무촌리 철물점 등", label_visibility="collapsed")
             target_region = region_option
-
     with col_btn:
-        search_place_btn = st.button("네이버 검색", key="search_place_btn", use_container_width=True)
+        # ✅ use_container_width=True → width='stretch'
+        search_place_btn = st.button("네이버 검색", key="search_place_btn", width='stretch')
     
     if search_place_btn and search_query:
         final_query = f"{target_region} {search_query}".strip()
@@ -157,12 +184,12 @@ with tab2:
                 title = item['title'].replace('<b>', '').replace('</b>', '')
                 category = item['category']
                 address = item['roadAddress'] or item['address'] 
-                
                 col_info, col_sel = st.columns([5, 1])
                 with col_info:
                     st.write(f"**{title}** \n<small>{category} | 📍 {address}</small>", unsafe_allow_html=True)
                 with col_sel:
-                    if st.button("선택", key=f"sel_place_{i}", use_container_width=True):
+                    # ✅ use_container_width=True → width='stretch'
+                    if st.button("선택", key=f"sel_place_{i}", width='stretch'):
                         st.session_state.selected_place = {"title": title, "category": category, "address": address, "link": item.get('link', '')}
                         st.session_state.place_search_results = None
                         st.rerun()
@@ -174,10 +201,8 @@ with tab2:
         if st.button("장소 다시 검색하기", key="reset_place_btn"):
             st.session_state.selected_place = None
             st.rerun()
-
     st.markdown("---")
 
-    # 2. 사진 업로드
     st.markdown("#### 🖼️ 2. 사진 업로드 및 메모")
     uploaded_photos = st.file_uploader("포스팅에 들어갈 사진들을 순서대로 올려주세요.", type=["png", "jpg", "jpeg"], accept_multiple_files=True, key="photo_uploader")
     photo_contexts = []
@@ -187,14 +212,13 @@ with tab2:
         for i, photo in enumerate(uploaded_photos):
             col_img, col_text = st.columns([1, 3])
             with col_img:
-                st.image(photo, use_container_width=True)
+                # ✅ use_container_width=True → width='stretch'
+                st.image(photo, width='stretch')
             with col_text:
                 caption = st.text_area(f"사진 {i+1} 설명", placeholder="예: 타설 전 철근 배근 완료 상태 / 우드톤 가구 조립 중", height=100, key=f"photo_cap_{i}")
                 photo_contexts.append({"photo": photo, "caption": caption})
-
     st.markdown("---")
 
-    # 3. 포스팅 설정
     st.markdown("#### 📝 3. 포스팅 설정")
     col_cat, col_vibe = st.columns(2)
     with col_cat:
@@ -202,8 +226,9 @@ with tab2:
     with col_vibe:
         photo_vibe = st.select_slider("글의 감성 농도", options=["담백하게", "전문적으로", "차분하게", "다정하게", "위트 있게"], value="차분하게", key="photo_vibe")
 
-    st.write("") 
-    generate_photo_btn = st.button("📸 사진 포스팅 생성", type="primary", use_container_width=True)
+    st.write("")
+    # ✅ use_container_width=True → width='stretch'
+    generate_photo_btn = st.button("📸 사진 포스팅 생성", type="primary", width='stretch')
 
     if generate_photo_btn:
         if not uploaded_photos:
@@ -221,29 +246,28 @@ with tab2:
                 
                 reference_posts = rss.get_latest_posts_text(limit=3)
                 prompt = daily_builder.build_photo_post_prompt(
-                    category=photo_category, vibe=photo_vibe, place_info_text=place_info_text, photo_contexts_text=photo_contexts_text, reference_posts=reference_posts
+                    category=photo_category, vibe=photo_vibe,
+                    place_info_text=place_info_text,
+                    photo_contexts_text=photo_contexts_text,
+                    reference_posts=reference_posts
                 )
-
                 result = gemini.generate_post(prompt, images=uploaded_photos)
-                
-                preview_html_raw = result
-                for i, photo in enumerate(uploaded_photos):
-                    photo.seek(0)
-                    b64_data = base64.b64encode(photo.read()).decode('utf-8')
-                    mime_type = photo.type if hasattr(photo, 'type') else 'image/jpeg'
-                    preview_html_raw = preview_html_raw.replace(f"[PHOTO_{i+1}]", f"data:{mime_type};base64,{b64_data}")
-                
+
+                # ✅ [PHOTO_N] + 외부URL 모두 방어하는 통합 치환
+                preview_html_raw = sanitize_img_src(result, uploaded_photos)
                 st.session_state.photo_preview_html = formatter.wrap_in_table(f"{photo_category} 기록", preview_html_raw)
 
+                # 복사용: 이미지 자리를 안내 문구로 교체
                 copy_html_raw = result
                 for i in range(len(uploaded_photos)):
-                    pattern = r'<div[^>]*>\s*<img[^>]*src="\[PHOTO_' + str(i+1) + r'\]"[^>]*>\s*</div>'
-                    replacement = f'<p style="text-align: center; color: #e53e3e; font-weight: bold; margin: 30px 0;">[📸 블로그 에디터에서 이곳에 사진 {i+1}을 직접 업로드해주세요]</p>'
-                    if re.search(pattern, copy_html_raw):
-                        copy_html_raw = re.sub(pattern, replacement, copy_html_raw)
+                    replacement = f'<p style="text-align:center;color:#e53e3e;font-weight:bold;margin:30px 0;">[📸 블로그 에디터에서 이곳에 사진 {i+1}을 직접 업로드해주세요]</p>'
+                    copy_html_raw = copy_html_raw.replace(f"[PHOTO_{i+1}]", "PHOTO_PLACEHOLDER")
+                    pattern_div = r'<div[^>]*>\s*<img[^>]*src="(?:PHOTO_PLACEHOLDER|https?://[^"]+)"[^>]*>\s*</div>'
+                    pattern_img = r'<img[^>]*src="(?:PHOTO_PLACEHOLDER|https?://[^"]+)"[^>]*>'
+                    if re.search(pattern_div, copy_html_raw):
+                        copy_html_raw = re.sub(pattern_div, replacement, copy_html_raw)
                     else:
-                        fallback_pattern = r'<img[^>]*src="\[PHOTO_' + str(i+1) + r'\]"[^>]*>'
-                        copy_html_raw = re.sub(fallback_pattern, replacement, copy_html_raw)
+                        copy_html_raw = re.sub(pattern_img, replacement, copy_html_raw)
 
                 st.session_state.photo_copy_html = formatter.wrap_in_table(f"{photo_category} 기록", copy_html_raw)
                 st.success("사진 기반 맞춤형 포스팅 생성이 완료되었습니다!")
@@ -267,20 +291,17 @@ with tab2:
             st.code(clean_code_html, language="html")
 
 # ==========================================
-# [TAB 3] 🤝 모임 후기 포스팅 (신규 추가!)
+# [TAB 3] 모임 후기 포스팅
 # ==========================================
 with tab3:
     st.subheader("🤝 모임/행사 후기 포스팅")
     st.write("아이디어 랩, 워크숍, 소모임 등 사람들과 함께한 기록을 생생하게 정리해 드립니다.")
 
-    # 1. 장소 검색 (탭 2와 분리된 key 사용)
     st.markdown("#### 📍 1. 모임 장소 검색 (선택)")
     col_region_m, col_search_m, col_btn_m = st.columns([1.5, 3, 1])
-    
     with col_region_m:
         region_list_m = ["직접 입력", "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"]
         region_option_m = st.selectbox("지역 선택", options=region_list_m, index=0, key="meeting_region", label_visibility="collapsed")
-        
     with col_search_m:
         if region_option_m == "직접 입력":
             search_query_m = st.text_input("검색어", placeholder="예: 활동그래, NFM 등", key="meeting_search_input", label_visibility="collapsed")
@@ -288,9 +309,9 @@ with tab3:
         else:
             search_query_m = st.text_input("상호명 검색", placeholder="예: 활동그래", key="meeting_search_input", label_visibility="collapsed")
             target_region_m = region_option_m
-
     with col_btn_m:
-        search_place_btn_m = st.button("네이버 검색", key="meeting_search_btn", use_container_width=True)
+        # ✅ use_container_width=True → width='stretch'
+        search_place_btn_m = st.button("네이버 검색", key="meeting_search_btn", width='stretch')
     
     if search_place_btn_m and search_query_m:
         final_query_m = f"{target_region_m} {search_query_m}".strip()
@@ -311,12 +332,12 @@ with tab3:
                 title = item['title'].replace('<b>', '').replace('</b>', '')
                 category = item['category']
                 address = item['roadAddress'] or item['address'] 
-                
                 col_info, col_sel = st.columns([5, 1])
                 with col_info:
                     st.write(f"**{title}** <small>({category}) | 📍 {address}</small>", unsafe_allow_html=True)
                 with col_sel:
-                    if st.button("선택", key=f"sel_m_place_{i}", use_container_width=True):
+                    # ✅ use_container_width=True → width='stretch'
+                    if st.button("선택", key=f"sel_m_place_{i}", width='stretch'):
                         st.session_state.meeting_selected_place = {"title": title, "category": category, "address": address}
                         st.session_state.meeting_search_results = None
                         st.rerun()
@@ -330,9 +351,7 @@ with tab3:
             st.rerun()
     st.markdown("---")
 
-    # 2. 모임 정보 및 사진 입력
     st.markdown("#### 📝 2. 모임 정보 및 사진")
-    
     col_info1, col_info2 = st.columns(2)
     with col_info1:
         meeting_name = st.text_input("모임명", placeholder="예: 전주국제영화제 티셔츠 디자인 아이디어 랩")
@@ -351,14 +370,15 @@ with tab3:
         for i, photo in enumerate(uploaded_photos_m):
             col_img, col_text = st.columns([1, 3])
             with col_img:
-                st.image(photo, use_container_width=True)
+                # ✅ use_container_width=True → width='stretch'
+                st.image(photo, width='stretch')
             with col_text:
                 caption = st.text_area(f"사진 {i+1} 설명", placeholder="예: 포스트잇으로 아이디어 도출 중인 모습", height=80, key=f"m_photo_cap_{i}")
                 photo_contexts_m.append({"photo": photo, "caption": caption})
-
     st.markdown("---")
     
-    generate_meeting_btn = st.button("✨ 모임 후기 포스팅 생성", type="primary", use_container_width=True)
+    # ✅ use_container_width=True → width='stretch'
+    generate_meeting_btn = st.button("✨ 모임 후기 포스팅 생성", type="primary", width='stretch')
 
     if generate_meeting_btn:
         if not meeting_name or not activities:
@@ -375,7 +395,6 @@ with tab3:
                     photo_contexts_text_m += f"- 사진 {i+1} 메모: {ctx['caption']}\n"
                 
                 reference_posts = rss.get_latest_posts_text(limit=3)
-
                 prompt = daily_builder.build_meeting_review_prompt(
                     meeting_name=meeting_name,
                     date=str(meeting_date),
@@ -392,25 +411,24 @@ with tab3:
                 else:
                     result = gemini.generate_post(prompt)
                 
-                preview_html_raw = result
                 if uploaded_photos_m:
-                    for i, photo in enumerate(uploaded_photos_m):
-                        photo.seek(0)
-                        b64_data = base64.b64encode(photo.read()).decode('utf-8')
-                        mime_type = photo.type if hasattr(photo, 'type') else 'image/jpeg'
-                        preview_html_raw = preview_html_raw.replace(f"[PHOTO_{i+1}]", f"data:{mime_type};base64,{b64_data}")
-                
+                    # ✅ [PHOTO_N] + 외부URL 모두 방어하는 통합 치환
+                    preview_html_raw = sanitize_img_src(result, uploaded_photos_m)
+                else:
+                    preview_html_raw = result
                 st.session_state.meeting_preview_html = formatter.wrap_in_table("🤝 모임 기록", preview_html_raw)
 
                 copy_html_raw = result
                 if uploaded_photos_m:
                     for i in range(len(uploaded_photos_m)):
-                        pattern = r'<div[^>]*>\s*<img[^>]*src="\[PHOTO_' + str(i+1) + r'\]"[^>]*>\s*</div>'
-                        replacement = f'<p style="text-align: center; color: #e53e3e; font-weight: bold; margin: 30px 0;">[📸 블로그 에디터에서 이곳에 사진 {i+1}을 직접 업로드해주세요]</p>'
-                        if re.search(pattern, copy_html_raw):
-                            copy_html_raw = re.sub(pattern, replacement, copy_html_raw)
+                        replacement = f'<p style="text-align:center;color:#e53e3e;font-weight:bold;margin:30px 0;">[📸 블로그 에디터에서 이곳에 사진 {i+1}을 직접 업로드해주세요]</p>'
+                        copy_html_raw = copy_html_raw.replace(f"[PHOTO_{i+1}]", "PHOTO_PLACEHOLDER")
+                        pattern_div = r'<div[^>]*>\s*<img[^>]*src="(?:PHOTO_PLACEHOLDER|https?://[^"]+)"[^>]*>\s*</div>'
+                        pattern_img = r'<img[^>]*src="(?:PHOTO_PLACEHOLDER|https?://[^"]+)"[^>]*>'
+                        if re.search(pattern_div, copy_html_raw):
+                            copy_html_raw = re.sub(pattern_div, replacement, copy_html_raw)
                         else:
-                            copy_html_raw = re.sub(r'<img[^>]*src="\[PHOTO_' + str(i+1) + r'\]"[^>]*>', replacement, copy_html_raw)
+                            copy_html_raw = re.sub(pattern_img, replacement, copy_html_raw)
 
                 st.session_state.meeting_copy_html = formatter.wrap_in_table("🤝 모임 기록", copy_html_raw)
                 st.success("모임 후기 포스팅 생성이 완료되었습니다!")
@@ -418,16 +436,13 @@ with tab3:
     if st.session_state.get("meeting_preview_html"):
         st.markdown("---")
         res_tab1, res_tab2, res_tab3 = st.tabs(["👁️ 완벽 미리보기", "📋 블로그 복사용 화면", "📄 HTML 원본 코드"])
-        
         with res_tab1:
             clean_html = st.session_state.meeting_preview_html.replace("```html\n", "").replace("```html", "").replace("```", "")
             show_isolated_html(clean_html, height=1000, scrolling=True)
-            
         with res_tab2:
             st.success("💡 아래 회색 박스 내용을 복사(Ctrl+C)하여 네이버 블로그에 붙여넣기(Ctrl+V) 하세요!")
             clean_copy_html = st.session_state.meeting_copy_html.replace("```html\n", "").replace("```html", "").replace("```", "")
             show_isolated_html(clean_copy_html, height=1000, scrolling=True)
-
         with res_tab3:
             clean_code_html = st.session_state.meeting_copy_html
             st.code(clean_code_html, language="html")
