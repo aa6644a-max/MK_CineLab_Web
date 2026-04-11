@@ -254,12 +254,12 @@ with tab2:
             st.info("✨ 실제 사진들이 적용된 완벽한 미리보기입니다.")
             clean_html = st.session_state.photo_preview_html.replace("```html\n", "").replace("```html", "").replace("```", "")
             clean_html = clean_html.replace("MK CINELAB PREVIEW", "MK DAILY RECORD").replace("다른 영화 이야기가", "다른 일상/현장 이야기가")
-            components.html(clean_html, height=1000, scrolling=True)
+            show_isolated_html(clean_html, height=1000, scrolling=True)
         with res_tab2:
             st.success("💡 아래 회색 네모 박스 안의 내용을 마우스로 쭉 드래그해서 복사(Ctrl+C)한 뒤 붙여넣기(Ctrl+V) 하세요!")
             clean_copy_html = st.session_state.photo_copy_html.replace("```html\n", "").replace("```html", "").replace("```", "")
             clean_copy_html = clean_copy_html.replace("MK CINELAB PREVIEW", "MK DAILY RECORD").replace("다른 영화 이야기가", "다른 일상/현장 이야기가")
-            components.html(clean_copy_html, height=1000, scrolling=True)
+            show_isolated_html(clean_copy_html, height=1000, scrolling=True)
         with res_tab3:
             st.warning("티스토리 등 HTML 소스코드 직접 입력이 가능한 곳을 위한 예비용 코드입니다.")
             clean_code_html = st.session_state.photo_copy_html.replace("MK CINELAB PREVIEW", "MK DAILY RECORD").replace("다른 영화 이야기가", "다른 일상/현장 이야기가")
@@ -420,12 +420,12 @@ with tab3:
         
         with res_tab1:
             clean_html = st.session_state.meeting_preview_html.replace("```html\n", "").replace("```html", "").replace("```", "")
-            components.html(clean_html, height=1000, scrolling=True)
+            show_isolated_html(clean_html, height=1000, scrolling=True)
             
         with res_tab2:
             st.success("💡 아래 회색 박스 내용을 복사(Ctrl+C)하여 네이버 블로그에 붙여넣기(Ctrl+V) 하세요!")
             clean_copy_html = st.session_state.meeting_copy_html.replace("```html\n", "").replace("```html", "").replace("```", "")
-            components.html(clean_copy_html, height=1000, scrolling=True)
+            show_isolated_html(clean_copy_html, height=1000, scrolling=True)
 
         with res_tab3:
             clean_code_html = st.session_state.meeting_copy_html
