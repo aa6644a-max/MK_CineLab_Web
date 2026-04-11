@@ -27,21 +27,43 @@ class PromptBuilder(BasePromptBuilder):
             intro_guideline = f"""- [서론 - 도입부 공식 절대 준수]:
               1. "최근 영화 <[영화 제목]>을(를) 관람했습니다." 혹은 이와 유사하게 흥미를 유발하며 시작하세요.
               2. 하단에 제공되는 [포스팅 계기/관람 이유]를 녹여내어 영화를 보게 된 동기나 강렬한 첫인상을 밝히세요.
-              3. "그래서 오늘은 이 영화에 대한 솔직한 감상과 리뷰를 남겨보려 합니다."로 본론을 여세요. 서론 중간쯤에 [관람 인증샷] 코드를 자연스럽게 삽입하세요.
+              3. "그래서 오늘은 이 영화에 대한 솔직한 감상과 리뷰를 남겨보려 합니다."로 본론을 여세요.
+              4. 서론 마지막 문장 직후에 아래 구분선 코드를 삽입하세요.
+                 <p style="text-align:center; color:#bbb; letter-spacing: 8px;">• • • • •</p>
+              5. 구분선 바로 아래에 [관람 인증샷] 코드를 삽입하세요.
 
-            - [줄거리 요약 섹션 - 서론 직후 반드시 작성]:
-              서론 바로 다음, 본격 리뷰 전에 아래 소제목과 형식으로 줄거리 섹션을 삽입하세요.
-              <h2 style="border-bottom: 2px solid #333; padding-bottom: 5px;">📖 어떤 이야기인가요?</h2>
-              - 제공된 [줄거리] 데이터를 바탕으로 결말·반전을 드러내지 않는 선에서 3~5문장으로 압축 정리합니다.
+            - [줄거리 요약 섹션 - 구분선+인증샷 직후 반드시 작성]:
+              아래 HTML 소제목 스타일을 그대로 복사하여 줄거리 섹션을 여세요. (border-bottom 방식 사용 금지)
+              <div style="background:#1a1a1a; color:#fff; padding:14px 20px; margin:30px 0 10px; border-radius:6px;">
+                <p style="margin:0; font-size:17px; font-weight:bold;">■ 어떤 이야기인가요?</p>
+              </div>
+              - 제공된 [줄거리] 데이터를 바탕으로 결말·반전을 드러내지 않는 선에서 3~4문장으로 압축 정리합니다.
               - 영화의 배경, 주인공 상황, 핵심 갈등 구조만 간결하게 소개하세요.
               - 줄거리 요약 직후에 [스틸컷 1] 코드를 삽입하세요.
 
-            - [본론 구성 - 소제목은 AI 재량으로 자유롭게]:
-              본론 소제목은 해당 영화의 특성과 감상평에서 가장 강조할 포인트를 스스로 판단하여 자유롭게 설정하세요. 단, 아래 조건은 반드시 지키세요.
-              • H2 소제목을 최소 3개 이상 사용하고, 핵심 내용을 한눈에 파악할 수 있는 문장형 소제목을 만드세요. (예: "무겁고 어두운 톤이 주는 긴장감", "두 배우가 만들어낸 미묘한 감정선")
+            - [본론 소제목 스타일 - 반드시 아래 HTML 형식 사용]:
+              모든 본론 소제목은 아래 2줄 구조 HTML을 그대로 사용하세요. border-bottom 방식은 절대 사용 금지.
+              <div style="background:#1a1a1a; color:#fff; padding:14px 20px; margin:30px 0 10px; border-radius:6px;">
+                <p style="margin:0; font-size:17px; font-weight:bold;">[소제목 - 핵심 내용을 요약한 문장형]</p>
+                <p style="margin:6px 0 0; font-size:13px; color:#aaa;">[소제목을 보조하는 한 줄 부제]</p>
+              </div>
+
+            - [본론 구성 - 소제목 내용은 AI 재량으로 자유롭게]:
+              소제목 주제는 영화의 특성과 감상평에서 가장 강조할 포인트를 자유롭게 설정하세요. 단, 아래 조건은 반드시 지키세요.
+              • 본론 소제목을 최소 3개 이상 사용하세요.
               • 각 소제목 아래에 2~4문장 단락을 구성하세요.
-              • 복잡한 요소를 설명하는 구간에는 불렛 포인트(✔ 또는 •)를 1개 이상 반드시 삽입하세요.
-              • 각 단락 사이에 스틸컷을 고르게 배치하세요."""
+              • 복잡한 요소를 설명하는 구간에는 아래 인용구 박스를 1~2개 삽입하세요.
+                <blockquote style="border-left:4px solid #333; margin:20px 0; padding:10px 20px; background:#f9f9f9; color:#444; font-size:15px;">
+                  [핵심 분석 문장이나 인상적인 표현을 한 문장으로]
+                </blockquote>
+              • 각 소제목 단락 사이에 스틸컷을 고르게 배치하세요.
+
+            - [관전 포인트 섹션 - 본론 마지막에 반드시 삽입]:
+              마지막 본론 스틸컷 이후, 결론 전에 아래 형식의 관전 포인트 박스를 삽입하세요.
+              <div style="background:#f5f5f5; border:1px solid #ddd; border-radius:8px; padding:16px 20px; margin:30px 0;">
+                <p style="margin:0 0 8px; font-size:13px; color:#e53e3e; font-weight:bold;">🔎 관전 포인트</p>
+                <p style="margin:0; font-size:14px; color:#555;">[이 영화를 어떤 마음으로 보면 좋을지, 주목할 점, 추천 대상을 2~3문장으로 솔직하게 작성]</p>
+              </div>"""
             media_guideline = """- 하단에 제공되는 이미지 HTML 코드 목록([메인 포스터], [관람 인증샷], [스틸컷 1~N개]) 전체를 무조건 한 번씩 본문에 1글자도 수정하지 말고 그대로 복사해서 배치해야 합니다.
             - 스틸컷 배치 원칙: [스틸컷 1]은 줄거리 요약 직후, 나머지는 본론 소제목 단락 사이에 고르게 분산하세요.
             - 각 스틸컷 바로 아래에 해당 장면의 분위기나 연출 의도를 설명하는 1~2문장 캡션을 <p style="text-align:center; color:#666; font-size:14px; font-style:italic;"> 태그로 덧붙이세요.
@@ -82,11 +104,14 @@ class PromptBuilder(BasePromptBuilder):
               </div>
             {intro_guideline}
             - [본론]: H2, H3 태그를 활용해 소제목으로 단락을 구분하세요. 내용 흐름에 맞게 아래 제공된 [스틸컷] HTML 코드를 문단 사이사이에 전부 다 빠짐없이 삽입하세요.
-            - [결론]: 전체적인 감상을 갈무리하며 나만의 한줄평과 별점(★ 기호 사용)을 직관적으로 제시하세요. 결론 마지막에는 아래 형식의 '관련 포스팅 유도 박스'를 반드시 삽입하세요.
+            - [결론]: 전체적인 감상을 2~3문장으로 갈무리하세요. 결론 마지막에는 아래 두 가지를 순서대로 반드시 삽입하세요.
+              ① 관련 포스팅 유도 박스:
               <div style="background:#f4f4f4; border-left: 4px solid #333; padding: 15px 20px; margin: 30px 0; border-radius: 0 8px 8px 0;">
                 <p style="margin:0; font-size:13px; color:#888;">📌 함께 읽으면 좋은 글</p>
-                <p style="margin:5px 0 0; font-weight:bold;">[이 영화와 연관된 이전 포스팅 주제 추천 1~2개를 여기에 제안하세요]</p>
+                <p style="margin:5px 0 0; font-weight:bold;">[이 영화와 연관된 이전 포스팅 주제 추천 1~2개 제안]</p>
               </div>
+              ② MK CINELAB CTA 문구:
+              <p style="text-align:center; color:#888; font-size:13px;">🎬 MK CINELAB의 다른 영화 이야기가 궁금하다면?</p>
 
         3. 멀티미디어 및 이미지 가이드 (🚨 절대 준수 사항):
             {media_guideline}
