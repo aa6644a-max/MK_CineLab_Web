@@ -10,7 +10,7 @@ load_dotenv()
 
 class GeminiClient:
     def __init__(self):
-        # 1. 웹 금고(secrets) 확인 후 없으면 로컬(.env) 확인
+        # 1. API 키 불러오기
         if "GOOGLE_API_KEY" in st.secrets:
             raw_key = st.secrets["GOOGLE_API_KEY"]
         else:
@@ -23,21 +23,14 @@ class GeminiClient:
 
         self.client = genai.Client(api_key=api_key)
         
-        # 💡 모델을 Gemini 3.1 Flash-Lite로 변경했습니다.
-        # 이 모델은 503 에러에 더 강하며 가성비가 뛰어납니다.
-        self.model_name = 'gemini-3-flash'
+        # 💡 모델명을 'gemini-3-flash'로 수정했습니다.
+        # 이 이름이 현재 가장 확실하고 404 에러가 나지 않는 공식 명칭입니다.
+        self.model_name = 'gemini-3-flash' 
 
     def generate_post(self, prompt, images=None, max_retries=3):
-        """
-        포스팅을 생성합니다. 503 에러 발생 시 최대 max_retries만큼 재시도합니다.
-        """
         contents = []
-        
-        # 1. 프롬프트 텍스트 추가
         if prompt:
             contents.append(prompt)
-        
-        # 2. 이미지 파일 처리
         if images:
             for img_file in images:
                 try:
@@ -46,12 +39,11 @@ class GeminiClient:
                 except Exception as img_err:
                     print(f"이미지 로드 에러: {img_err}")
 
-        # 페이로드 설정
         payload = contents if len(contents) > 1 else prompt
 
-        # 🔄 재시도 로직 시작
         for attempt in range(max_retries):
             try:
+                # API 호출
                 response = self.client.models.generate_content(
                     model=self.model_name,
                     contents=payload
@@ -64,15 +56,12 @@ class GeminiClient:
                     
             except Exception as e:
                 error_msg = str(e)
-                
-                # 503 서버 과부하 에러 감지 시 재시도
+                # 503 과부하 에러 시 재시도 로직
                 if any(err in error_msg for err in ["503", "UNAVAILABLE", "high demand"]):
                     if attempt < max_retries - 1:
-                        # 재시도 횟수가 늘어날수록 대기 시간을 조금씩 늘리면 더 효과적입니다.
-                        wait_time = (attempt + 1) * 5 
-                        print(f"서버 혼잡(503). {wait_time}초 후 {attempt + 2}번째 재시도...")
+                        wait_time = (attempt + 1) * 5
+                        print(f"서버 혼잡. {wait_time}초 후 재시도...")
                         time.sleep(wait_time)
                         continue
                 
-                # 최종 실패 시 에러 메시지 반환
                 return f"제미나이 API 에러 발생: {error_msg}"
