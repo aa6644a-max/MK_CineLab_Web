@@ -23,9 +23,9 @@ class GeminiClient:
 
         self.client = genai.Client(api_key=api_key)
         
-        # 💡 모델명을 'gemini-3-flash'로 수정했습니다.
-        # 이 이름이 현재 가장 확실하고 404 에러가 나지 않는 공식 명칭입니다.
-        self.model_name = 'gemini-3-flash' 
+        # 💡 모델명을 3.1 Flash-Lite로 변경했습니다.
+        # 503 에러에 강하고 비용이 매우 저렴한 모델입니다.
+        self.model_name = 'gemini-3.1-flash-lite' 
 
     def generate_post(self, prompt, images=None, max_retries=3):
         contents = []
@@ -56,11 +56,12 @@ class GeminiClient:
                     
             except Exception as e:
                 error_msg = str(e)
-                # 503 과부하 에러 시 재시도 로직
+                # 503 과부하 에러(UNAVAILABLE) 감지 시 점진적 재시도
                 if any(err in error_msg for err in ["503", "UNAVAILABLE", "high demand"]):
                     if attempt < max_retries - 1:
+                        # 재시도 횟수에 따라 대기 시간을 5초, 10초로 늘립니다.
                         wait_time = (attempt + 1) * 5
-                        print(f"서버 혼잡. {wait_time}초 후 재시도...")
+                        print(f"서버 혼잡. {wait_time}초 후 {attempt + 2}번째 재시도...")
                         time.sleep(wait_time)
                         continue
                 
