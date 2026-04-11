@@ -10,12 +10,17 @@ from naver_client import NaverClient
 
 
 def show_isolated_html(html_str, height=1000, scrolling=True):
-    """AI 마크다운 제거 후 base64 iframe으로 렌더링"""
+    """srcdoc iframe 방식으로 HTML 렌더링.
+    - data:URI 방식은 Streamlit Cloud CSP에 막혀 빈 화면 발생
+    - components.html 은 2026-06 이후 제거 예정
+    - srcdoc 방식은 브라우저 표준이라 Streamlit 버전 무관하게 영구 작동
+    """
+    import html as html_lib
     clean_html = html_str.replace("```html\n", "").replace("```html", "").replace("```", "")
-    overflow_style = "auto" if scrolling else "hidden"
-    b64 = base64.b64encode(clean_html.encode('utf-8')).decode('utf-8')
-    iframe_html = f'<iframe src="data:text/html;charset=utf-8;base64,{b64}" width="100%" height="{height}" style="border:none; overflow:{overflow_style};"></iframe>'
-    st.markdown(iframe_html, unsafe_allow_html=True)
+    escaped = html_lib.escape(clean_html, quote=True)
+    scroll_css = "overflow:auto;" if scrolling else "overflow:hidden;"
+    iframe = f'<iframe srcdoc="{escaped}" width="100%" height="{height}" style="border:none;{scroll_css}"></iframe>'
+    st.markdown(iframe, unsafe_allow_html=True)
 
 
 def sanitize_img_src(html_str, photos, placeholder_prefix="PHOTO"):
