@@ -1,6 +1,6 @@
 import os
 import re
-import time  # 💡 대기 시간을 위해 time 모듈 추가
+import time
 from google import genai 
 import streamlit as st
 from dotenv import load_dotenv
@@ -22,27 +22,34 @@ class GeminiClient:
              raise ValueError("GOOGLE_API_KEY가 없습니다. 설정을 확인하세요.")
 
         self.client = genai.Client(api_key=api_key)
-        # gemini-2.5-flash는 멀티모달(텍스트+이미지) 분석을 완벽하게 지원합니다.
-        self.model_name = 'gemini-2.5-flash' 
+        
+        # 💡 모델을 Gemini 3.1 Flash-Lite로 변경했습니다.
+        # 이 모델은 503 에러에 더 강하며 가성비가 뛰어납니다.
+        self.model_name = 'gemini-3.1-flash-lite' 
 
-    # 💡 max_retries=3 파라미터를 추가하여 최대 3번까지 재시도하도록 설정
     def generate_post(self, prompt, images=None, max_retries=3):
+        """
+        포스팅을 생성합니다. 503 에러 발생 시 최대 max_retries만큼 재시도합니다.
+        """
         contents = []
         
         # 1. 프롬프트 텍스트 추가
         if prompt:
             contents.append(prompt)
         
-        # 2. 이미지 파일들이 있다면 PIL Image 객체로 변환하여 리스트에 추가
+        # 2. 이미지 파일 처리
         if images:
             for img_file in images:
-                img = Image.open(img_file)
-                contents.append(img)
+                try:
+                    img = Image.open(img_file)
+                    contents.append(img)
+                except Exception as img_err:
+                    print(f"이미지 로드 에러: {img_err}")
 
-        # 리스트에 텍스트만 있으면 텍스트만, 이미지가 섞여있으면 통째로 전송
+        # 페이로드 설정
         payload = contents if len(contents) > 1 else prompt
 
-        # 💡 에러 발생 시 자동으로 다시 시도하는 반복문 추가
+        # 🔄 재시도 로직 시작
         for attempt in range(max_retries):
             try:
                 response = self.client.models.generate_content(
@@ -58,12 +65,14 @@ class GeminiClient:
             except Exception as e:
                 error_msg = str(e)
                 
-                # 에러 메시지에 503이나 UNAVAILABLE이 포함되어 있으면 (서버 과부하)
-                if "503" in error_msg or "UNAVAILABLE" in error_msg or "high demand" in error_msg.lower():
-                    if attempt < max_retries - 1: # 마지막 시도가 아니라면 대기 후 재시도
-                        print(f"서버 과부하 발생(503). 5초 후 {attempt + 2}번째 재시도를 합니다...")
-                        time.sleep(5)  # 5초 동안 대기
-                        continue # 반복문의 처음으로 돌아가서 다시 요청
+                # 503 서버 과부하 에러 감지 시 재시도
+                if any(err in error_msg for err in ["503", "UNAVAILABLE", "high demand"]):
+                    if attempt < max_retries - 1:
+                        # 재시도 횟수가 늘어날수록 대기 시간을 조금씩 늘리면 더 효과적입니다.
+                        wait_time = (attempt + 1) * 5 
+                        print(f"서버 혼잡(503). {wait_time}초 후 {attempt + 2}번째 재시도...")
+                        time.sleep(wait_time)
+                        continue
                 
-                # 503 에러가 아니거나, 3번 다 실패했다면 에러 메시지 반환
+                # 최종 실패 시 에러 메시지 반환
                 return f"제미나이 API 에러 발생: {error_msg}"
