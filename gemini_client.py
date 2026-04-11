@@ -25,7 +25,7 @@ class GeminiClient:
         
         # 💡 모델을 Gemini 3.1 Flash-Lite로 변경했습니다.
         # 이 모델은 503 에러에 더 강하며 가성비가 뛰어납니다.
-        self.model_name = 'gemini-3.1-flash-lite' 
+        self.model_name = 'gemini-3-flash'
 
     def generate_post(self, prompt, images=None, max_retries=3):
         """
