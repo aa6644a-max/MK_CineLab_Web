@@ -13,17 +13,30 @@ from naver_client import NaverClient
 # HTML 렌더링 헬퍼
 # ─────────────────────────────────────────────
 def show_isolated_html(html_str, height=1000, scrolling=True):
-    """srcdoc iframe 방식 — 브라우저 표준, Streamlit 버전 무관하게 영구 작동.
+    """base64 인코딩 방식으로 HTML 렌더링.
 
-    ⚠️ html.escape() 사용 금지:
-    srcdoc 속성에서는 큰따옴표만 &quot; 치환하면 되고,
-    < > 까지 이스케이프하면 HTML 태그가 텍스트로 그대로 출력됨.
+    srcdoc 방식은 HTML 내부의 따옴표(")를 전부 &quot;로 이스케이프해야 하는데,
+    style 속성 안 따옴표까지 치환되면서 &quot; 텍스트가 그대로 화면에 출력되는 문제가 있음.
+    base64 인코딩은 따옴표 이스케이프 문제가 근본적으로 발생하지 않음.
+    Streamlit Cloud CSP 차단 문제는 HTML 안에 CSP meta 태그를 주입해 우회.
     """
     clean_html = html_str.replace("```html\n", "").replace("```html", "").replace("```", "")
-    # & 먼저 치환 후 " 만 치환 — HTML 태그(<, >)는 건드리지 않음
-    srcdoc_safe = clean_html.replace("&", "&amp;").replace('"', "&quot;")
+    # 완전한 HTML 문서가 아닌 조각인 경우 document 구조로 감싸기
+    if "<html" not in clean_html.lower():
+        clean_html = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
+<style>body{{margin:0;padding:0;}}</style>
+</head>
+<body>
+{clean_html}
+</body>
+</html>"""
+    b64 = base64.b64encode(clean_html.encode("utf-8")).decode("utf-8")
     scroll_css = "overflow:auto;" if scrolling else "overflow:hidden;"
-    iframe = f'<iframe srcdoc="{srcdoc_safe}" width="100%" height="{height}" style="border:none;{scroll_css}"></iframe>'
+    iframe = f'<iframe src="data:text/html;charset=utf-8;base64,{b64}" width="100%" height="{height}" style="border:none;{scroll_css}"></iframe>'
     st.markdown(iframe, unsafe_allow_html=True)
 
 
