@@ -13,12 +13,17 @@ from naver_client import NaverClient
 # HTML 렌더링 헬퍼
 # ─────────────────────────────────────────────
 def show_isolated_html(html_str, height=1000, scrolling=True):
-    """srcdoc iframe 방식 — 브라우저 표준, Streamlit 버전 무관하게 영구 작동"""
-    import html as html_lib
+    """srcdoc iframe 방식 — 브라우저 표준, Streamlit 버전 무관하게 영구 작동.
+
+    ⚠️ html.escape() 사용 금지:
+    srcdoc 속성에서는 큰따옴표만 &quot; 치환하면 되고,
+    < > 까지 이스케이프하면 HTML 태그가 텍스트로 그대로 출력됨.
+    """
     clean_html = html_str.replace("```html\n", "").replace("```html", "").replace("```", "")
-    escaped = html_lib.escape(clean_html, quote=True)
+    # & 먼저 치환 후 " 만 치환 — HTML 태그(<, >)는 건드리지 않음
+    srcdoc_safe = clean_html.replace("&", "&amp;").replace('"', "&quot;")
     scroll_css = "overflow:auto;" if scrolling else "overflow:hidden;"
-    iframe = f'<iframe srcdoc="{escaped}" width="100%" height="{height}" style="border:none;{scroll_css}"></iframe>'
+    iframe = f'<iframe srcdoc="{srcdoc_safe}" width="100%" height="{height}" style="border:none;{scroll_css}"></iframe>'
     st.markdown(iframe, unsafe_allow_html=True)
 
 
