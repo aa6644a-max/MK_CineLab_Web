@@ -171,19 +171,33 @@ class PromptBuilder(BasePromptBuilder):
             
         backdrop_urls = details.get('backdrop_urls', [])
         stills_html_list = []
-        for i, url in enumerate(backdrop_urls):
+
+        # ✅ 스틸컷 최대 5개 하드캡
+        # 이유: 소제목은 최소 3개 + 줄거리 1개 = 4개 배치 슬롯이 기본.
+        # 5개를 초과하면 배치할 소제목이 없어 AI가 후반부에 몰아붙이는 현상이 반복적으로 발생함.
+        # TMDB backdrop이 10개 이상 넘어와도 5개까지만 사용하도록 강제.
+        MAX_STILLS = 5
+        capped_urls = backdrop_urls[:MAX_STILLS]
+
+        for i, url in enumerate(capped_urls):
             stills_html_list.append(self._build_image_html(url, f"{title} 공식 스틸컷 {i+1}"))
 
-        target_count = max(5, len(backdrop_urls))
-        for i in range(len(stills_html_list), target_count):
+        # 실제 URL이 5개 미만이면 플레이스홀더로 채움
+        for i in range(len(stills_html_list), MAX_STILLS):
             stills_html_list.append(self._build_placeholder_html(f"{title} 주요 장면 {i+1} (관련 텍스트 삽입)"))
 
         stills_prompt_parts = []
         for i, html in enumerate(stills_html_list):
             if i == 0:
                 placement_hint = "(배치 위치: 줄거리 요약 직후)"
+            elif i == 1:
+                placement_hint = "(배치 위치: 본론 첫 번째 소제목 단락 아래)"
+            elif i == 2:
+                placement_hint = "(배치 위치: 본론 두 번째 소제목 단락 아래)"
+            elif i == 3:
+                placement_hint = "(배치 위치: 본론 세 번째 소제목 단락 아래)"
             else:
-                placement_hint = f"(배치 위치: 본론 소제목 {i}번 단락 아래)"
+                placement_hint = "(배치 위치: 본론 마지막 소제목 단락 아래 또는 관전 포인트 박스 직전)"
             stills_prompt_parts.append(f"        - [스틸컷 {i+1}] {placement_hint}: {html}")
         
         stills_prompt_text = "\n".join(stills_prompt_parts)
