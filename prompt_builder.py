@@ -10,7 +10,8 @@ class PromptBuilder(BasePromptBuilder):
     def _get_base_guideline(self, post_type="review"):
         time_context = f"현재 시점은 {self.current_year}년 {self.current_month}월({self.season})입니다."
         
-        # 💡 디자인 가이드와 공통 제약사항 호출 (영화 블로그 컬러: 다크 차콜)
+        # ✅ [수정1] brand_color="#1a1a1a"로 BasePromptBuilder의 디자인 시스템 올바르게 호출
+        # BasePromptBuilder._get_design_system()이 정의한 1x1 표(table) 타이틀 박스 방식이 적용됨
         design_system = self._get_design_system(brand_color="#1a1a1a")
         common_constraints = self._get_common_constraints()
 
@@ -24,6 +25,10 @@ class PromptBuilder(BasePromptBuilder):
             - 💡 [융통성 발휘]: 개봉 전 프리뷰이므로, 부가적인 정보 사진이 들어가면 좋은 위치에는 언제든지 `<p style="text-align: center; color: #888; font-size: 14px; background: #eee; padding: 10px;">{{사진: 필요한 실제 사진/상황에 대한 구체적 설명}}</p>` 코드를 사용하세요."""
         
         elif post_type == "review":
+            # ✅ [수정2] 소제목 스타일을 BasePromptBuilder._get_design_system()의 
+            # "1x1 표(table) 타이틀 박스" 방식과 일치하도록 수정.
+            # 기존의 <div style="background:#1a1a1a..."> 방식을 제거하고
+            # BasePromptBuilder가 정의한 table 구조로 통일합니다.
             intro_guideline = f"""- [서론 - 도입부 공식 절대 준수]:
               1. "최근 영화 <[영화 제목]>을(를) 관람했습니다." 혹은 이와 유사하게 흥미를 유발하며 시작하세요.
               2. 하단에 제공되는 [포스팅 계기/관람 이유]를 녹여내어 영화를 보게 된 동기나 강렬한 첫인상을 밝히세요.
@@ -33,30 +38,28 @@ class PromptBuilder(BasePromptBuilder):
               5. 구분선 바로 아래에 [관람 인증샷] 코드를 삽입하세요.
 
             - [줄거리 요약 섹션 - 구분선+인증샷 직후 반드시 작성]:
-              아래 HTML 소제목 스타일을 그대로 복사하여 줄거리 섹션을 여세요. (border-bottom 방식 사용 금지)
-              <div style="background:#1a1a1a; color:#fff; padding:14px 20px; margin:30px 0 10px; border-radius:6px;">
-                <p style="margin:0; font-size:17px; font-weight:bold;">■ 어떤 이야기인가요?</p>
-              </div>
+              아래 HTML 소제목 스타일을 그대로 복사하여 줄거리 섹션을 여세요.
+              (🚨 H2, H3 태그 및 border-bottom 방식 사용 절대 금지 — 반드시 아래 table 구조만 사용)
+              <table width="100%" border="0" cellpadding="15" bgcolor="#1a1a1a"><tr><td><b style="color:#ffffff; font-size:18px;">■ 어떤 이야기인가요?</b></td></tr></table>
               - 제공된 [줄거리] 데이터를 바탕으로 결말·반전을 드러내지 않는 선에서 3~4문장으로 압축 정리합니다.
               - 영화의 배경, 주인공 상황, 핵심 갈등 구조만 간결하게 소개하세요.
               - 줄거리 요약 직후에 [스틸컷 1] 코드를 삽입하세요.
 
-            - [본론 소제목 스타일 - 반드시 아래 HTML 형식 사용]:
-              모든 본론 소제목은 아래 2줄 구조 HTML을 그대로 사용하세요. border-bottom 방식은 절대 사용 금지.
-              <div style="background:#1a1a1a; color:#fff; padding:14px 20px; margin:30px 0 10px; border-radius:6px;">
-                <p style="margin:0; font-size:17px; font-weight:bold;">[소제목 - 핵심 내용을 요약한 문장형]</p>
-                <p style="margin:6px 0 0; font-size:13px; color:#aaa;">[소제목을 보조하는 한 줄 부제]</p>
-              </div>
+            - [본론 소제목 스타일 - 🚨 반드시 아래 table 형식만 사용]:
+              모든 본론 소제목은 위 디자인 시스템(1번 항목)에서 정의한 table 구조를 그대로 사용하세요.
+              H2, H3 태그 및 border-bottom 방식은 절대 사용 금지.
+              <table width="100%" border="0" cellpadding="15" bgcolor="#1a1a1a"><tr><td><b style="color:#ffffff; font-size:18px;">[소제목 내용]</b></td></tr></table>
 
             - [본론 구성 - 소제목 내용은 AI 재량으로 자유롭게]:
               소제목 주제는 영화의 특성과 감상평에서 가장 강조할 포인트를 자유롭게 설정하세요. 단, 아래 조건은 반드시 지키세요.
               • 본론 소제목을 최소 3개 이상 사용하세요.
-              • 각 소제목 아래에 2~4문장 단락을 구성하세요.
+              • 각 소제목 아래에 3~5문장 단락을 구성하세요. (글자수 목표 달성을 위해 충분히 풍부하게 서술)
               • 복잡한 요소를 설명하는 구간에는 아래 인용구 박스를 1~2개 삽입하세요.
                 <blockquote style="border-left:4px solid #333; margin:20px 0; padding:10px 20px; background:#f9f9f9; color:#444; font-size:15px;">
                   [핵심 분석 문장이나 인상적인 표현을 한 문장으로]
                 </blockquote>
-              • 각 소제목 단락 사이에 스틸컷을 고르게 배치하세요.
+              • 🚨 [스틸컷 분산 배치 필수]: 스틸컷은 반드시 각 소제목 단락 사이에 1장씩 고르게 분산하세요.
+                절대로 후반부에 연달아 몰아 배치하지 마세요. 스틸컷 2장 이상이 연속으로 붙어 있으면 안 됩니다.
 
             - [관전 포인트 섹션 - 본론 마지막에 반드시 삽입]:
               마지막 본론 스틸컷 이후, 결론 전에 아래 형식의 관전 포인트 박스를 삽입하세요.
@@ -64,10 +67,18 @@ class PromptBuilder(BasePromptBuilder):
                 <p style="margin:0 0 8px; font-size:13px; color:#e53e3e; font-weight:bold;">🔎 관전 포인트</p>
                 <p style="margin:0; font-size:14px; color:#555;">[이 영화를 어떤 마음으로 보면 좋을지, 주목할 점, 추천 대상을 2~3문장으로 솔직하게 작성]</p>
               </div>"""
+
+            # ✅ [수정3] 이미지 분산 배치 강제 지침 강화
+            # 기존: "고르게 분산하세요" (권고) → 변경: 구체적인 배치 순서와 금지 조항 명시
             media_guideline = """- 하단에 제공되는 이미지 HTML 코드 목록([메인 포스터], [관람 인증샷], [스틸컷 1~N개]) 전체를 무조건 한 번씩 본문에 1글자도 수정하지 말고 그대로 복사해서 배치해야 합니다.
-            - 스틸컷 배치 원칙: [스틸컷 1]은 줄거리 요약 직후, 나머지는 본론 소제목 단락 사이에 고르게 분산하세요.
+            - 🚨 [스틸컷 배치 순서 — 절대 준수]:
+              • [스틸컷 1]은 줄거리 요약 섹션 직후에 배치하세요.
+              • [스틸컷 2]부터는 반드시 각 본론 소제목 단락 아래에 1장씩 배치하세요.
+              • 남은 스틸컷이 소제목 수보다 많을 경우, 긴 단락 중간에 1장씩 분산하세요.
+              • 🚫 절대 금지: 스틸컷 2장 이상을 텍스트 없이 연속으로 배치하는 것은 엄격히 금지합니다.
+              • 🚫 절대 금지: 글 후반부(결론 앞)에 스틸컷을 몰아서 배치하는 것은 엄격히 금지합니다.
             - 각 스틸컷 바로 아래에 해당 장면의 분위기나 연출 의도를 설명하는 1~2문장 캡션을 <p style="text-align:center; color:#666; font-size:14px; font-style:italic;"> 태그로 덧붙이세요.
-            - 제미나이 임의로 이미지 태그를 줄이거나 생략하지 마세요."""
+            - AI 임의로 이미지 태그를 줄이거나 생략하지 마세요."""
         
         elif post_type == "news":
             intro_guideline = f"""- [서론 - 도입부 공식 절대 준수]:
@@ -103,7 +114,6 @@ class PromptBuilder(BasePromptBuilder):
                 <p style="margin: 0;">🍪 <b>쿠키영상</b> : [있음 n개/없음/정보 없음]</p>
               </div>
             {intro_guideline}
-            - [본론]: H2, H3 태그를 활용해 소제목으로 단락을 구분하세요. 내용 흐름에 맞게 아래 제공된 [스틸컷] HTML 코드를 문단 사이사이에 전부 다 빠짐없이 삽입하세요.
             - [결론]: 전체적인 감상을 2~3문장으로 갈무리하세요. 결론 마지막에는 아래 두 가지를 순서대로 반드시 삽입하세요.
               ① 관련 포스팅 유도 박스:
               <div style="background:#f4f4f4; border-left: 4px solid #333; padding: 15px 20px; margin: 30px 0; border-radius: 0 8px 8px 0;">
@@ -142,12 +152,25 @@ class PromptBuilder(BasePromptBuilder):
         stills_html_list = []
         for i, url in enumerate(backdrop_urls):
             stills_html_list.append(self._build_image_html(url, f"{title} 공식 스틸컷 {i+1}"))
-            
-        target_count = max(6, len(backdrop_urls))
+
+        # ✅ [수정4] 스틸컷 최소 수량 조정: max(6, ...) → max(5, ...)
+        # 기존 6개 강제 생성이 후반부 몰아붙이기의 원인이었으므로 5개로 줄이고,
+        # 실제 URL이 있는 경우엔 그 수를 우선 따르도록 합니다.
+        target_count = max(5, len(backdrop_urls))
         for i in range(len(stills_html_list), target_count):
             stills_html_list.append(self._build_placeholder_html(f"{title} 주요 장면 {i+1} (관련 텍스트 삽입)"))
 
-        stills_prompt_text = "\n".join([f"        - [스틸컷 {i+1}]: {html}" for i, html in enumerate(stills_html_list)])
+        # ✅ [수정5] 스틸컷 배치 힌트를 프롬프트 텍스트에 직접 명시
+        # 각 스틸컷 항목에 권장 배치 위치를 주석으로 추가하여 AI가 순서대로 분산 배치하도록 유도
+        stills_prompt_parts = []
+        for i, html in enumerate(stills_html_list):
+            if i == 0:
+                placement_hint = "(배치 위치: 줄거리 요약 직후)"
+            else:
+                placement_hint = f"(배치 위치: 본론 소제목 {i}번 단락 아래)"
+            stills_prompt_parts.append(f"        - [스틸컷 {i+1}] {placement_hint}: {html}")
+        
+        stills_prompt_text = "\n".join(stills_prompt_parts)
         
         if is_preview:
             return poster_html, stills_prompt_text, ""
