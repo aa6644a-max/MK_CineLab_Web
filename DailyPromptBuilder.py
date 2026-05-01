@@ -77,7 +77,10 @@ class DailyPromptBuilder(BasePromptBuilder):
         
         {base}
 
-        출력 형식: ```html, ``` 등 마크다운 코드블록 기호를 절대 포함하지 마세요. 오직 순수 HTML 본문 코드만 출력하세요. 맨 마지막 줄에 HTML 주석() 형식으로 매력적인 제목 5개를 제안하세요.
+        출력 형식: ```html, ``` 등 마크다운 코드블록 기호를 절대 포함하지 마세요. 오직 순수 HTML 본문 코드만 출력하세요.
+        맨 마지막 줄에 아래 형식으로 네이버 SEO 최적화 제목 5개를 반드시 제안하세요:
+        <!-- TITLES: 제목1||제목2||제목3||제목4||제목5 -->
+        (제목 조건: 검색 노출에 유리한 핵심 키워드를 앞에 배치, 30자 이내, 클릭을 유도하는 감성적 표현 포함)
         """
 
     def build_photo_post_prompt(self, category, vibe, place_info_text, photo_contexts_text, reference_posts=""):
@@ -116,8 +119,10 @@ class DailyPromptBuilder(BasePromptBuilder):
         
         {ref_prompt}
 
-        출력 형식: 설명이나 인사말 없이 오직 완성된 HTML 본문 코드만 출력하세요. (```html 마크다운 기호 제외). 
-        맨 마지막 줄에 HTML 주석() 형식으로 매력적인 제목 5개를 제안하세요.
+        출력 형식: 설명이나 인사말 없이 오직 완성된 HTML 본문 코드만 출력하세요. (```html 마크다운 기호 제외).
+        맨 마지막 줄에 아래 형식으로 네이버 SEO 최적화 제목 5개를 반드시 제안하세요:
+        <!-- TITLES: 제목1||제목2||제목3||제목4||제목5 -->
+        (제목 조건: 검색 노출에 유리한 핵심 키워드를 앞에 배치, 30자 이내, 클릭을 유도하는 감성적 표현 포함)
         """
     
     def build_meeting_review_prompt(self, meeting_name, date, participants, activities, mood, place_info_text, photo_contexts_text, reference_posts=""):
@@ -159,6 +164,8 @@ class DailyPromptBuilder(BasePromptBuilder):
         
         {ref_prompt}
 
-        출력 형식: 설명이나 인사말 없이 오직 완성된 HTML 본문 코드만 출력하세요. (```html 마크다운 기호 제외). 
-        맨 마지막 줄에 HTML 주석() 형식으로 매력적인 제목 5개를 제안하세요.
+        출력 형식: 설명이나 인사말 없이 오직 완성된 HTML 본문 코드만 출력하세요. (```html 마크다운 기호 제외).
+        맨 마지막 줄에 아래 형식으로 네이버 SEO 최적화 제목 5개를 반드시 제안하세요:
+        <!-- TITLES: 제목1||제목2||제목3||제목4||제목5 -->
+        (제목 조건: 검색 노출에 유리한 핵심 키워드를 앞에 배치, 30자 이내, 클릭을 유도하는 감성적 표현 포함)
         """

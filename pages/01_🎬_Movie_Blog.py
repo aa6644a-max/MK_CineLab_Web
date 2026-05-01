@@ -1,5 +1,6 @@
 import streamlit as st
 import base64
+import re
 #import streamlit.components.v1 as components
 from tmdb_client import TMDBClient
 from claude_client import ClaudeClient
@@ -37,7 +38,14 @@ if "rev_data" not in st.session_state: st.session_state.rev_data = None
 if "pre_data" not in st.session_state: st.session_state.pre_data = None
 if "news_data" not in st.session_state: st.session_state.news_data = None
 if "converted_html" not in st.session_state: st.session_state.converted_html = None
+if "converted_titles" not in st.session_state: st.session_state.converted_titles = []
 if "cur_data" not in st.session_state: st.session_state.cur_data = None 
+
+def parse_titles_from_html(html_text):
+    match = re.search(r'<!--\s*TITLES:\s*(.+?)\s*-->', html_text, re.DOTALL)
+    if not match:
+        return []
+    return [t.strip() for t in match.group(1).split('||') if t.strip()]
 
 def get_recent_references(post_type_filter, limit=2):
     try:
@@ -81,13 +89,20 @@ with tab1:
                     # 💡 2. builder에 reason_input 전달
                     prompt = builder.build_review_prompt(details, comment, reason=reason_input, latest_news=latest_news, reference_posts=reference_posts)
                     result = gemini.generate_post(prompt)
+                    titles = parse_titles_from_html(result)
                     final_html = formatter.wrap_in_table(f"{details['title']} 리뷰", result)
-                    st.session_state.rev_data = {"title": details['title'], "html": final_html}
+                    st.session_state.rev_data = {"title": details['title'], "html": final_html, "titles": titles}
                 else: st.error(f"'{title}' 영회를 찾을 수 없습니다.")
         else: st.warning("영화 제목을 입력해 주세요.")
 
     if st.session_state.rev_data:
         st.success(f"'{st.session_state.rev_data['title']}' 리뷰 생성 완료!")
+        titles = st.session_state.rev_data.get("titles", [])
+        if titles:
+            with st.container(border=True):
+                st.markdown("##### 📌 네이버 SEO 최적화 제목 추천")
+                selected = st.selectbox("원하는 제목을 선택하세요", titles, key="rev_title_select")
+                st.code(selected, language=None)
         if st.button("💾 이 리뷰를 내 취향 DB에 저장하기", key="save_rev_btn"):
             if db.save_post(st.session_state.rev_data['title'], "리뷰", st.session_state.rev_data['html']):
                 st.toast("✅ DB에 저장되었습니다!", icon="🎉")
@@ -120,13 +135,20 @@ with tab2:
                     # 💡 4. builder에 reason=pre_reason_input 전달
                     prompt = builder.build_preview_prompt(details, point, reason=pre_reason_input, latest_news=latest_news, reference_posts=reference_posts)
                     result = gemini.generate_post(prompt)
+                    titles = parse_titles_from_html(result)
                     final_html = formatter.wrap_in_table(f"{details['title']} 프리뷰", result)
-                    st.session_state.pre_data = {"title": details['title'], "html": final_html}
+                    st.session_state.pre_data = {"title": details['title'], "html": final_html, "titles": titles}
                 else: st.error("해당하는 영화 정보가 없습니다.")
         else: st.warning("영화 제목을 입력해 주세요.")
 
     if st.session_state.pre_data:
         st.success("프리뷰 생성 완료!")
+        titles = st.session_state.pre_data.get("titles", [])
+        if titles:
+            with st.container(border=True):
+                st.markdown("##### 📌 네이버 SEO 최적화 제목 추천")
+                selected = st.selectbox("원하는 제목을 선택하세요", titles, key="pre_title_select")
+                st.code(selected, language=None)
         if st.button("💾 이 프리뷰를 내 취향 DB에 저장하기", key="save_pre_btn"):
             if db.save_post(st.session_state.pre_data['title'], "프리뷰", st.session_state.pre_data['html']):
                 st.toast("✅ DB에 저장되었습니다!", icon="🎉")
@@ -147,12 +169,19 @@ with tab3:
                     reference_posts = db_refs + "\n\n---\n[RSS 최신글]\n---\n\n" + reference_posts
                 prompt = builder.build_news_prompt(news_content, reference_posts)
                 result = gemini.generate_post(prompt)
+                titles = parse_titles_from_html(result)
                 final_html = formatter.wrap_in_table("최신 영화 뉴스", result)
-                st.session_state.news_data = {"title": "영화 뉴스", "html": final_html}
+                st.session_state.news_data = {"title": "영화 뉴스", "html": final_html, "titles": titles}
         else: st.warning("뉴스 원문을 입력해 주세요.")
 
     if st.session_state.news_data:
         st.success("뉴스 포스팅 생성 완료!")
+        titles = st.session_state.news_data.get("titles", [])
+        if titles:
+            with st.container(border=True):
+                st.markdown("##### 📌 네이버 SEO 최적화 제목 추천")
+                selected = st.selectbox("원하는 제목을 선택하세요", titles, key="news_title_select")
+                st.code(selected, language=None)
         if st.button("💾 이 뉴스를 내 취향 DB에 저장하기", key="save_news_btn"):
             if db.save_post(st.session_state.news_data['title'], "뉴스", st.session_state.news_data['html']):
                 st.toast("✅ DB에 저장되었습니다!", icon="🎉")
@@ -209,9 +238,10 @@ with tab4:
 
                     prompt = builder.build_curation_prompt(cur_theme, movies_data_text, reference_posts)
                     result = gemini.generate_post(prompt)
+                    titles = parse_titles_from_html(result)
                     final_html = formatter.wrap_in_table(cur_theme, result)
-                    
-                    st.session_state.cur_data = {"title": cur_theme, "html": final_html}
+
+                    st.session_state.cur_data = {"title": cur_theme, "html": final_html, "titles": titles}
                 else:
                     st.error("유효한 영화 정보를 하나도 수집하지 못했습니다. 제목을 정확히 확인해 주세요.")
         else:
@@ -219,6 +249,12 @@ with tab4:
             
     if st.session_state.cur_data:
         st.success("큐레이션 리스트 포스팅 생성 완료!")
+        titles = st.session_state.cur_data.get("titles", [])
+        if titles:
+            with st.container(border=True):
+                st.markdown("##### 📌 네이버 SEO 최적화 제목 추천")
+                selected = st.selectbox("원하는 제목을 선택하세요", titles, key="cur_title_select")
+                st.code(selected, language=None)
         if st.button("💾 이 리스트를 내 취향 DB에 저장하기", key="save_cur_btn"):
             if db.save_post(st.session_state.cur_data['title'], "리스트", st.session_state.cur_data['html']):
                 st.toast("✅ DB에 저장되었습니다!", icon="🎉")
@@ -253,12 +289,20 @@ with tab5:
             if manual_content:
                 with st.spinner("원문 내용을 훼손하지 않고 예쁜 HTML 태그를 입히는 중..."):
                     prompt = builder.build_html_conversion_prompt(manual_content)
-                    st.session_state.converted_html = gemini.generate_post(prompt)
+                    result = gemini.generate_post(prompt)
+                    st.session_state.converted_titles = parse_titles_from_html(result)
+                    st.session_state.converted_html = result
             else: st.warning("변환할 본문을 입력해 주세요.")
                 
     if st.session_state.converted_html:
         st.markdown("---")
         st.subheader("🛠️ 변환된 HTML 코드 결과")
+        titles = st.session_state.get("converted_titles", [])
+        if titles:
+            with st.container(border=True):
+                st.markdown("##### 📌 네이버 SEO 최적화 제목 추천")
+                selected = st.selectbox("원하는 제목을 선택하세요", titles, key="conv_title_select")
+                st.code(selected, language=None)
         sub_t1, sub_t2 = st.tabs(["📄 변환된 HTML 코드", "👁️ 미리보기"])
         with sub_t1: st.code(st.session_state.converted_html, language='html')
         with sub_t2: show_isolated_html(st.session_state.converted_html)

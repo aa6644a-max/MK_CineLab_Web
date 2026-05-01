@@ -12,6 +12,13 @@ from naver_client import NaverClient
 # ─────────────────────────────────────────────
 # HTML 렌더링 헬퍼
 # ─────────────────────────────────────────────
+def parse_titles_from_html(html_text):
+    import re
+    match = re.search(r'<!--\s*TITLES:\s*(.+?)\s*-->', html_text, re.DOTALL)
+    if not match:
+        return []
+    return [t.strip() for t in match.group(1).split('||') if t.strip()]
+
 def show_isolated_html(html_str, height=1000, scrolling=True):
     """base64 인코딩 방식으로 HTML 렌더링.
 
@@ -124,6 +131,9 @@ for key in [
 ]:
     if key not in st.session_state:
         st.session_state[key] = None
+for key in ["daily_titles", "photo_titles", "meeting_titles"]:
+    if key not in st.session_state:
+        st.session_state[key] = []
 
 
 # ==========================================
@@ -171,6 +181,7 @@ with tab1:
                         combined_text, f"[{post_category} / {writing_vibe} 분위기] {user_context}", reference_posts
                     )
                     result = gemini.generate_post(prompt)
+                    st.session_state.daily_titles = parse_titles_from_html(result)
                     st.session_state.daily_html = formatter.wrap_in_table(f"{post_category} 기록", result)
                     st.success("노트북LM 스타일의 맞춤형 포스팅 생성이 완료되었습니다!")
         else:
@@ -178,6 +189,11 @@ with tab1:
 
     if st.session_state.daily_html:
         st.markdown("---")
+        if st.session_state.daily_titles:
+            with st.container(border=True):
+                st.markdown("##### 📌 네이버 SEO 최적화 제목 추천")
+                selected = st.selectbox("원하는 제목을 선택하세요", st.session_state.daily_titles, key="daily_title_select")
+                st.code(selected, language=None)
         res_tab1, res_tab2 = st.tabs(["👁️ 블로그 미리보기", "📄 HTML 코드"])
         with res_tab1:
             st.info("외부 정보 없이 민규님이 주신 자료로만 구성된 미리보기입니다.")
@@ -295,6 +311,7 @@ with tab2:
                     reference_posts=reference_posts
                 )
                 result = gemini.generate_post(prompt, images=uploaded_photos)
+                st.session_state.photo_titles = parse_titles_from_html(result)
 
                 # ✅ 미리보기용: 이미지 base64 심지 않고 원본 HTML 그대로 저장
                 st.session_state.photo_result_html = formatter.wrap_in_table(f"{photo_category} 기록", result)
@@ -308,6 +325,11 @@ with tab2:
 
     if st.session_state.get("photo_result_html"):
         st.markdown("---")
+        if st.session_state.photo_titles:
+            with st.container(border=True):
+                st.markdown("##### 📌 네이버 SEO 최적화 제목 추천")
+                selected = st.selectbox("원하는 제목을 선택하세요", st.session_state.photo_titles, key="photo_title_select")
+                st.code(selected, language=None)
         res_tab1, res_tab2, res_tab3 = st.tabs(["👁️ 완벽 미리보기", "📋 블로그 복사용 화면", "📄 HTML 원본 코드"])
         with res_tab1:
             st.info("✨ 실제 사진들이 적용된 완벽한 미리보기입니다.")
@@ -445,6 +467,7 @@ with tab3:
                     result = gemini.generate_post(prompt, images=uploaded_photos_m)
                 else:
                     result = gemini.generate_post(prompt)
+                st.session_state.meeting_titles = parse_titles_from_html(result)
 
                 # ✅ 미리보기용: 이미지 base64 심지 않고 원본 HTML 그대로 저장
                 st.session_state.meeting_result_html = formatter.wrap_in_table("🤝 모임 기록", result)
@@ -457,6 +480,11 @@ with tab3:
 
     if st.session_state.get("meeting_result_html"):
         st.markdown("---")
+        if st.session_state.meeting_titles:
+            with st.container(border=True):
+                st.markdown("##### 📌 네이버 SEO 최적화 제목 추천")
+                selected = st.selectbox("원하는 제목을 선택하세요", st.session_state.meeting_titles, key="meeting_title_select")
+                st.code(selected, language=None)
         res_tab1, res_tab2, res_tab3 = st.tabs(["👁️ 완벽 미리보기", "📋 블로그 복사용 화면", "📄 HTML 원본 코드"])
         with res_tab1:
             photos_for_preview = st.session_state.meeting_uploaded_files or []
