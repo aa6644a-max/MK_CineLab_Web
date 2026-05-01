@@ -42,7 +42,8 @@ if "cur_data" not in st.session_state: st.session_state.cur_data = None
 def get_recent_references(post_type_filter, limit=2):
     try:
         all_posts = db.get_all_posts()
-        filtered_posts = [p[3] for p in all_posts if p[2] == post_type_filter]
+        # p[2]=포스팅종류, p[4]=본문내용
+        filtered_posts = [p[4] for p in all_posts if p[2] == post_type_filter and len(p) > 4 and p[4]]
         if not filtered_posts:
             return ""
         recent_posts = filtered_posts[-limit:]
@@ -72,8 +73,11 @@ with tab1:
                     details = tmdb.get_movie_details(movie_info['id'])
                     latest_news = naver.search_movie_news(title)
                     
-                    reference_posts = rss.get_latest_posts_text(limit=5) 
-                    
+                    reference_posts = rss.get_latest_posts_text(limit=5)
+                    db_refs = get_recent_references("리뷰")
+                    if db_refs:
+                        reference_posts = db_refs + "\n\n---\n[RSS 최신글]\n---\n\n" + reference_posts
+
                     # 💡 2. builder에 reason_input 전달
                     prompt = builder.build_review_prompt(details, comment, reason=reason_input, latest_news=latest_news, reference_posts=reference_posts)
                     result = gemini.generate_post(prompt)
@@ -109,7 +113,10 @@ with tab2:
                     latest_news = naver.search_movie_news(p_title)
                     
                     reference_posts = rss.get_latest_posts_text(limit=5)
-                    
+                    db_refs = get_recent_references("프리뷰")
+                    if db_refs:
+                        reference_posts = db_refs + "\n\n---\n[RSS 최신글]\n---\n\n" + reference_posts
+
                     # 💡 4. builder에 reason=pre_reason_input 전달
                     prompt = builder.build_preview_prompt(details, point, reason=pre_reason_input, latest_news=latest_news, reference_posts=reference_posts)
                     result = gemini.generate_post(prompt)
@@ -135,6 +142,9 @@ with tab3:
         if news_content:
             with st.spinner("뉴스 분석 및 취향 데이터 반영 중..."):
                 reference_posts = rss.get_latest_posts_text(limit=5)
+                db_refs = get_recent_references("뉴스")
+                if db_refs:
+                    reference_posts = db_refs + "\n\n---\n[RSS 최신글]\n---\n\n" + reference_posts
                 prompt = builder.build_news_prompt(news_content, reference_posts)
                 result = gemini.generate_post(prompt)
                 final_html = formatter.wrap_in_table("최신 영화 뉴스", result)
@@ -193,7 +203,10 @@ with tab4:
                 if movies_data_text.strip():
                     st.info("Claude가 수집된 데이터를 바탕으로 MK 스타일 원고를 작성하고 있습니다...")
                     reference_posts = rss.get_latest_posts_text(limit=5)
-                    
+                    db_refs = get_recent_references("리스트")
+                    if db_refs:
+                        reference_posts = db_refs + "\n\n---\n[RSS 최신글]\n---\n\n" + reference_posts
+
                     prompt = builder.build_curation_prompt(cur_theme, movies_data_text, reference_posts)
                     result = gemini.generate_post(prompt)
                     final_html = formatter.wrap_in_table(cur_theme, result)

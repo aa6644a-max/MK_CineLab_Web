@@ -52,7 +52,7 @@ class DBManager:
             worksheet = sh.get_worksheet(0)
             values = worksheet.get_all_values()
             if len(values) <= 1: return []
-            return [[i, v[1], v[2], v[0]] for i, v in enumerate(values[1:], start=2)]
+            return [[i, v[1], v[2], v[0], v[3] if len(v) > 3 else ''] for i, v in enumerate(values[1:], start=2)]
         except:
             return []
 
