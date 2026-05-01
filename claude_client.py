@@ -59,10 +59,14 @@ class ClaudeClient:
             try:
                 response = self.client.messages.create(
                     model=self.model,
-                    max_tokens=4096,
+                    max_tokens=8192,
                     messages=[{"role": "user", "content": content}]
                 )
-                return response.content[0].text
+                text = response.content[0].text
+                # 클로드가 응답을 마크다운 코드블록으로 감싸는 경우 제거
+                text = re.sub(r'^```html?\s*\n?', '', text.strip())
+                text = re.sub(r'\n?```\s*$', '', text.strip())
+                return text
             except Exception as e:
                 error_msg = str(e)
                 if any(err in error_msg for err in ["529", "overloaded", "rate_limit", "429"]):

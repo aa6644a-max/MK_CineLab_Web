@@ -77,7 +77,7 @@ class DailyPromptBuilder(BasePromptBuilder):
         
         {base}
 
-        출력 형식: 오직 HTML 본문 코드만 출력하세요. 맨 마지막 줄에 HTML 주석() 형식으로 매력적인 제목 5개를 제안하세요.
+        출력 형식: ```html, ``` 등 마크다운 코드블록 기호를 절대 포함하지 마세요. 오직 순수 HTML 본문 코드만 출력하세요. 맨 마지막 줄에 HTML 주석() 형식으로 매력적인 제목 5개를 제안하세요.
         """
 
     def build_photo_post_prompt(self, category, vibe, place_info_text, photo_contexts_text, reference_posts=""):
