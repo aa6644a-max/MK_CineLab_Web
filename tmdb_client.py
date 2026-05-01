@@ -109,3 +109,74 @@ class TMDBClient:
             print(f"TMDB Detail Error: {e}")
             
         return {}
+
+    def search_tv(self, title):
+        url = f"{self.base_url}/search/tv"
+        params = {"api_key": self.api_key, "query": title, "language": "ko-KR"}
+        try:
+            response = requests.get(url, params=params, timeout=10)
+            if response.status_code == 200:
+                results = response.json().get('results', [])
+                for item in results:
+                    if item.get('name') == title:
+                        return item
+                return results[0] if results else None
+        except Exception as e:
+            print(f"TMDB TV Search Error: {e}")
+        return None
+
+    def get_tv_details(self, tv_id):
+        url = f"{self.base_url}/tv/{tv_id}"
+        params = {
+            "api_key": self.api_key,
+            "language": "ko-KR",
+            "append_to_response": "credits,images",
+            "include_image_language": "ko,en,null"
+        }
+        try:
+            response = requests.get(url, params=params, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+
+                runtimes = data.get("episode_run_time", [])
+                avg_runtime = runtimes[0] if runtimes else 24
+                total_episodes = data.get("number_of_episodes", 0)
+                total_minutes = total_episodes * avg_runtime
+                total_hours, remaining_mins = divmod(total_minutes, 60)
+                if total_hours > 0:
+                    total_time_str = f"{total_hours}시간 {remaining_mins}분" if remaining_mins else f"{total_hours}시간"
+                else:
+                    total_time_str = f"{total_minutes}분"
+
+                genres = [g.get("name") for g in data.get("genres", [])]
+                countries = [c.get("name") for c in data.get("production_countries", [])]
+                cast = [c.get("name") for c in data.get("credits", {}).get("cast", [])[:3]]
+
+                poster_path = data.get("poster_path")
+                poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else ""
+
+                backdrops = data.get("images", {}).get("backdrops", [])
+                backdrop_urls = [f"https://image.tmdb.org/t/p/original{bd['file_path']}"
+                                 for bd in backdrops[:5] if bd.get("file_path")]
+                if not backdrop_urls and data.get("backdrop_path"):
+                    backdrop_urls.append(f"https://image.tmdb.org/t/p/original{data.get('backdrop_path')}")
+
+                return {
+                    "id": data.get("id"),
+                    "title": data.get("name"),
+                    "original_title": data.get("original_name", "정보 없음"),
+                    "country": ", ".join(countries) if countries else "정보 없음",
+                    "first_air_date": data.get("first_air_date", "정보 없음"),
+                    "number_of_episodes": total_episodes,
+                    "number_of_seasons": data.get("number_of_seasons", 1),
+                    "episode_runtime": avg_runtime,
+                    "total_watch_time": total_time_str,
+                    "genres": ", ".join(genres) if genres else "정보 없음",
+                    "overview": data.get("overview") or "TMDB에 등록된 공식 줄거리가 없습니다.",
+                    "cast": ", ".join(cast) if cast else "정보 없음",
+                    "poster_url": poster_url,
+                    "backdrop_urls": backdrop_urls
+                }
+        except Exception as e:
+            print(f"TMDB TV Detail Error: {e}")
+        return {}

@@ -420,3 +420,60 @@ class PromptBuilder(BasePromptBuilder):
         <!-- TITLES: 제목1||제목2||제목3||제목4||제목5 -->
         (제목 조건: 검색 노출에 유리한 핵심 키워드를 앞에 배치, 30자 이내, 클릭을 유도하는 감성적 표현 포함)
         """
+
+    def build_binge_prompt(self, theme, series_data_text, reference_posts=""):
+        ref_prompt = self._get_reference_prompt(reference_posts)
+        time_context = f"현재 시점은 {self.current_year}년 {self.current_month}월({self.season})입니다."
+
+        return f"""
+        당신은 네이버 인플루언서 'MK'입니다. 시리즈물(애니메이션/드라마 등)을 정주행하는 경험을 담은 '정주행 추천' 블로그 포스팅을 작성하세요.
+
+        {time_context}
+
+        [포스팅 메인 테마]
+        - {theme}
+
+        {ref_prompt}
+
+        [수집된 시리즈 데이터 (TMDB 기반)]
+        {series_data_text}
+
+        [🚨 정주행 추천 포스팅 핵심 규칙]
+        1. 글 전체 톤: "실제로 정주행해봤어요"처럼 직접 경험한 1인칭 체험기 스타일로 작성하세요.
+        2. 작품 1편당 소개글 + 정주행 포인트 합쳐 200~250자 내외로 타이트하게 요약하세요.
+        3. 🚨 [정주행 정보 박스 — 절대 필수]: 각 작품 포스터 바로 아래에 반드시 아래 형식을 삽입하세요:
+           <div style="background:#f4f4f4; border-radius:8px; padding:12px 18px; margin:15px 0; font-size:14px; line-height:2.2;">
+             <p style="margin:0;">📺 <b>총 화수</b> : [총화수]화 ([시즌수]시즌)</p>
+             <p style="margin:0;">⏱️ <b>편당 러닝타임</b> : 약 [편당분수]분</p>
+             <p style="margin:0;">🕐 <b>정주행 완료 시 총 시청 시간</b> : 약 [총시청시간]</p>
+           </div>
+        4. 정주행 포인트는 "이런 사람에게", "이럴 때 보면 딱"인 관점에서 구체적으로 작성하세요.
+
+        [🚨 절대 준수: MK CINELAB 정주행 추천 HTML 레이아웃]
+        아래 구조를 100% 동일하게 따르고, 제공된 작품 수만큼 <작품 섹션>을 반복하세요.
+
+        <p>오늘은 <b>{theme}</b> 시리즈들을 정주행 관점에서 소개해 보려 합니다. [절대 "안녕하세요" 인사 금지. 바로 본론으로]</p>
+        <p style="text-align: center;">&nbsp;</p>
+
+        <h2 style="border-bottom: 2px solid #333; padding-bottom: 5px;">[작품 제목]</h2>
+        <p style="color: #666; font-weight: bold; font-size: 18px;">[정주행 체험을 담은 감성 부제 1줄]</p>
+
+        [수집된 데이터의 <포스터 HTML 코드>를 여기에 반드시 삽입]
+
+        [위 정보 박스 삽입 — 총화수·편당시간·총시간 반드시 데이터에서 가져와 채울 것]
+
+        <p>[TMDB 줄거리를 바탕으로 한 간결한 소개. 직접 보는 느낌으로. (1~2문장)]</p>
+
+        <h3 style="color: #1565c0; margin-top: 20px;">🎯 정주행 포인트</h3>
+        <p>[어떤 사람에게, 언제 보면 좋은지 구체적으로. (1~2문장)]</p>
+
+        <p style="text-align: center;">&nbsp;</p>
+        <hr style="border: 0; border-top: 1px dashed #ccc; margin: 30px 0;">
+
+        <p>[모든 작품 소개 후 정주행을 권유하는 따뜻한 마무리 1~2문장]</p>
+
+        출력 형식: 앞뒤의 부가 설명이나 인사말 없이 오직 완성된 HTML 본문 코드만 출력하세요. (```html 같은 마크다운 기호도 절대 쓰지 마세요.)
+        맨 마지막 줄에 아래 형식으로 네이버 SEO 최적화 제목 5개를 반드시 제안하세요:
+        <!-- TITLES: 제목1||제목2||제목3||제목4||제목5 -->
+        (제목 조건: 검색 노출에 유리한 핵심 키워드를 앞에 배치, 30자 이내, 클릭을 유도하는 감성적 표현 포함)
+        """
