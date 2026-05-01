@@ -1,6 +1,6 @@
 import sys
 from tmdb_client import TMDBClient
-from gemini_client import GeminiClient
+from claude_client import ClaudeClient
 
 def main():
     print("🎬 [MK CINELAB] 자동 포스팅 생성기를 시작합니다.")
@@ -8,7 +8,7 @@ def main():
 
     # 1. 클라이언트 초기화
     tmdb = TMDBClient()
-    gemini = GeminiClient()
+    gemini = ClaudeClient()
 
     # 2. 사용자로부터 영화 정보 입력받기
     movie_title = input("📝 리뷰를 작성할 영화 제목을 입력하세요: ").strip()
@@ -65,7 +65,7 @@ def main():
     """
 
     # 6. 블로그 포스팅 생성
-    print("\n🤖 Gemini가 MK CINELAB 스타일로 글을 쓰는 중입니다. 잠시만 기다려주세요...")
+    print("\n🤖 Claude가 MK CINELAB 스타일로 글을 쓰는 중입니다. 잠시만 기다려주세요...")
     try:
         final_post = gemini.generate_post(prompt)
         

@@ -3,7 +3,7 @@ import base64
 import re
 import pdfplumber
 from DailyPromptBuilder import DailyPromptBuilder
-from gemini_client import GeminiClient
+from claude_client import ClaudeClient
 from rss_client import RSSClient
 from html_formatter import HTMLFormatter
 from naver_client import NaverClient
@@ -105,7 +105,7 @@ st.set_page_config(page_title="일상 & 현장 기록", page_icon="🏠", layout
 
 @st.cache_resource(show_spinner=False)
 def init_daily_engines():
-    return DailyPromptBuilder(), GeminiClient(), RSSClient(), HTMLFormatter(), NaverClient()
+    return DailyPromptBuilder(), ClaudeClient(), RSSClient(), HTMLFormatter(), NaverClient()
 
 daily_builder, gemini, rss, formatter, naver_client = init_daily_engines()
 

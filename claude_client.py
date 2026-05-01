@@ -1,5 +1,8 @@
-# claude_client.py
 import os
+import re
+import base64
+import time
+import streamlit as st
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
@@ -7,21 +10,65 @@ load_dotenv()
 
 class ClaudeClient:
     def __init__(self):
-        self.client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        
-        # 'latest' 대신 구체적인 모델 버전을 명시하여 404 에러를 방지합니다.
-        # 대부분의 티어에서 즉시 사용 가능한 하이쿠 모델입니다. [cite: 99, 117]
-        self.model = "claude-3-haiku-20240307" 
+        if "ANTHROPIC_API_KEY" in st.secrets:
+            raw_key = st.secrets["ANTHROPIC_API_KEY"]
+        else:
+            raw_key = os.getenv("ANTHROPIC_API_KEY", "")
 
-    def generate_post(self, prompt):
-        try:
-            # max_tokens는 가이드대로 4000으로 설정합니다. [cite: 108]
-            response = self.client.messages.create(
-                model=self.model,
-                max_tokens=4000, 
-                temperature=0.7,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return response.content[0].text
-        except Exception as e:
-            return f"에러 발생: {str(e)}"
+        api_key = re.sub(r'[^a-zA-Z0-9_-]', '', str(raw_key))
+
+        if not api_key:
+            raise ValueError("ANTHROPIC_API_KEY가 없습니다. 설정을 확인하세요.")
+
+        self.client = Anthropic(api_key=api_key)
+        self.model = "claude-sonnet-4-6"
+
+    def generate_post(self, prompt, images=None, max_retries=3):
+        content = []
+
+        if images:
+            for img_file in images:
+                try:
+                    if hasattr(img_file, 'seek'):
+                        img_file.seek(0)
+                    img_bytes = img_file.read()
+                    if hasattr(img_file, 'seek'):
+                        img_file.seek(0)
+
+                    media_type = getattr(img_file, 'type', None)
+                    if not media_type:
+                        name = getattr(img_file, 'name', '').lower()
+                        media_type = 'image/png' if name.endswith('.png') else 'image/jpeg'
+
+                    b64 = base64.standard_b64encode(img_bytes).decode('utf-8')
+                    content.append({
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": media_type,
+                            "data": b64
+                        }
+                    })
+                except Exception as img_err:
+                    print(f"이미지 로드 에러: {img_err}")
+
+        if prompt:
+            content.append({"type": "text", "text": prompt})
+
+        for attempt in range(max_retries):
+            try:
+                response = self.client.messages.create(
+                    model=self.model,
+                    max_tokens=4096,
+                    messages=[{"role": "user", "content": content}]
+                )
+                return response.content[0].text
+            except Exception as e:
+                error_msg = str(e)
+                if any(err in error_msg for err in ["529", "overloaded", "rate_limit", "429"]):
+                    if attempt < max_retries - 1:
+                        wait_time = (attempt + 1) * 5
+                        print(f"서버 혼잡. {wait_time}초 후 {attempt + 2}번째 재시도...")
+                        time.sleep(wait_time)
+                        continue
+                return f"클로드 API 에러 발생: {error_msg}"

@@ -2,7 +2,7 @@ import streamlit as st
 import re
 import io
 from PIL import Image
-from gemini_client import GeminiClient
+from claude_client import ClaudeClient
 
 st.set_page_config(page_title="실험실 - AI 사진 큐레이터", page_icon="🧪", layout="centered")
 
@@ -10,7 +10,7 @@ st.set_page_config(page_title="실험실 - AI 사진 큐레이터", page_icon="�
 # 💡 핵심 추가: 이미지 최적화 (다이어트) 클래스
 # ==========================================
 class OptimizedPhoto:
-    """GeminiClient와 완벽하게 호환되도록 만든 가짜 파일 객체"""
+    """ClaudeClient와 완벽하게 호환되도록 만든 가짜 파일 객체"""
     def __init__(self, byte_data, original_name):
         self.name = original_name
         self.type = "image/jpeg"
@@ -41,10 +41,10 @@ def optimize_image(uploaded_file):
 
 # Gemini 엔진 가볍게 초기화
 @st.cache_resource(show_spinner=False)
-def init_gemini():
-    return GeminiClient()
+def init_claude():
+    return ClaudeClient()
 
-gemini = init_gemini()
+gemini = init_claude()
 
 st.title("🧪 실험실: AI 사진 큐레이터")
 st.markdown("블로그 포스팅 전, 찍어둔 **수십 장의 사진을 던져주고 베스트 컷만 추출해내는 기능**을 테스트합니다.")

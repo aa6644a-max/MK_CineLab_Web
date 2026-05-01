@@ -2,7 +2,7 @@ import streamlit as st
 import base64
 #import streamlit.components.v1 as components
 from tmdb_client import TMDBClient
-from gemini_client import GeminiClient
+from claude_client import ClaudeClient
 from prompt_builder import PromptBuilder
 from html_formatter import HTMLFormatter
 from naver_client import NaverClient
@@ -24,7 +24,7 @@ st.set_page_config(page_title="MK CINELAB", page_icon="🎬", layout="centered")
 # 🚨 해결의 핵심: 함수 이름을 v3로 변경하여 강제 캐시 초기화!
 @st.cache_resource(show_spinner=False)
 def init_engines_v3():
-    return TMDBClient(), GeminiClient(), PromptBuilder(), HTMLFormatter(), NaverClient(), DBManager(), RSSClient()
+    return TMDBClient(), ClaudeClient(), PromptBuilder(), HTMLFormatter(), NaverClient(), DBManager(), RSSClient()
 
 tmdb, gemini, builder, formatter, naver, db, rss = init_engines_v3()
 
@@ -191,7 +191,7 @@ with tab4:
                         st.warning(f"'{m_title}' 정보를 찾을 수 없어 리스트에서 제외했습니다.")
                 
                 if movies_data_text.strip():
-                    st.info("제미나이가 수집된 데이터를 바탕으로 MK 스타일 원고를 작성하고 있습니다...")
+                    st.info("Claude가 수집된 데이터를 바탕으로 MK 스타일 원고를 작성하고 있습니다...")
                     reference_posts = rss.get_latest_posts_text(limit=5)
                     
                     prompt = builder.build_curation_prompt(cur_theme, movies_data_text, reference_posts)
@@ -217,7 +217,7 @@ with tab4:
 # --- Tab 5: 내 글 직접 등록 ---
 with tab5:
     st.subheader("📝 내 블로그 원문 직접 등록")
-    st.markdown("제미나이의 완벽한 문체 학습을 위해, 민규 님이 과거에 직접 쓰셨던 **진짜(Real) 블로그 포스팅 텍스트**를 넣어주세요.")
+    st.markdown("Claude의 완벽한 문체 학습을 위해, 민규 님이 과거에 직접 쓰셨던 **진짜(Real) 블로그 포스팅 텍스트**를 넣어주세요.")
     col_a, col_b = st.columns([3, 1])
     with col_a:
         manual_title = st.text_input("영화 제목 (또는 테마)", placeholder="예: 더 퍼스트 슬램덩크", key="manual_title")
@@ -236,7 +236,7 @@ with tab5:
             else: st.warning("영화 제목과 블로그 본문을 모두 입력해 주세요.")
                 
     with col_btn2:
-        if st.button("✨ (추천) 제미나이로 HTML 변환 후 확인하기", type="primary"):
+        if st.button("✨ (추천) Claude로 HTML 변환 후 확인하기", type="primary"):
             if manual_content:
                 with st.spinner("원문 내용을 훼손하지 않고 예쁜 HTML 태그를 입히는 중..."):
                     prompt = builder.build_html_conversion_prompt(manual_content)
