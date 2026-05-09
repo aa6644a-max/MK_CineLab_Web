@@ -70,9 +70,9 @@ THUMBNAIL_HTML = """<!DOCTYPE html>
     display:flex; gap:8px; align-items:center;
   }
   .nf-btn {
-    padding:5px 13px; border-radius:4px;
-    font-size:clamp(9px,2.5vw,13px); font-weight:700;
-    display:flex; align-items:center; gap:4px;
+    padding:4px 10px; border-radius:4px;
+    font-size:clamp(7px,1.8vw,10px); font-weight:700;
+    display:flex; align-items:center; gap:3px;
     font-family:'Noto Sans KR',sans-serif;
   }
   .nf-btn.play { background:#fff; color:#111; }
@@ -442,7 +442,7 @@ document.getElementById('dl-btn').addEventListener('click', () => {
   curY += subFs + size*0.028;
 
   ctx.shadowBlur = 0;
-  const btnH=size*0.046, btnR=size*0.01, btnFs=Math.round(size*0.026);
+  const btnH=size*0.038, btnR=size*0.01, btnFs=Math.round(size*0.018);
   ctx.font = `700 ${btnFs}px "Noto Sans KR",sans-serif`;
   const playLabel='▶  감상 하기';
   const playW = ctx.measureText(playLabel).width + size*0.038;
