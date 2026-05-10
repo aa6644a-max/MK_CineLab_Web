@@ -20,9 +20,10 @@ st.markdown("### 🧭 작업실 바로가기")
 st.write("아래의 버튼을 클릭하거나 왼쪽 사이드바를 통해 원하시는 작업실로 이동하세요!")
 st.write("") 
 
-# 2x2 그리드 형태로 카드 배치
+# 2x3 그리드 형태로 카드 배치
 col1, col2 = st.columns(2)
 col3, col4 = st.columns(2)
+col5, col6 = st.columns(2)
 
 with col1:
     with st.container(border=True):
@@ -59,20 +60,21 @@ with col4:
         st.write("") 
         st.page_link("pages/03_🎬_Movie_Search.py", label="Movie Search 이동하기", icon="🚀")
 
-# ==========================================
-# 3. 🧪 실험실 (새로 추가된 부분)
-# ==========================================
-st.markdown("---")
-st.markdown("### 🧪 실험실 (Lab)")
-with st.container(border=True):
-    st.markdown("### 🪄 04 AI Photo Curator")
-    st.write("**수십 장의 사진 중 베스트 컷 자동 선별 실험**")
-    st.caption("대량의 현장 사진을 AI가 한 번에 분석하여 기승전결 스토리텔링에 적합한 핵심 사진만 번호로 골라줍니다.")
-    st.write("")
-    try:
-        st.page_link("pages/04_🧪_Lab.py", label="Lab 이동하기", icon="🔬")
-    except:
-        st.button("🔬 pages 폴더 안에 04_🧪_Lab.py 파일을 만들어주세요", disabled=True, use_container_width=True)
+with col5:
+    with st.container(border=True):
+        st.markdown("### 🎨 04 Thumbnail")
+        st.write("**넷플릭스 스타일 블로그 썸네일**")
+        st.caption("영화 스틸컷을 업로드하고 제목을 입력하면 넷플릭스 스타일 썸네일을 바로 다운로드할 수 있습니다.")
+        st.write("")
+        st.page_link("pages/04_🎨_Thumbnail.py", label="Thumbnail 이동하기", icon="🎨")
+
+with col6:
+    with st.container(border=True):
+        st.markdown("### 📰 05 카드뉴스 메이커")
+        st.write("**영화모임 카드뉴스 4종 세트**")
+        st.caption("커버·정보·소개·신청 4장짜리 카드뉴스를 만들어 인스타그램에 바로 올릴 수 있습니다.")
+        st.write("")
+        st.page_link("pages/05_📰_Card_News.py", label="카드뉴스 메이커 이동하기", icon="📰")
 
 # ==========================================
 # 4. 하단 꿀팁
