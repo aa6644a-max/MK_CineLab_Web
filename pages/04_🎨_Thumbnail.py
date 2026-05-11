@@ -50,43 +50,6 @@ THUMBNAIL_HTML = """<!DOCTYPE html>
   }
   #move-hint.fade { opacity:0; }
 
-  .overlay-ui { position:absolute; inset:0; pointer-events:none; }
-  .text-block { position:absolute; top:13%; left:5%; right:5%; overflow:hidden; }
-  #prev-title {
-    font-weight:900; color:#fff;
-    line-height:1.18;
-    text-shadow:0 2px 16px rgba(0,0,0,0.8);
-    white-space:nowrap; overflow:hidden;
-  }
-  #prev-sub {
-    font-size:clamp(11px,3.2vw,18px);
-    font-weight:500; color:rgba(255,255,255,0.85);
-    margin-top:8px;
-    text-shadow:0 1px 8px rgba(0,0,0,0.9);
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  }
-  .nf-btns {
-    position:absolute; left:5%;
-    display:flex; gap:8px; align-items:center;
-  }
-  .nf-btn {
-    padding:4px 10px; border-radius:4px;
-    font-size:clamp(7px,1.8vw,10px); font-weight:700;
-    display:flex; align-items:center; gap:3px;
-    font-family:'Noto Sans KR',sans-serif;
-  }
-  .nf-btn.play { background:#fff; color:#111; }
-  .nf-btn.info { background:rgba(80,80,80,0.75); color:#fff; }
-
-  .pb-wrap { position:absolute; bottom:38px; left:14px; right:14px; }
-  .pb-track { height:3px; background:rgba(255,255,255,0.28); border-radius:2px; position:relative; }
-  .pb-fill { height:100%; background:#e50914; border-radius:2px; position:relative; }
-  .pb-dot { width:11px; height:11px; background:#e50914; border-radius:50%; position:absolute; right:-5.5px; top:-4px; }
-
-  .ctrl-bar { position:absolute; bottom:10px; left:14px; right:14px; display:flex; align-items:center; justify-content:space-between; }
-  .ctrl-side { display:flex; gap:10px; align-items:center; }
-  .ctrl-icon svg { display:block; }
-
   .form-card {
     background:#161616; border:1px solid rgba(255,255,255,0.08);
     border-radius:12px; padding:20px 16px;
@@ -151,7 +114,6 @@ THUMBNAIL_HTML = """<!DOCTYPE html>
   .dl-btn:hover { background:#c8060f; }
   .dl-btn:active { transform:scale(.98); }
   .tip { font-size:11px; color:rgba(255,255,255,0.28); text-align:center; }
-  #export-canvas { display:none; }
 </style>
 </head>
 <body>
@@ -162,7 +124,6 @@ THUMBNAIL_HTML = """<!DOCTYPE html>
 <div class="preview-wrap">
   <div class="preview-box" id="preview-box">
     <canvas id="preview-canvas"></canvas>
-
     <div id="drag-hint">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
         <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -171,38 +132,7 @@ THUMBNAIL_HTML = """<!DOCTYPE html>
       </svg>
       <span>이미지를 업로드해 주세요</span>
     </div>
-
     <div id="move-hint" style="display:none;">✥ 드래그해서 이미지 위치 조정</div>
-
-    <div class="overlay-ui">
-      <div class="text-block">
-        <div id="prev-title">제목을 입력하세요</div>
-        <div id="prev-sub">부제목을 입력하세요</div>
-      </div>
-      <div class="nf-btns" id="nf-btns">
-        <div class="nf-btn play">▶ 감상 하기</div>
-        <div class="nf-btn info">ⓘ More Info</div>
-      </div>
-      <div class="pb-wrap">
-        <div class="pb-track">
-          <div class="pb-fill" id="pb-fill" style="width:20%"><div class="pb-dot"></div></div>
-        </div>
-      </div>
-      <div class="ctrl-bar">
-        <div class="ctrl-side">
-          <span class="ctrl-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg></span>
-          <span class="ctrl-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.62"/></svg></span>
-          <span class="ctrl-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.49-3.62"/></svg></span>
-          <span class="ctrl-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></span>
-        </div>
-        <div class="ctrl-side">
-          <span class="ctrl-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></span>
-          <span class="ctrl-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg></span>
-          <span class="ctrl-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-          <span class="ctrl-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></span>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -242,80 +172,123 @@ THUMBNAIL_HTML = """<!DOCTYPE html>
   <p class="tip">PNG 파일로 저장됩니다</p>
 </div>
 
-<canvas id="export-canvas"></canvas>
-
 <script>
 let loadedImage  = null;
 let imgOffsetX   = 0.5;
 let imgOffsetY   = 0.5;
 let selectedSize = 1080;
 let progressPct  = 20;
+let titleText    = '제목을 입력하세요';
+let subText      = '부제목을 입력하세요';
 
 const box      = document.getElementById('preview-box');
 const pCanvas  = document.getElementById('preview-canvas');
 const pCtx     = pCanvas.getContext('2d');
 const dragHint = document.getElementById('drag-hint');
 const moveHint = document.getElementById('move-hint');
-const pbFill   = document.getElementById('pb-fill');
-const titleEl  = document.getElementById('prev-title');
-const subEl    = document.getElementById('prev-sub');
-const nfBtns   = document.getElementById('nf-btns');
+
+// ── 핵심 렌더러: 미리보기·저장 동일한 함수 사용 ─────────────────────
+function renderThumb(ctx, S) {
+  ctx.clearRect(0, 0, S, S);
+
+  // 배경 이미지 (cover fit + drag offset)
+  if (loadedImage) {
+    const iw = loadedImage.naturalWidth, ih = loadedImage.naturalHeight;
+    const sc = Math.max(S / iw, S / ih);
+    const sw = iw * sc, sh = ih * sc;
+    ctx.globalAlpha = 0.75;
+    ctx.drawImage(loadedImage, (S - sw) * imgOffsetX, (S - sh) * imgOffsetY, sw, sh);
+    ctx.globalAlpha = 1;
+  } else {
+    ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, 0, S, S);
+  }
+
+  // 그라디언트 오버레이
+  const grad = ctx.createLinearGradient(0, 0, 0, S);
+  grad.addColorStop(0,    'rgba(0,0,0,0.38)');
+  grad.addColorStop(0.45, 'rgba(0,0,0,0.08)');
+  grad.addColorStop(1,    'rgba(0,0,0,0.72)');
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, S, S);
+
+  ctx.textBaseline = 'alphabetic';
+  const leftX = S * 0.05, maxW = S * 0.90;
+  let curY = S * 0.13;
+
+  // 제목 — 자동 축소
+  let titleFs = Math.round(S * 0.088);
+  const minTitleFs = Math.round(S * 0.030);
+  ctx.fillStyle = '#fff';
+  ctx.shadowColor = 'rgba(0,0,0,0.75)'; ctx.shadowBlur = S * 0.016;
+  ctx.font = `900 ${titleFs}px "Noto Sans KR",sans-serif`;
+  while (titleFs > minTitleFs && ctx.measureText(titleText).width > maxW) {
+    titleFs -= 2;
+    ctx.font = `900 ${titleFs}px "Noto Sans KR",sans-serif`;
+  }
+  ctx.fillText(titleText, leftX, curY + titleFs);
+  curY += titleFs + S * 0.018;
+
+  // 부제목 — 자동 축소
+  let subFs = Math.round(S * 0.034);
+  const minSubFs = Math.round(S * 0.014);
+  ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.shadowBlur = S * 0.009;
+  ctx.font = `500 ${subFs}px "Noto Sans KR",sans-serif`;
+  while (subFs > minSubFs && ctx.measureText(subText).width > maxW) {
+    subFs--;
+    ctx.font = `500 ${subFs}px "Noto Sans KR",sans-serif`;
+  }
+  ctx.fillText(subText, leftX, curY + subFs);
+  curY += subFs + S * 0.028;
+
+  // 버튼 (감상하기 / More Info)
+  ctx.shadowBlur = 0;
+  const btnH = S * 0.05, btnR = S * 0.01, btnFs = Math.round(S * 0.022);
+  ctx.font = `700 ${btnFs}px "Noto Sans KR",sans-serif`;
+
+  const playLabel = '▶  감상 하기';
+  const playW = ctx.measureText(playLabel).width + S * 0.038;
+  ctx.fillStyle = '#fff'; roundRect(ctx, leftX, curY, playW, btnH, btnR); ctx.fill();
+  ctx.fillStyle = '#111'; ctx.fillText(playLabel, leftX + S * 0.018, curY + btnH * 0.665);
+
+  const infoLabel = 'ⓘ  More Info';
+  const infoW = ctx.measureText(infoLabel).width + S * 0.038;
+  ctx.fillStyle = 'rgba(80,80,80,0.78)';
+  roundRect(ctx, leftX + playW + S * 0.014, curY, infoW, btnH, btnR); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.fillText(infoLabel, leftX + playW + S * 0.014 + S * 0.018, curY + btnH * 0.665);
+
+  // 진행 바
+  const pbH = Math.max(2, Math.round(S * 0.004));
+  const pbY = S * 0.918, pbL = S * 0.04, pbW = S * 0.92;
+  const fillW = pbW * (progressPct / 100);
+  ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.fillRect(pbL, pbY, pbW, pbH);
+  ctx.fillStyle = '#e50914'; ctx.fillRect(pbL, pbY, fillW, pbH);
+  ctx.beginPath();
+  ctx.arc(pbL + fillW, pbY + pbH / 2, Math.max(4, S * 0.007), 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawPreview() {
+  renderThumb(pCtx, pCanvas.width);
+}
 
 function resizeCanvas() {
   pCanvas.width  = box.offsetWidth;
   pCanvas.height = box.offsetHeight;
   drawPreview();
-  positionButtons();
-  autoFitTitle();
 }
-window.addEventListener('load', resizeCanvas);
+
+// 폰트 로드 완료 후 초기 렌더링
+window.addEventListener('load', () => document.fonts.ready.then(resizeCanvas));
 window.addEventListener('resize', resizeCanvas);
 
-function drawPreview() {
-  const W = pCanvas.width, H = pCanvas.height;
-  pCtx.clearRect(0, 0, W, H);
-  if (loadedImage) {
-    const iw = loadedImage.naturalWidth, ih = loadedImage.naturalHeight;
-    const scale = Math.max(W/iw, H/ih);
-    const sw = iw*scale, sh = ih*scale;
-    const sx = (W - sw) * imgOffsetX;
-    const sy = (H - sh) * imgOffsetY;
-    pCtx.globalAlpha = 0.75;
-    pCtx.drawImage(loadedImage, sx, sy, sw, sh);
-    pCtx.globalAlpha = 1;
-  }
-  const grad = pCtx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0,    'rgba(0,0,0,0.38)');
-  grad.addColorStop(0.45, 'rgba(0,0,0,0.08)');
-  grad.addColorStop(1,    'rgba(0,0,0,0.72)');
-  pCtx.fillStyle = grad;
-  pCtx.fillRect(0, 0, W, H);
-}
-
-function positionButtons() {
-  const topPx = box.offsetHeight * 0.13;
-  nfBtns.style.top = (topPx + titleEl.offsetHeight + subEl.offsetHeight + 14) + 'px';
-}
-
-function autoFitTitle() {
-  const maxW = box.offsetWidth * 0.90;
-  let fs = Math.round(box.offsetWidth * 0.088);
-  const minFs = 16;
-  titleEl.style.fontSize = fs + 'px';
-  while (fs > minFs && titleEl.scrollWidth > maxW) {
-    fs--;
-    titleEl.style.fontSize = fs + 'px';
-  }
-}
-
+// ── 입력 이벤트 ──────────────────────────────────────────────────
 document.getElementById('inp-title').addEventListener('input', e => {
-  titleEl.textContent = e.target.value || '제목을 입력하세요';
-  autoFitTitle();
-  positionButtons();
+  titleText = e.target.value || '제목을 입력하세요';
+  drawPreview();
 });
 document.getElementById('inp-sub').addEventListener('input', e => {
-  subEl.textContent = e.target.value || '부제목을 입력하세요';
-  positionButtons();
+  subText = e.target.value || '부제목을 입력하세요';
+  drawPreview();
 });
 
 document.getElementById('file-input').addEventListener('change', e => {
@@ -336,47 +309,10 @@ document.getElementById('file-input').addEventListener('change', e => {
   img.src = URL.createObjectURL(file);
 });
 
-let isDragging = false, lastX = 0, lastY = 0;
-function getXY(e) {
-  return e.touches ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
-                   : { x: e.clientX,             y: e.clientY };
-}
-box.addEventListener('mousedown',  e => { if (!loadedImage) return; isDragging=true; const p=getXY(e); lastX=p.x; lastY=p.y; });
-box.addEventListener('touchstart', e => { if (!loadedImage) return; isDragging=true; const p=getXY(e); lastX=p.x; lastY=p.y; }, { passive:true });
-window.addEventListener('mousemove', e => {
-  if (!isDragging || !loadedImage) return;
-  const p = getXY(e);
-  const dx = p.x - lastX, dy = p.y - lastY;
-  lastX = p.x; lastY = p.y;
-  const W = pCanvas.width, H = pCanvas.height;
-  const scale = Math.max(W/loadedImage.naturalWidth, H/loadedImage.naturalHeight);
-  const sw = loadedImage.naturalWidth*scale, sh = loadedImage.naturalHeight*scale;
-  const rx = sw - W, ry = sh - H;
-  if (rx > 0) imgOffsetX = Math.min(1, Math.max(0, imgOffsetX - dx/rx));
-  if (ry > 0) imgOffsetY = Math.min(1, Math.max(0, imgOffsetY - dy/ry));
-  drawPreview();
-});
-window.addEventListener('touchmove', e => {
-  if (!isDragging || !loadedImage) return;
-  if (e.cancelable) e.preventDefault();
-  const p = getXY(e);
-  const dx = p.x - lastX, dy = p.y - lastY;
-  lastX = p.x; lastY = p.y;
-  const W = pCanvas.width, H = pCanvas.height;
-  const scale = Math.max(W/loadedImage.naturalWidth, H/loadedImage.naturalHeight);
-  const sw = loadedImage.naturalWidth*scale, sh = loadedImage.naturalHeight*scale;
-  const rx = sw - W, ry = sh - H;
-  if (rx > 0) imgOffsetX = Math.min(1, Math.max(0, imgOffsetX - dx/rx));
-  if (ry > 0) imgOffsetY = Math.min(1, Math.max(0, imgOffsetY - dy/ry));
-  drawPreview();
-}, { passive:false });
-window.addEventListener('mouseup',  () => isDragging = false);
-window.addEventListener('touchend', () => isDragging = false);
-
 document.getElementById('progress-slider').addEventListener('input', e => {
   progressPct = parseInt(e.target.value);
   document.getElementById('progress-val').textContent = progressPct + '%';
-  pbFill.style.width = progressPct + '%';
+  drawPreview();
 });
 
 document.querySelectorAll('.size-btn').forEach(btn => {
@@ -387,93 +323,69 @@ document.querySelectorAll('.size-btn').forEach(btn => {
   });
 });
 
-document.getElementById('dl-btn').addEventListener('click', () => {
-  const title = document.getElementById('inp-title').value || '제목을 입력하세요';
-  const sub   = document.getElementById('inp-sub').value   || '부제목을 입력하세요';
-  const size  = selectedSize;
-  const canvas = document.getElementById('export-canvas');
-  canvas.width = size; canvas.height = size;
+// ── 다운로드 — renderThumb()로 고해상도 렌더링 ──────────────────────
+document.getElementById('dl-btn').addEventListener('click', async () => {
+  await document.fonts.ready;
+  const S = selectedSize;
+  const canvas = document.createElement('canvas');
+  canvas.width = S; canvas.height = S;
   const ctx = canvas.getContext('2d');
-
-  ctx.clearRect(0, 0, size, size);
-
-  if (loadedImage) {
-    const iw = loadedImage.naturalWidth, ih = loadedImage.naturalHeight;
-    const scale = Math.max(size/iw, size/ih);
-    const sw = iw*scale, sh = ih*scale;
-    const sx = (size - sw) * imgOffsetX;
-    const sy = (size - sh) * imgOffsetY;
-    ctx.globalAlpha = 0.75;
-    ctx.drawImage(loadedImage, sx, sy, sw, sh);
-    ctx.globalAlpha = 1;
-  } else {
-    ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0,0,size,size);
-  }
-
-  const grad = ctx.createLinearGradient(0,0,0,size);
-  grad.addColorStop(0,    'rgba(0,0,0,0.38)');
-  grad.addColorStop(0.45, 'rgba(0,0,0,0.08)');
-  grad.addColorStop(1,    'rgba(0,0,0,0.72)');
-  ctx.fillStyle = grad; ctx.fillRect(0,0,size,size);
-
-  const leftX = size*0.05, maxW = size*0.90;
-  let curY = size*0.13;
-
-  let titleFs = Math.round(size*0.078);
-  const minTitleFs = Math.round(size*0.030);
-  ctx.font = `900 ${titleFs}px "Noto Sans KR",sans-serif`;
-  ctx.fillStyle = '#fff';
-  ctx.shadowColor = 'rgba(0,0,0,0.75)'; ctx.shadowBlur = 18;
-  while (titleFs > minTitleFs && ctx.measureText(title).width > maxW) {
-    titleFs -= 2;
-    ctx.font = `900 ${titleFs}px "Noto Sans KR",sans-serif`;
-  }
-  ctx.fillText(title, leftX, curY + titleFs);
-  curY += titleFs + size*0.018;
-
-  let subFs = Math.round(size*0.034);
-  ctx.font = `500 ${subFs}px "Noto Sans KR",sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.shadowBlur = 10;
-  while (subFs > 14 && ctx.measureText(sub).width > maxW) {
-    subFs--;
-    ctx.font = `500 ${subFs}px "Noto Sans KR",sans-serif`;
-  }
-  ctx.fillText(sub, leftX, curY + subFs);
-  curY += subFs + size*0.028;
-
-  ctx.shadowBlur = 0;
-  const btnH=size*0.038, btnR=size*0.01, btnFs=Math.round(size*0.018);
-  ctx.font = `700 ${btnFs}px "Noto Sans KR",sans-serif`;
-  const playLabel='▶  감상 하기';
-  const playW = ctx.measureText(playLabel).width + size*0.038;
-  ctx.fillStyle='#fff'; roundRect(ctx,leftX,curY,playW,btnH,btnR); ctx.fill();
-  ctx.fillStyle='#111'; ctx.fillText(playLabel, leftX+size*0.018, curY+btnH*0.665);
-  const infoLabel='ⓘ  More Info';
-  const infoW = ctx.measureText(infoLabel).width + size*0.038;
-  ctx.fillStyle='rgba(80,80,80,0.78)'; roundRect(ctx,leftX+playW+size*0.014,curY,infoW,btnH,btnR); ctx.fill();
-  ctx.fillStyle='#fff'; ctx.fillText(infoLabel, leftX+playW+size*0.014+size*0.018, curY+btnH*0.665);
-
-  const pbY=size*0.918, pbL=size*0.04, pbW=size*0.92;
-  const fillW = pbW * (progressPct/100);
-  ctx.fillStyle='rgba(255,255,255,0.28)'; ctx.fillRect(pbL,pbY,pbW,4);
-  ctx.fillStyle='#e50914'; ctx.fillRect(pbL,pbY,fillW,4);
-  ctx.beginPath(); ctx.arc(pbL+fillW, pbY+2, 7, 0, Math.PI*2); ctx.fill();
-
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  renderThumb(ctx, S);
+  const title = document.getElementById('inp-title').value || 'thumbnail';
   const link = document.createElement('a');
-  link.download = (title.slice(0,20).replace(/[^\\w가-힣]/g,'_')||'thumbnail')+'_'+size+'.png';
+  link.download = (title.slice(0, 20).replace(/[^\\w가-힣]/g, '_') || 'thumbnail') + '_' + S + '.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
 });
 
-function roundRect(ctx,x,y,w,h,r){
+// ── 드래그로 이미지 위치 조정 ─────────────────────────────────────
+let isDragging = false, lastX = 0, lastY = 0;
+function getXY(e) {
+  return e.touches ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+                   : { x: e.clientX, y: e.clientY };
+}
+box.addEventListener('mousedown',  e => { if (!loadedImage) return; isDragging = true; const p = getXY(e); lastX = p.x; lastY = p.y; });
+box.addEventListener('touchstart', e => { if (!loadedImage) return; isDragging = true; const p = getXY(e); lastX = p.x; lastY = p.y; }, { passive: true });
+window.addEventListener('mousemove', e => {
+  if (!isDragging || !loadedImage) return;
+  const p = getXY(e), dx = p.x - lastX, dy = p.y - lastY;
+  lastX = p.x; lastY = p.y;
+  const S = pCanvas.width;
+  const sc = Math.max(S / loadedImage.naturalWidth, S / loadedImage.naturalHeight);
+  const rx = loadedImage.naturalWidth  * sc - S;
+  const ry = loadedImage.naturalHeight * sc - S;
+  if (rx > 0) imgOffsetX = Math.min(1, Math.max(0, imgOffsetX - dx / rx));
+  if (ry > 0) imgOffsetY = Math.min(1, Math.max(0, imgOffsetY - dy / ry));
+  drawPreview();
+});
+window.addEventListener('touchmove', e => {
+  if (!isDragging || !loadedImage) return;
+  if (e.cancelable) e.preventDefault();
+  const p = getXY(e), dx = p.x - lastX, dy = p.y - lastY;
+  lastX = p.x; lastY = p.y;
+  const S = pCanvas.width;
+  const sc = Math.max(S / loadedImage.naturalWidth, S / loadedImage.naturalHeight);
+  const rx = loadedImage.naturalWidth  * sc - S;
+  const ry = loadedImage.naturalHeight * sc - S;
+  if (rx > 0) imgOffsetX = Math.min(1, Math.max(0, imgOffsetX - dx / rx));
+  if (ry > 0) imgOffsetY = Math.min(1, Math.max(0, imgOffsetY - dy / ry));
+  drawPreview();
+}, { passive: false });
+window.addEventListener('mouseup',  () => isDragging = false);
+window.addEventListener('touchend', () => isDragging = false);
+
+function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
-  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
-  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
-  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
-  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
 }
 </script>
 </body>
 </html>"""
 
-components.html(THUMBNAIL_HTML, height=1750, scrolling=False)
+components.html(THUMBNAIL_HTML, height=1600, scrolling=False)
