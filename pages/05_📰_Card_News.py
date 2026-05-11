@@ -737,7 +737,7 @@ CARD_NEWS_HTML = """<!DOCTYPE html>
         </div>
         <div class="field">
           <label>날짜</label>
-          <input type="date" id="c1-date" value="2025-05-03" onchange="updateDates()">
+          <input type="date" id="c1-date" onchange="updateDates()">
         </div>
         <div class="field">
           <label>장소</label>
@@ -1159,6 +1159,9 @@ function downloadCurrent() {
     showToast(`카드 ${currentTab + 1} 저장 완료!`);
   });
 }
+
+const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+document.getElementById('c1-date').value = today;
 
 update();
 updateDates();
