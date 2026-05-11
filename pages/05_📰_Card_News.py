@@ -899,7 +899,6 @@ DM으로 받습니다.
           <div class="card2-photo">
             <div class="card2-photo-bg" id="card2-photo-bg"></div>
             <div class="card2-photo-scrim"></div>
-            <div class="card2-photo-label" id="d-c2-place-label">Lawns</div>
           </div>
           <div class="card2-body">
             <div class="card2-eyebrow">모임 정보</div>
