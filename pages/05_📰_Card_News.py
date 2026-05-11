@@ -1220,11 +1220,13 @@ const ICONS = {
 };
 
 async function renderCard(n) {
-  const W=1080, H=1350, PX=W*0.06;
+  // W=1080, H=1350 (4:5). CSS margin% = % of containing-block WIDTH(W), not height.
+  const W=1080, H=1350, PX=W*0.06;   // PX=64.8px (6% horizontal pad)
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   const ctx=cv.getContext('2d');
   ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
   const A=getAc(), A2=getAc2();
+  // Font sizes = clamp-max * 2 (preview card ~540px → canvas 1080px = 2x)
   const F = (w,sz) => `${w} ${sz}px Pretendard,sans-serif`;
 
   if (n===0) {
@@ -1233,52 +1235,60 @@ async function renderCard(n) {
     bgCover(ctx, await loadImg(getBg('card1-bg')), 0,0,W,H);
     applyGrad(ctx,0,0,W,H,[[0,'rgba(0,0,0,0.15)'],[0.25,'rgba(0,0,0,0.05)'],[0.55,'rgba(0,0,0,0.4)'],[1,'rgba(0,0,0,0.88)']]);
 
-    // Logo (top-right)
-    ctx.font=F('400',20); const ltxt='MK CINELAB', lw=ctx.measureText(ltxt).width+24, lh=32;
-    const lx=W-PX-lw, ly=H*0.038;
-    ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=1; rr(ctx,lx,ly,lw,lh,3); ctx.stroke();
-    ctx.fillStyle='rgba(255,255,255,0.75)'; ctx.fillText(ltxt,lx+12,ly+lh*0.69);
+    // Logo — top:4.5% right:5%, font clamp-max 11px×2=22px
+    ctx.font=F('400',22);
+    const ltxt='MK CINELAB', lw=ctx.measureText(ltxt).width+20, lh=36;
+    const lx=W-W*0.05-lw, ly=H*0.045;
+    ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=1.5;
+    rr(ctx,lx,ly,lw,lh,4); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.75)'; ctx.fillText(ltxt,lx+10,ly+lh*0.69);
 
-    let cy=H-H*0.06;
+    // card1-bottom: padding 5% 6% 6% — all % = % of W
+    // Build from bottom upward; cy = text baseline
+    let cy = H - W*0.06;  // bottom padding = W×6% = 64.8px
 
-    // Meta row (date + place)
+    // Meta row — font 10px×2=20px, icon 12px×2=24px
     const ISZ=24;
-    ctx.font=F('400',22); ctx.fillStyle='rgba(255,255,255,0.72)';
+    ctx.font=F('400',20); ctx.fillStyle='rgba(255,255,255,0.72)';
     const ds=t('d-c1-date'), ps=t('d-c1-place');
     ICONS.calendar(ctx,PX,cy-ISZ,ISZ,A); ctx.fillText(ds,PX+ISZ+8,cy-3);
     const dW=ctx.measureText(ds).width;
-    ICONS.pin(ctx,PX+ISZ+8+dW+28,cy-ISZ,ISZ,A); ctx.fillText(ps,PX+ISZ+8+dW+32+ISZ,cy-3);
-    cy-=ISZ+H*0.035;
+    ICONS.pin(ctx,PX+ISZ+8+dW+W*0.04,cy-ISZ,ISZ,A);
+    ctx.fillText(ps,PX+ISZ+8+dW+W*0.04+ISZ+8,cy-3);
+    cy -= ISZ + W*0.035;          // ↑ icon height + divider margin-bottom(3.5%W)
 
-    // Divider
+    // Divider — margin-bottom 3.5%W
     ctx.beginPath(); ctx.moveTo(PX,cy); ctx.lineTo(W-PX,cy);
     ctx.strokeStyle='rgba(255,255,255,0.18)'; ctx.lineWidth=1; ctx.stroke();
-    cy-=H*0.035;
+    cy -= W*0.04;                  // ↑ title-en margin-bottom(4%W)
 
-    // English title
+    // English title — clamp-max 11px×2=22px, margin-bottom 4%W
     ctx.font=F('400',22); ctx.fillStyle='rgba(255,255,255,0.4)';
-    ctx.fillText(v('c1-title-en'),PX,cy); cy-=22+H*0.012;
+    ctx.fillText(v('c1-title-en'),PX,cy);
+    cy -= 22 + W*0.01;             // ↑ text height + title margin-bottom(1%W)
 
-    // Korean title (auto-fit + wrap)
+    // Korean title — clamp-max 38px×2=76px, line-height 1.2
     const titleStr=v('c1-title'), maxTW=W-PX*2;
-    let tSz=82;
-    while(tSz>36){ctx.font=F('700',tSz); if(ctx.measureText(titleStr).width<=maxTW)break; tSz-=4;}
+    let tSz=76;
+    while(tSz>32){ctx.font=F('700',tSz); if(ctx.measureText(titleStr).width<=maxTW)break; tSz-=4;}
     ctx.font=F('700',tSz); ctx.fillStyle='#fff';
     const tLines=wrapLines(ctx,titleStr,maxTW);
     for(let i=tLines.length-1;i>=0;i--){ctx.fillText(tLines[i],PX,cy); cy-=tSz*1.2;}
-    cy-=H*0.01;
+    cy -= W*0.02;                  // ↑ eyebrow margin-bottom(2%W)
 
-    // Eyebrow
-    ctx.font=F('400',21); ctx.fillStyle=A+'cc';
-    ctx.fillText((v('c1-eyebrow')||'').toUpperCase(),PX,cy); cy-=21+H*0.025;
+    // Eyebrow — clamp-max 10px×2=20px
+    ctx.font=F('400',20); ctx.fillStyle=A+'cc';
+    ctx.fillText((v('c1-eyebrow')||'').toUpperCase(),PX,cy);
+    cy -= 20 + W*0.035;            // ↑ text height + badge margin-bottom(3.5%W)
 
-    // Badge
+    // Badge — clamp-max 9.5px×2=19px, padding 3px 12px
     const bStr=v('c1-badge'); ctx.font=F('400',19);
-    const bTW=ctx.measureText(bStr).width, bH=32, bP=12, dR=5;
+    const bTW=ctx.measureText(bStr).width, bH=34, bP=W*0.011, dR=6;
     const bX=PX, bY=cy-bH;
-    ctx.strokeStyle=A+'b3'; ctx.lineWidth=1.5; rr(ctx,bX,bY,bTW+bP*2+dR*2+10,bH,bH/2); ctx.stroke();
+    ctx.strokeStyle=A+'b3'; ctx.lineWidth=1.5;
+    rr(ctx,bX,bY,bTW+bP*2+dR*2+14,bH,bH/2); ctx.stroke();
     ctx.fillStyle=A; ctx.beginPath(); ctx.arc(bX+bP+dR,bY+bH/2,dR,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle=A2; ctx.fillText(bStr,bX+bP+dR*2+10,bY+bH*0.68);
+    ctx.fillStyle=A2; ctx.fillText(bStr,bX+bP+dR*2+14,bY+bH*0.69);
 
   } else if (n===1) {
     // ── Card 2: Info ──
@@ -1287,8 +1297,22 @@ async function renderCard(n) {
     bgCover(ctx, await loadImg(getBg('card2-photo-bg')),0,0,W,PH);
     applyGrad(ctx,0,0,W,PH,[[0,'rgba(0,0,0,0.1)'],[1,'rgba(0,0,0,0.6)']]);
 
-    const py=PH+BH*0.07, ISZ=28, KEY_X=PX+ISZ+14, VAL_X=PX+ISZ+98;
-    ctx.font=F('700',19); ctx.fillStyle=A; ctx.fillText('모임 정보',PX,py+19);
+    // body padding 5% 6% (W-based)
+    const bPT=W*0.05, bPB=W*0.06;
+    const py=PH+bPT;
+    // icon: clamp(14,2.5vw,20)×2=40px — cap at 36 for visual balance
+    const ISZ=36;
+    // flex gap: 4%W, key min-width: 15%W
+    const GAP=W*0.04, KEY_W=W*0.15;
+    const KEY_X=PX+ISZ+GAP, VAL_X=KEY_X+KEY_W+GAP;
+
+    // Eyebrow — clamp-max 9px×2=18px, margin-bottom 5%W
+    ctx.font=F('700',18); ctx.fillStyle=A; ctx.fillText('모임 정보',PX,py+18);
+
+    const rStart=py+18+W*0.05;
+    const incH=W*0.13;
+    const avail=BH-bPT-18-W*0.05-incH-bPB;
+    const rH=avail/4;
 
     const rows=[
       {icon:'calendar',key:'일시',val:t('d-c2-datetime')},
@@ -1296,22 +1320,22 @@ async function renderCard(n) {
       {icon:'clock',   key:'비용',val:t('d-c2-fee')},
       {icon:'chat',    key:'신청',val:t('d-c2-apply')},
     ];
-    const rStart=py+52, avail=BH-52-BH*0.2, rH=avail/rows.length;
     rows.forEach((row,i)=>{
       const ry=rStart+i*rH, mid=ry+rH/2;
       if(i<rows.length-1){ctx.beginPath();ctx.moveTo(PX,ry+rH);ctx.lineTo(W-PX,ry+rH);ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;ctx.stroke();}
       ICONS[row.icon](ctx,PX,mid-ISZ/2,ISZ,A);
-      ctx.font=F('400',17); ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.fillText(row.key,KEY_X,mid+6);
-      ctx.font=F('500',23); ctx.fillStyle='rgba(255,255,255,0.88)'; ctx.fillText(row.val,VAL_X,mid+8);
+      ctx.font=F('400',18); ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.fillText(row.key,KEY_X,mid+6);
+      ctx.font=F('500',24); ctx.fillStyle='rgba(255,255,255,0.88)'; ctx.fillText(row.val,VAL_X,mid+9);
     });
 
-    // Include box
-    const incY=PH+BH-BH*0.16, incH=BH*0.12, ISZ2=22;
+    // Include box — padding 3%W, icon clamp-max 14px×2=28px
+    const incY=PH+BH-bPB-incH;
+    const ISZ2=28, incPad=W*0.04;
     ctx.fillStyle=A+'14'; rr(ctx,PX,incY,W-PX*2,incH,10); ctx.fill();
     ctx.strokeStyle=A+'40'; ctx.lineWidth=1; rr(ctx,PX,incY,W-PX*2,incH,10); ctx.stroke();
-    ICONS.check(ctx,PX+16,incY+(incH-ISZ2)/2,ISZ2,A);
+    ICONS.check(ctx,PX+incPad,incY+(incH-ISZ2)/2,ISZ2,A);
     ctx.font=F('400',20); ctx.fillStyle='rgba(255,255,255,0.6)';
-    ctx.fillText(t('d-c2-include'),PX+16+ISZ2+10,incY+incH/2+7);
+    ctx.fillText(t('d-c2-include'),PX+incPad+ISZ2+10,incY+incH/2+7);
 
   } else if (n===2) {
     // ── Card 3: Intro ──
@@ -1320,36 +1344,47 @@ async function renderCard(n) {
     bgCover(ctx, await loadImg(getBg('card3-photo-bg')),0,0,W,PH);
     applyGrad(ctx,0,0,W,PH,[[0,'rgba(0,0,0,0.1)'],[1,'rgba(0,0,0,0.7)']]);
 
-    // Film dots
+    // Film dots — bottom 6% of photo, left 5%
+    const dotY=PH-PH*0.06;
     [1,0.4,0.2].forEach((op,i)=>{
       ctx.fillStyle=`rgba(212,165,116,${op*0.6})`;
-      ctx.beginPath(); ctx.arc(PX+i*18,PH-H*0.04,7,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(PX+i*22,dotY,8,0,Math.PI*2); ctx.fill();
     });
 
-    const py=PH+BH*0.07;
+    // body padding 5% 6% (W-based)
+    const bPT=W*0.05, bPB=W*0.05;
+    const py=PH+bPT;
+
+    // Section label — clamp-max 9px×2=18px, margin-bottom 5%W
     ctx.font=F('700',18); ctx.fillStyle=A;
     ctx.fillText((t('d-c3-label')||'').toUpperCase(),PX,py+18);
 
     const items=[t('d-c3-item1'),t('d-c3-item2'),t('d-c3-item3'),t('d-c3-item4')].filter(x=>x.trim());
-    const iStart=py+55, closH=BH*0.1, avail=BH-55-closH-BH*0.06, iH=avail/items.length;
-    const itemFSz=22;
+    const closH=W*0.08+24;
+    const iStart=py+18+W*0.05;
+    const avail=BH-bPT-18-W*0.05-closH-bPB;
+    const iH=avail/items.length;
+    // item text: clamp-max 12px×2=24px, dot: clamp-max 6px → radius=6
+    const itemFSz=24, dotR=6;
 
     items.forEach((item,i)=>{
       const iy=iStart+i*iH, mid=iy+iH/2;
       if(i<items.length-1){ctx.beginPath();ctx.moveTo(PX,iy+iH);ctx.lineTo(W-PX,iy+iH);ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;ctx.stroke();}
-      ctx.fillStyle=A; ctx.beginPath(); ctx.arc(PX+5,mid-4,5,0,Math.PI*2); ctx.fill();
+      // dot aligned to first text line
+      ctx.fillStyle=A; ctx.beginPath(); ctx.arc(PX+dotR,iy+W*0.033+dotR,dotR,0,Math.PI*2); ctx.fill();
       ctx.font=F('400',itemFSz); ctx.fillStyle='rgba(255,255,255,0.82)';
-      const ls=wrapLines(ctx,item,W-PX*2-24);
-      const totalLH=ls.length*itemFSz*1.5;
-      ls.forEach((l,li)=>ctx.fillText(l,PX+18,mid-totalLH/2+(li+0.8)*itemFSz*1.5));
+      const ls=wrapLines(ctx,item,W-PX*2-dotR*2-14);
+      const lineH=itemFSz*1.5;
+      const startY=mid-ls.length*lineH/2+lineH*0.75;
+      ls.forEach((l,li)=>ctx.fillText(l,PX+dotR*2+14,startY+li*lineH));
     });
 
-    // Closing line
-    const cY=PH+BH-closH+8;
-    ctx.beginPath(); ctx.moveTo(PX,cY-8); ctx.lineTo(W-PX,cY-8);
+    // Closing — border-top + italic text
+    const cY=PH+BH-bPB;
+    ctx.beginPath(); ctx.moveTo(PX,cY-closH+4); ctx.lineTo(W-PX,cY-closH+4);
     ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=1; ctx.stroke();
     ctx.font=`italic 400 22px Pretendard,sans-serif`; ctx.fillStyle=A+'bf';
-    ctx.fillText(t('d-c3-closing'),PX,cY+22);
+    ctx.fillText(t('d-c3-closing'),PX,cY-4);
 
   } else if (n===3) {
     // ── Card 4: CTA ──
@@ -1358,31 +1393,37 @@ async function renderCard(n) {
     bgCover(ctx, await loadImg(getBg('card4-photo-bg')),0,0,W,PH);
     applyGrad(ctx,0,0,W,PH,[[0,'rgba(0,0,0,0.1)'],[1,'rgba(0,0,0,0.65)']]);
 
-    let cy=PH+BH*0.1;
-    ctx.font=F('700',18); ctx.fillStyle=A; ctx.fillText('신청 방법',PX,cy); cy+=40;
+    // body padding 5% 6% (W-based)
+    let cy=PH+W*0.05;
 
+    // How-to label — clamp-max 9px×2=18px
+    ctx.font=F('700',18); ctx.fillStyle=A; ctx.fillText('신청 방법',PX,cy+18);
+    cy += 18 + W*0.03;
+
+    // How-to text — clamp-max 11.5px×2=23→24px
     const howLines=v('c4-howtext').split(/\\r?\\n/).filter(l=>l.trim());
-    ctx.font=F('400',26); ctx.fillStyle='rgba(255,255,255,0.65)';
-    howLines.forEach(line=>{ctx.fillText(line,PX,cy); cy+=26*1.7;});
+    const howFSz=24;
+    ctx.font=F('400',howFSz); ctx.fillStyle='rgba(255,255,255,0.65)';
+    howLines.forEach(line=>{ctx.fillText(line,PX,cy); cy+=howFSz*1.7;});
 
-    // Divider
+    // Divider at 73% of body height
     const divY=PH+BH*0.73;
     ctx.beginPath(); ctx.moveTo(PX,divY); ctx.lineTo(W-PX,divY);
     ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=1; ctx.stroke();
 
-    // Account + host
+    // Account + host — account 13px×2=26px, host 9px×2=18px
     const accY=divY+BH*0.1;
-    ctx.font=F('700',28); ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.fillText(t('d-c4-account'),PX,accY);
+    ctx.font=F('700',26); ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.fillText(t('d-c4-account'),PX,accY);
     const hostStr=t('d-c4-host');
     ctx.font=F('400',18); ctx.fillStyle='rgba(255,255,255,0.3)';
-    ctx.fillText(hostStr, W-PX-ctx.measureText(hostStr).width, accY);
+    ctx.fillText(hostStr,W-PX-ctx.measureText(hostStr).width,accY);
 
-    // CTA button
+    // CTA button — clamp-max 12px×2=24→26px for legibility
     const ctaY=accY+BH*0.1, ctaH=BH*0.18;
     ctx.fillStyle=A; rr(ctx,PX,ctaY,W-PX*2,ctaH,10); ctx.fill();
-    const ctaStr=t('d-c4-cta'), ctaSz=28;
+    const ctaStr=t('d-c4-cta'), ctaSz=26;
     ctx.font=F('700',ctaSz); ctx.fillStyle='#1a0f00';
-    ctx.fillText(ctaStr,(W-ctx.measureText(ctaStr).width)/2, ctaY+ctaH/2+ctaSz*0.36);
+    ctx.fillText(ctaStr,(W-ctx.measureText(ctaStr).width)/2,ctaY+ctaH/2+ctaSz*0.36);
   }
 
   return cv;
