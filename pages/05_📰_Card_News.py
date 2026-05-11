@@ -1237,10 +1237,10 @@ async function renderCard(n) {
     applyGrad(ctx,0,0,W,H,[[0,'rgba(0,0,0,0.15)'],[0.25,'rgba(0,0,0,0.05)'],[0.55,'rgba(0,0,0,0.4)'],[1,'rgba(0,0,0,0.88)']]);
 
     // Logo: absolute top:4.5%H right:5%W. Font clamp(7,1.5vw,11)→7.2→×2.25=16px
-    const logoFSz=19;
+    const logoFSz=22;
     ctx.font=F('400',logoFSz);
     const ltxt='MK CINELAB', ltxtW=ctx.measureText(ltxt).width;
-    const lPX=24, lPY=13, lW=ltxtW+lPX*2, lH=logoFSz+lPY*2;
+    const lPX=26, lPY=14, lW=ltxtW+lPX*2, lH=logoFSz+lPY*2;
     const lx=W-W*0.05-lW, ly=H*0.045;
     ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=1.5;
     rr(ctx,lx,ly,lW,lH,4); ctx.stroke();
@@ -1250,7 +1250,7 @@ async function renderCard(n) {
     let cy=H-W*0.06;  // bottom padding edge
 
     // Meta row: font clamp(7,1.3vw,10)→7→16px; icon clamp(9,1.5vw,12)→9→20px
-    const metaFSz=19, metaISZ=24;
+    const metaFSz=22, metaISZ=28;
     ctx.font=F('400',metaFSz); ctx.fillStyle='rgba(255,255,255,0.72)';
     const ds=t('d-c1-date'), ps=t('d-c1-place');
     ICONS.calendar(ctx,PX,cy-metaISZ,metaISZ,A);
@@ -1267,30 +1267,30 @@ async function renderCard(n) {
     cy -= W*0.04;  // title-en margin-bottom 4%W
 
     // English title: clamp(8,1.5vw,11)→8→18px
-    const titleEnFSz=22;
+    const titleEnFSz=26;
     ctx.font=F('400',titleEnFSz); ctx.fillStyle='rgba(255,255,255,0.4)';
     ctx.fillText(v('c1-title-en'),PX,cy);
     cy -= titleEnFSz + W*0.01;  // title margin-bottom 1%W
 
-    // Korean title: start 64px
+    // Korean title: start 86px
     const titleStr=v('c1-title'), maxTW=W-PX*2;
-    let tSz=64;
-    while(tSz>36){ ctx.font=F('700',tSz); if(ctx.measureText(titleStr).width<=maxTW) break; tSz-=3; }
+    let tSz=86;
+    while(tSz>44){ ctx.font=F('700',tSz); if(ctx.measureText(titleStr).width<=maxTW) break; tSz-=4; }
     ctx.font=F('700',tSz); ctx.fillStyle='#fff';
     const tLines=wrapLines(ctx,titleStr,maxTW);
     for(let i=tLines.length-1; i>=0; i--){ ctx.fillText(tLines[i],PX,cy); cy-=tSz*1.2; }
     cy -= W*0.02;  // eyebrow margin-bottom 2%W
 
     // Eyebrow: clamp(7,1.3vw,10)→7→16px
-    ctx.font=F('400',19); ctx.fillStyle=A+'cc';
+    ctx.font=F('400',24); ctx.fillStyle=A+'cc';
     ctx.fillText((v('c1-eyebrow')||'').toUpperCase(),PX,cy);
-    cy -= 19 + W*0.035;  // badge margin-bottom 3.5%W
+    cy -= 24 + W*0.035;  // badge margin-bottom 3.5%W
 
-    // Badge: 19px
-    const badgeFSz=19;
+    // Badge: 22px
+    const badgeFSz=22;
     ctx.font=F('400',badgeFSz);
     const bStr=v('c1-badge'), bTW=ctx.measureText(bStr).width;
-    const bPadX=W*0.012, bH=38, dotR=6, dotGap=12;
+    const bPadX=W*0.012, bH=44, dotR=7, dotGap=12;
     const bTotalW=bPadX+dotR*2+dotGap+bTW+bPadX;
     const bX=PX, bY=cy-bH;
     ctx.strokeStyle=A+'b3'; ctx.lineWidth=1.5;
