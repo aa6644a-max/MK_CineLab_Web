@@ -265,6 +265,126 @@ function renderThumb(ctx, S) {
   ctx.beginPath();
   ctx.arc(pbL + fillW, pbY + pbH / 2, Math.max(4, S * 0.007), 0, Math.PI * 2);
   ctx.fill();
+
+  drawCtrlBar(ctx, S);
+}
+
+function drawCtrlBar(ctx, S) {
+  const sz  = S * 0.027;
+  const cy  = S * 0.955;
+  const gap = S * 0.050;
+  const lx  = S * 0.040;
+  const rx  = S - S * 0.040;
+  const k   = sz / 24;
+
+  ctx.save();
+  ctx.shadowBlur  = 0;
+  ctx.fillStyle   = 'rgba(255,255,255,0.90)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.90)';
+
+  function at(cx, fn) {
+    ctx.save();
+    ctx.translate(cx - sz / 2, cy - sz / 2);
+    ctx.scale(k, k);
+    ctx.lineWidth = 2.2 / k;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    fn();
+    ctx.restore();
+  }
+
+  // 1. Pause
+  at(lx, () => {
+    ctx.fillRect(5.5, 4, 4.5, 16);
+    ctx.fillRect(14, 4, 4.5, 16);
+  });
+
+  // 2. Skip back 10s (CW arc + arrowhead at end + "10")
+  at(lx + gap, () => {
+    ctx.beginPath();
+    ctx.arc(12, 12.5, 8, 0.55, Math.PI * 1.45, false);
+    ctx.stroke();
+    const a = Math.PI * 1.45;
+    const px = 12 + 8 * Math.cos(a), py = 12.5 + 8 * Math.sin(a);
+    const tdx = Math.sin(a), tdy = -Math.cos(a);
+    ctx.beginPath();
+    ctx.moveTo(px + tdx * 3, py + tdy * 3);
+    ctx.lineTo(px - tdy * 2.5, py + tdx * 2.5);
+    ctx.lineTo(px + tdy * 2.5, py - tdx * 2.5);
+    ctx.closePath(); ctx.fill();
+    ctx.font = 'bold 7px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('10', 12, 12.5);
+  });
+
+  // 3. Skip forward 10s (CCW arc, mirror of skip-back)
+  at(lx + gap * 2, () => {
+    ctx.beginPath();
+    ctx.arc(12, 12.5, 8, Math.PI - 0.55, -Math.PI * 0.45, true);
+    ctx.stroke();
+    const a = -Math.PI * 0.45;
+    const px = 12 + 8 * Math.cos(a), py = 12.5 + 8 * Math.sin(a);
+    const tdx = -Math.sin(a), tdy = Math.cos(a);
+    ctx.beginPath();
+    ctx.moveTo(px + tdx * 3, py + tdy * 3);
+    ctx.lineTo(px - tdy * 2.5, py + tdx * 2.5);
+    ctx.lineTo(px + tdy * 2.5, py - tdx * 2.5);
+    ctx.closePath(); ctx.fill();
+    ctx.font = 'bold 7px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('10', 12, 12.5);
+  });
+
+  // 4. Volume (speaker polygon + two arc waves)
+  at(lx + gap * 3, () => {
+    ctx.beginPath();
+    ctx.moveTo(11, 5); ctx.lineTo(6, 9); ctx.lineTo(2.5, 9);
+    ctx.lineTo(2.5, 15); ctx.lineTo(6, 15); ctx.lineTo(11, 19);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(12.5, 12, 4,   -Math.PI * 0.5, Math.PI * 0.5, false); ctx.stroke();
+    ctx.beginPath(); ctx.arc(12.5, 12, 7.5, -Math.PI * 0.5, Math.PI * 0.5, false); ctx.stroke();
+  });
+
+  // 5. Next episode (right-pointing triangle + vertical bar)
+  at(rx - gap * 3, () => {
+    ctx.beginPath();
+    ctx.moveTo(4, 4); ctx.lineTo(17, 12); ctx.lineTo(4, 20);
+    ctx.closePath(); ctx.fill();
+    ctx.fillRect(18, 4, 2.5, 16);
+  });
+
+  // 6. Episode list (dots + horizontal lines)
+  at(rx - gap * 2, () => {
+    [6, 12, 18].forEach(y => {
+      ctx.beginPath(); ctx.arc(3.5, y, 1.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(8, y); ctx.lineTo(22, y); ctx.stroke();
+    });
+  });
+
+  // 7. Chat bubble
+  at(rx - gap, () => {
+    ctx.beginPath();
+    ctx.moveTo(4, 3.5); ctx.lineTo(20, 3.5);
+    ctx.arcTo(22.5, 3.5, 22.5, 6, 2.5);
+    ctx.lineTo(22.5, 16);
+    ctx.arcTo(22.5, 18.5, 20, 18.5, 2.5);
+    ctx.lineTo(14, 18.5); ctx.lineTo(10, 22); ctx.lineTo(10, 18.5);
+    ctx.lineTo(4, 18.5);
+    ctx.arcTo(1.5, 18.5, 1.5, 16, 2.5);
+    ctx.lineTo(1.5, 6);
+    ctx.arcTo(1.5, 3.5, 4, 3.5, 2.5);
+    ctx.closePath(); ctx.stroke();
+  });
+
+  // 8. Fullscreen (L-shapes at four corners)
+  at(rx, () => {
+    const d = 4.5, m = 2;
+    ctx.beginPath(); ctx.moveTo(m + d, m); ctx.lineTo(m, m); ctx.lineTo(m, m + d); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(24 - m - d, m); ctx.lineTo(24 - m, m); ctx.lineTo(24 - m, m + d); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(m + d, 24 - m); ctx.lineTo(m, 24 - m); ctx.lineTo(m, 24 - m - d); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(24 - m - d, 24 - m); ctx.lineTo(24 - m, 24 - m); ctx.lineTo(24 - m, 24 - m - d); ctx.stroke();
+  });
+
+  ctx.restore();
 }
 
 function drawPreview() {
