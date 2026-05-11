@@ -1033,7 +1033,6 @@ DM으로 받습니다.
 
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 let currentTab = 0;
 
@@ -1117,51 +1116,293 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2400);
 }
 
-const CARD_IDS    = ['canvas-card1','canvas-card2','canvas-card3','canvas-card4'];
 const CARD_LABELS = ['card1_cover','card2_info','card3_intro','card4_cta'];
-const TARGET_W    = 1080;
-const TARGET_H    = 1350;
 
-function exportCard(el) {
-  return new Promise(async resolve => {
-    // 폰트 로딩 완료 대기
-    await document.fonts.ready;
+// ── Pure Canvas Renderer (html2canvas 미사용) ──────────────────
 
-    const elW = el.offsetWidth || 540;
-    // 표시 크기 → 1080px 정확 매핑 (오프스크린 불필요, 폰트 비율 유지)
-    const scale = TARGET_W / elW;
-
-    html2canvas(el, {
-      scale,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: null,
-      logging: false,
-    }).then(raw => {
-      // 부동소수점 오차 보정으로 정확히 1080×1350
-      const out = document.createElement('canvas');
-      out.width  = TARGET_W;
-      out.height = TARGET_H;
-      const ctx  = out.getContext('2d');
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(raw, 0, 0, TARGET_W, TARGET_H);
-      resolve(out.toDataURL('image/png'));
-    });
+function loadImg(src) {
+  return new Promise(res => {
+    const m = (src||'').match(/url\\("?(.+?)"?\\)/);
+    const url = m ? m[1] : src;
+    if (!url || url==='none') return res(null);
+    const img = new Image();
+    img.onload = ()=>res(img); img.onerror = ()=>res(null); img.src = url;
   });
 }
 
-function downloadCurrent() {
-  const el    = document.getElementById(CARD_IDS[currentTab]);
+function bgCover(ctx, img, x, y, w, h) {
+  if (!img) return;
+  const s = Math.max(w/img.width, h/img.height);
+  ctx.save(); ctx.beginPath(); ctx.rect(x,y,w,h); ctx.clip();
+  ctx.drawImage(img, x+(w-img.width*s)/2, y+(h-img.height*s)/2, img.width*s, img.height*s);
+  ctx.restore();
+}
+
+function applyGrad(ctx, x, y, w, h, stops) {
+  const g = ctx.createLinearGradient(x,y,x,y+h);
+  stops.forEach(([p,c])=>g.addColorStop(p,c));
+  ctx.fillStyle=g; ctx.fillRect(x,y,w,h);
+}
+
+function rr(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+r,r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.arcTo(x,y+h,x,y+h-r,r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath();
+}
+
+function wrapLines(ctx, text, maxW) {
+  const res=[];
+  for (const seg of (text||'').split('\\n')) {
+    if (!seg.trim()) continue;
+    if (ctx.measureText(seg).width<=maxW) { res.push(seg); continue; }
+    const words=seg.split(' ');
+    if (words.length>1) {
+      let cur='';
+      for (const w of words) {
+        const t=cur?cur+' '+w:w;
+        if(ctx.measureText(t).width<=maxW) cur=t;
+        else { if(cur)res.push(cur); cur=w; }
+      }
+      if(cur)res.push(cur);
+    } else {
+      let cur='';
+      for (const ch of seg) {
+        if(ctx.measureText(cur+ch).width<=maxW)cur+=ch;
+        else{res.push(cur);cur=ch;}
+      }
+      if(cur)res.push(cur);
+    }
+  }
+  return res;
+}
+
+function getBg(id)  { return ((document.getElementById(id)||{style:{}}).style.backgroundImage)||''; }
+function v(id)      { return (document.getElementById(id)||{}).value||''; }
+function t(id)      { return ((document.getElementById(id)||{}).textContent||'').trim(); }
+function getAc()    { return getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#d4a574'; }
+function getAc2()   { return getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim()||'#e8c49a'; }
+
+const ICONS = {
+  calendar(ctx,x,y,sz,col){
+    const s=sz/24; ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
+    ctx.strokeStyle=col; ctx.lineWidth=2/s; ctx.lineJoin='round';
+    rr(ctx,3,4,18,18,2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(16,2);ctx.lineTo(16,6);ctx.moveTo(8,2);ctx.lineTo(8,6);ctx.moveTo(3,10);ctx.lineTo(21,10); ctx.stroke();
+    ctx.restore();
+  },
+  pin(ctx,x,y,sz,col){
+    const s=sz/24; ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
+    ctx.strokeStyle=col; ctx.lineWidth=2/s; ctx.lineJoin='round';
+    ctx.beginPath(); ctx.moveTo(21,10); ctx.bezierCurveTo(21,17,12,23,12,23); ctx.bezierCurveTo(12,23,3,17,3,10); ctx.bezierCurveTo(3,5,7,1,12,1); ctx.bezierCurveTo(17,1,21,5,21,10); ctx.closePath(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(12,10,3,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+  },
+  clock(ctx,x,y,sz,col){
+    const s=sz/24; ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
+    ctx.strokeStyle=col; ctx.lineWidth=2/s;
+    ctx.beginPath(); ctx.arc(12,12,10,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(12,6);ctx.lineTo(12,12);ctx.lineTo(16,14); ctx.stroke();
+    ctx.restore();
+  },
+  chat(ctx,x,y,sz,col){
+    const s=sz/24; ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
+    ctx.strokeStyle=col; ctx.lineWidth=2/s; ctx.lineJoin='round';
+    ctx.beginPath(); ctx.moveTo(21,15); ctx.bezierCurveTo(21,16.1,20.1,17,19,17); ctx.lineTo(7,17); ctx.lineTo(3,21); ctx.lineTo(3,5); ctx.bezierCurveTo(3,3.9,3.9,3,5,3); ctx.lineTo(19,3); ctx.bezierCurveTo(20.1,3,21,3.9,21,5); ctx.closePath(); ctx.stroke();
+    ctx.restore();
+  },
+  check(ctx,x,y,sz,col){
+    const s=sz/24; ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
+    ctx.strokeStyle=col; ctx.lineWidth=2/s;
+    ctx.beginPath(); ctx.arc(12,12,10,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(8,12);ctx.lineTo(10,14);ctx.lineTo(14,10); ctx.stroke();
+    ctx.restore();
+  },
+};
+
+async function renderCard(n) {
+  const W=1080, H=1350, PX=W*0.06;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  const A=getAc(), A2=getAc2();
+  const F = (w,sz) => `${w} ${sz}px Pretendard,sans-serif`;
+
+  if (n===0) {
+    // ── Card 1: Cover ──
+    ctx.fillStyle='#1a1510'; ctx.fillRect(0,0,W,H);
+    bgCover(ctx, await loadImg(getBg('card1-bg')), 0,0,W,H);
+    applyGrad(ctx,0,0,W,H,[[0,'rgba(0,0,0,0.15)'],[0.25,'rgba(0,0,0,0.05)'],[0.55,'rgba(0,0,0,0.4)'],[1,'rgba(0,0,0,0.88)']]);
+
+    // Logo (top-right)
+    ctx.font=F('400',20); const ltxt='MK CINELAB', lw=ctx.measureText(ltxt).width+24, lh=32;
+    const lx=W-PX-lw, ly=H*0.038;
+    ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=1; rr(ctx,lx,ly,lw,lh,3); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.75)'; ctx.fillText(ltxt,lx+12,ly+lh*0.69);
+
+    let cy=H-H*0.06;
+
+    // Meta row (date + place)
+    const ISZ=24;
+    ctx.font=F('400',22); ctx.fillStyle='rgba(255,255,255,0.72)';
+    const ds=t('d-c1-date'), ps=t('d-c1-place');
+    ICONS.calendar(ctx,PX,cy-ISZ,ISZ,A); ctx.fillText(ds,PX+ISZ+8,cy-3);
+    const dW=ctx.measureText(ds).width;
+    ICONS.pin(ctx,PX+ISZ+8+dW+28,cy-ISZ,ISZ,A); ctx.fillText(ps,PX+ISZ+8+dW+32+ISZ,cy-3);
+    cy-=ISZ+H*0.035;
+
+    // Divider
+    ctx.beginPath(); ctx.moveTo(PX,cy); ctx.lineTo(W-PX,cy);
+    ctx.strokeStyle='rgba(255,255,255,0.18)'; ctx.lineWidth=1; ctx.stroke();
+    cy-=H*0.035;
+
+    // English title
+    ctx.font=F('400',22); ctx.fillStyle='rgba(255,255,255,0.4)';
+    ctx.fillText(v('c1-title-en'),PX,cy); cy-=22+H*0.012;
+
+    // Korean title (auto-fit + wrap)
+    const titleStr=v('c1-title'), maxTW=W-PX*2;
+    let tSz=82;
+    while(tSz>36){ctx.font=F('700',tSz); if(ctx.measureText(titleStr).width<=maxTW)break; tSz-=4;}
+    ctx.font=F('700',tSz); ctx.fillStyle='#fff';
+    const tLines=wrapLines(ctx,titleStr,maxTW);
+    for(let i=tLines.length-1;i>=0;i--){ctx.fillText(tLines[i],PX,cy); cy-=tSz*1.2;}
+    cy-=H*0.01;
+
+    // Eyebrow
+    ctx.font=F('400',21); ctx.fillStyle=A+'cc';
+    ctx.fillText((v('c1-eyebrow')||'').toUpperCase(),PX,cy); cy-=21+H*0.025;
+
+    // Badge
+    const bStr=v('c1-badge'); ctx.font=F('400',19);
+    const bTW=ctx.measureText(bStr).width, bH=32, bP=12, dR=5;
+    const bX=PX, bY=cy-bH;
+    ctx.strokeStyle=A+'b3'; ctx.lineWidth=1.5; rr(ctx,bX,bY,bTW+bP*2+dR*2+10,bH,bH/2); ctx.stroke();
+    ctx.fillStyle=A; ctx.beginPath(); ctx.arc(bX+bP+dR,bY+bH/2,dR,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=A2; ctx.fillText(bStr,bX+bP+dR*2+10,bY+bH*0.68);
+
+  } else if (n===1) {
+    // ── Card 2: Info ──
+    const PH=H*0.42, BH=H-H*0.42;
+    ctx.fillStyle='#0e0c0a'; ctx.fillRect(0,0,W,H);
+    bgCover(ctx, await loadImg(getBg('card2-photo-bg')),0,0,W,PH);
+    applyGrad(ctx,0,0,W,PH,[[0,'rgba(0,0,0,0.1)'],[1,'rgba(0,0,0,0.6)']]);
+
+    const py=PH+BH*0.07, ISZ=28, KEY_X=PX+ISZ+14, VAL_X=PX+ISZ+98;
+    ctx.font=F('700',19); ctx.fillStyle=A; ctx.fillText('모임 정보',PX,py+19);
+
+    const rows=[
+      {icon:'calendar',key:'일시',val:t('d-c2-datetime')},
+      {icon:'pin',     key:'장소',val:t('d-c2-place')},
+      {icon:'clock',   key:'비용',val:t('d-c2-fee')},
+      {icon:'chat',    key:'신청',val:t('d-c2-apply')},
+    ];
+    const rStart=py+52, avail=BH-52-BH*0.2, rH=avail/rows.length;
+    rows.forEach((row,i)=>{
+      const ry=rStart+i*rH, mid=ry+rH/2;
+      if(i<rows.length-1){ctx.beginPath();ctx.moveTo(PX,ry+rH);ctx.lineTo(W-PX,ry+rH);ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;ctx.stroke();}
+      ICONS[row.icon](ctx,PX,mid-ISZ/2,ISZ,A);
+      ctx.font=F('400',17); ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.fillText(row.key,KEY_X,mid+6);
+      ctx.font=F('500',23); ctx.fillStyle='rgba(255,255,255,0.88)'; ctx.fillText(row.val,VAL_X,mid+8);
+    });
+
+    // Include box
+    const incY=PH+BH-BH*0.16, incH=BH*0.12, ISZ2=22;
+    ctx.fillStyle=A+'14'; rr(ctx,PX,incY,W-PX*2,incH,10); ctx.fill();
+    ctx.strokeStyle=A+'40'; ctx.lineWidth=1; rr(ctx,PX,incY,W-PX*2,incH,10); ctx.stroke();
+    ICONS.check(ctx,PX+16,incY+(incH-ISZ2)/2,ISZ2,A);
+    ctx.font=F('400',20); ctx.fillStyle='rgba(255,255,255,0.6)';
+    ctx.fillText(t('d-c2-include'),PX+16+ISZ2+10,incY+incH/2+7);
+
+  } else if (n===2) {
+    // ── Card 3: Intro ──
+    const PH=H*0.35, BH=H-H*0.35;
+    ctx.fillStyle='#0e0c0a'; ctx.fillRect(0,0,W,H);
+    bgCover(ctx, await loadImg(getBg('card3-photo-bg')),0,0,W,PH);
+    applyGrad(ctx,0,0,W,PH,[[0,'rgba(0,0,0,0.1)'],[1,'rgba(0,0,0,0.7)']]);
+
+    // Film dots
+    [1,0.4,0.2].forEach((op,i)=>{
+      ctx.fillStyle=`rgba(212,165,116,${op*0.6})`;
+      ctx.beginPath(); ctx.arc(PX+i*18,PH-H*0.04,7,0,Math.PI*2); ctx.fill();
+    });
+
+    const py=PH+BH*0.07;
+    ctx.font=F('700',18); ctx.fillStyle=A;
+    ctx.fillText((t('d-c3-label')||'').toUpperCase(),PX,py+18);
+
+    const items=[t('d-c3-item1'),t('d-c3-item2'),t('d-c3-item3'),t('d-c3-item4')].filter(x=>x.trim());
+    const iStart=py+55, closH=BH*0.1, avail=BH-55-closH-BH*0.06, iH=avail/items.length;
+    const itemFSz=22;
+
+    items.forEach((item,i)=>{
+      const iy=iStart+i*iH, mid=iy+iH/2;
+      if(i<items.length-1){ctx.beginPath();ctx.moveTo(PX,iy+iH);ctx.lineTo(W-PX,iy+iH);ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;ctx.stroke();}
+      ctx.fillStyle=A; ctx.beginPath(); ctx.arc(PX+5,mid-4,5,0,Math.PI*2); ctx.fill();
+      ctx.font=F('400',itemFSz); ctx.fillStyle='rgba(255,255,255,0.82)';
+      const ls=wrapLines(ctx,item,W-PX*2-24);
+      const totalLH=ls.length*itemFSz*1.5;
+      ls.forEach((l,li)=>ctx.fillText(l,PX+18,mid-totalLH/2+(li+0.8)*itemFSz*1.5));
+    });
+
+    // Closing line
+    const cY=PH+BH-closH+8;
+    ctx.beginPath(); ctx.moveTo(PX,cY-8); ctx.lineTo(W-PX,cY-8);
+    ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.font=`italic 400 22px Pretendard,sans-serif`; ctx.fillStyle=A+'bf';
+    ctx.fillText(t('d-c3-closing'),PX,cY+22);
+
+  } else if (n===3) {
+    // ── Card 4: CTA ──
+    const PH=H*0.5, BH=H-H*0.5;
+    ctx.fillStyle='#0e0c0a'; ctx.fillRect(0,0,W,H);
+    bgCover(ctx, await loadImg(getBg('card4-photo-bg')),0,0,W,PH);
+    applyGrad(ctx,0,0,W,PH,[[0,'rgba(0,0,0,0.1)'],[1,'rgba(0,0,0,0.65)']]);
+
+    let cy=PH+BH*0.1;
+    ctx.font=F('700',18); ctx.fillStyle=A; ctx.fillText('신청 방법',PX,cy); cy+=40;
+
+    const howLines=v('c4-howtext').split(/\\r?\\n/).filter(l=>l.trim());
+    ctx.font=F('400',26); ctx.fillStyle='rgba(255,255,255,0.65)';
+    howLines.forEach(line=>{ctx.fillText(line,PX,cy); cy+=26*1.7;});
+
+    // Divider
+    const divY=PH+BH*0.73;
+    ctx.beginPath(); ctx.moveTo(PX,divY); ctx.lineTo(W-PX,divY);
+    ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=1; ctx.stroke();
+
+    // Account + host
+    const accY=divY+BH*0.1;
+    ctx.font=F('700',28); ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.fillText(t('d-c4-account'),PX,accY);
+    const hostStr=t('d-c4-host');
+    ctx.font=F('400',18); ctx.fillStyle='rgba(255,255,255,0.3)';
+    ctx.fillText(hostStr, W-PX-ctx.measureText(hostStr).width, accY);
+
+    // CTA button
+    const ctaY=accY+BH*0.1, ctaH=BH*0.18;
+    ctx.fillStyle=A; rr(ctx,PX,ctaY,W-PX*2,ctaH,10); ctx.fill();
+    const ctaStr=t('d-c4-cta'), ctaSz=28;
+    ctx.font=F('700',ctaSz); ctx.fillStyle='#1a0f00';
+    ctx.fillText(ctaStr,(W-ctx.measureText(ctaStr).width)/2, ctaY+ctaH/2+ctaSz*0.36);
+  }
+
+  return cv;
+}
+
+async function downloadCurrent() {
+  await document.fonts.ready;
   const label = CARD_LABELS[currentTab];
-  showToast(`카드 ${currentTab + 1} 저장 중...`);
-  exportCard(el).then(dataUrl => {
+  showToast(`카드 ${currentTab+1} 저장 중...`);
+  try {
+    const cv = await renderCard(currentTab);
     const link = document.createElement('a');
     link.download = `mkcinelab_${label}.png`;
-    link.href = dataUrl;
+    link.href = cv.toDataURL('image/png');
     link.click();
-    showToast(`카드 ${currentTab + 1} 저장 완료! (1080×1350)`);
-  });
+    showToast(`카드 ${currentTab+1} 저장 완료! (1080×1350)`);
+  } catch(e) {
+    showToast('저장 실패 — 콘솔 확인');
+    console.error(e);
+  }
 }
 
 const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
