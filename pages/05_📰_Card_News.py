@@ -1075,22 +1075,55 @@ function showToast(msg) {
 function downloadAll() {
   const cards  = ['canvas-card1','canvas-card2','canvas-card3','canvas-card4'];
   const labels = ['card1_cover','card2_info','card3_intro','card4_cta'];
+  const TARGET_W = 1080;
+  const TARGET_H = 1350;
   let i = 0;
-  function next() {
-    if (i >= cards.length) { showToast('모든 카드 저장 완료!'); return; }
-    html2canvas(document.getElementById(cards[i]), {
-      scale: 2, useCORS: true, allowTaint: true,
-      backgroundColor: null, logging: false,
-    }).then(canvas => {
-      const link = document.createElement('a');
-      link.download = `mkcinelab_${labels[i]}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-      i++;
-      setTimeout(next, 400);
+
+  function exportCard(el) {
+    return new Promise(resolve => {
+      const elW = el.offsetWidth  || 540;
+      const elH = el.offsetHeight || 675;
+      // 출력 목표 크기를 충족하는 최소 scale 계산 (최소 4배 보장)
+      const scale = Math.max(4, Math.ceil(TARGET_W / elW) + 1);
+
+      html2canvas(el, {
+        scale,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false,
+        width: elW,
+        height: elH,
+        windowWidth: elW,
+        windowHeight: elH,
+      }).then(raw => {
+        // 정확히 1080×1350으로 리사이즈
+        const out = document.createElement('canvas');
+        out.width  = TARGET_W;
+        out.height = TARGET_H;
+        const ctx = out.getContext('2d');
+        ctx.imageSmoothingEnabled  = true;
+        ctx.imageSmoothingQuality  = 'high';
+        ctx.drawImage(raw, 0, 0, TARGET_W, TARGET_H);
+        resolve(out.toDataURL('image/png'));
+      });
     });
   }
-  showToast('저장 시작...');
+
+  function next() {
+    if (i >= cards.length) { showToast('모든 카드 저장 완료! (1080×1350)'); return; }
+    const el = document.getElementById(cards[i]);
+    showToast(`카드 ${i+1}/4 저장 중...`);
+    exportCard(el).then(dataUrl => {
+      const link = document.createElement('a');
+      link.download = `mkcinelab_${labels[i]}.png`;
+      link.href = dataUrl;
+      link.click();
+      i++;
+      setTimeout(next, 800);
+    });
+  }
+
   next();
 }
 
