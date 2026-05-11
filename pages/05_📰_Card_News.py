@@ -252,7 +252,7 @@ CARD_NEWS_HTML = """<!DOCTYPE html>
   .canvas-card {
     width: 100%;
     aspect-ratio: 4/5;
-    border-radius: 16px;
+    border-radius: 0;
     overflow: hidden;
     position: relative;
     font-family: 'Pretendard', sans-serif;
