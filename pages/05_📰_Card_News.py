@@ -1237,10 +1237,10 @@ async function renderCard(n) {
     applyGrad(ctx,0,0,W,H,[[0,'rgba(0,0,0,0.15)'],[0.25,'rgba(0,0,0,0.05)'],[0.55,'rgba(0,0,0,0.4)'],[1,'rgba(0,0,0,0.88)']]);
 
     // Logo: absolute top:4.5%H right:5%W. Font clamp(7,1.5vw,11)→7.2→×2.25=16px
-    const logoFSz=16;
+    const logoFSz=19;
     ctx.font=F('400',logoFSz);
     const ltxt='MK CINELAB', ltxtW=ctx.measureText(ltxt).width;
-    const lPX=22, lPY=12, lW=ltxtW+lPX*2, lH=logoFSz+lPY*2;
+    const lPX=24, lPY=13, lW=ltxtW+lPX*2, lH=logoFSz+lPY*2;
     const lx=W-W*0.05-lW, ly=H*0.045;
     ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=1.5;
     rr(ctx,lx,ly,lW,lH,4); ctx.stroke();
@@ -1250,7 +1250,7 @@ async function renderCard(n) {
     let cy=H-W*0.06;  // bottom padding edge
 
     // Meta row: font clamp(7,1.3vw,10)→7→16px; icon clamp(9,1.5vw,12)→9→20px
-    const metaFSz=16, metaISZ=20;
+    const metaFSz=19, metaISZ=24;
     ctx.font=F('400',metaFSz); ctx.fillStyle='rgba(255,255,255,0.72)';
     const ds=t('d-c1-date'), ps=t('d-c1-place');
     ICONS.calendar(ctx,PX,cy-metaISZ,metaISZ,A);
@@ -1267,30 +1267,30 @@ async function renderCard(n) {
     cy -= W*0.04;  // title-en margin-bottom 4%W
 
     // English title: clamp(8,1.5vw,11)→8→18px
-    const titleEnFSz=18;
+    const titleEnFSz=22;
     ctx.font=F('400',titleEnFSz); ctx.fillStyle='rgba(255,255,255,0.4)';
     ctx.fillText(v('c1-title-en'),PX,cy);
     cy -= titleEnFSz + W*0.01;  // title margin-bottom 1%W
 
-    // Korean title: clamp(18,5vw,38) at 480px→24px→×2.25=54px
+    // Korean title: start 64px
     const titleStr=v('c1-title'), maxTW=W-PX*2;
-    let tSz=54;
-    while(tSz>30){ ctx.font=F('700',tSz); if(ctx.measureText(titleStr).width<=maxTW) break; tSz-=3; }
+    let tSz=64;
+    while(tSz>36){ ctx.font=F('700',tSz); if(ctx.measureText(titleStr).width<=maxTW) break; tSz-=3; }
     ctx.font=F('700',tSz); ctx.fillStyle='#fff';
     const tLines=wrapLines(ctx,titleStr,maxTW);
     for(let i=tLines.length-1; i>=0; i--){ ctx.fillText(tLines[i],PX,cy); cy-=tSz*1.2; }
     cy -= W*0.02;  // eyebrow margin-bottom 2%W
 
     // Eyebrow: clamp(7,1.3vw,10)→7→16px
-    ctx.font=F('400',16); ctx.fillStyle=A+'cc';
+    ctx.font=F('400',19); ctx.fillStyle=A+'cc';
     ctx.fillText((v('c1-eyebrow')||'').toUpperCase(),PX,cy);
-    cy -= 16 + W*0.035;  // badge margin-bottom 3.5%W
+    cy -= 19 + W*0.035;  // badge margin-bottom 3.5%W
 
-    // Badge: clamp(7,1.2vw,9.5)→7→16px; padding ~W*0.011 side
-    const badgeFSz=16;
+    // Badge: 19px
+    const badgeFSz=19;
     ctx.font=F('400',badgeFSz);
     const bStr=v('c1-badge'), bTW=ctx.measureText(bStr).width;
-    const bPadX=W*0.011, bH=32, dotR=5, dotGap=10;
+    const bPadX=W*0.012, bH=38, dotR=6, dotGap=12;
     const bTotalW=bPadX+dotR*2+dotGap+bTW+bPadX;
     const bX=PX, bY=cy-bH;
     ctx.strokeStyle=A+'b3'; ctx.lineWidth=1.5;
@@ -1310,20 +1310,19 @@ async function renderCard(n) {
     const bodyTop=PH+bPT, bodyBottom=PH+BH-bPB;
 
     // Eyebrow: clamp(7,1.1vw,9)→7→16px; margin-bottom 5%W
-    ctx.font=F('700',16); ctx.fillStyle=A;
-    ctx.fillText('모임 정보',PX,bodyTop+16);
+    ctx.font=F('700',19); ctx.fillStyle=A;
+    ctx.fillText('모임 정보',PX,bodyTop+19);
 
-    // Include box: padding 3%W; icon clamp(10,1.8vw,14)→10→22px; text clamp(8,1.3vw,10)→8→18px
-    const ISZ2=22, incTextFSz=18, incPadY=W*0.03, incPadX=W*0.04;
+    // Include box: icon 26px, text 22px
+    const ISZ2=26, incTextFSz=22, incPadY=W*0.03, incPadX=W*0.04;
     const incH=Math.max(ISZ2,incTextFSz)+incPadY*2;
     const incY=bodyBottom-incH;
 
-    // 4 info rows fill space between eyebrow and include box
-    // icon: clamp(14,2.5vw,20)→14→31.5, cap at 28; key:16px; val: clamp(9,1.6vw,12)→9→20px
-    const ISZ=28, keyFSz=16, valFSz=20;
+    // Info rows: icon 32px, key 19px, val 24px
+    const ISZ=32, keyFSz=19, valFSz=24;
     const GAP=W*0.04, KEY_W=W*0.15;
     const KEY_X=PX+ISZ+GAP, VAL_X=KEY_X+KEY_W+GAP;
-    const listTop=bodyTop+16+W*0.05;
+    const listTop=bodyTop+19+W*0.05;
     const rH=(incY-W*0.02-listTop)/4;
 
     const rows=[
@@ -1359,8 +1358,8 @@ async function renderCard(n) {
     bgCover(ctx, await loadImg(getBg('card3-photo-bg')),0,0,W,PH);
     applyGrad(ctx,0,0,W,PH,[[0,'rgba(0,0,0,0.1)'],[1,'rgba(0,0,0,0.7)']]);
 
-    // Film dots: radius 5px
-    const filmDotR=5;
+    // Film dots: radius 6px
+    const filmDotR=6;
     [1,0.4,0.2].forEach((op,i)=>{
       ctx.fillStyle=`rgba(212,165,116,${op*0.6})`;
       ctx.beginPath(); ctx.arc(PX+i*(filmDotR*2+10),PH-PH*0.06,filmDotR,0,Math.PI*2); ctx.fill();
@@ -1371,21 +1370,20 @@ async function renderCard(n) {
     const bodyTop=PH+bPT;
 
     // Section label: clamp(7,1.1vw,9)→7→16px; margin-bottom 5%W
-    ctx.font=F('700',16); ctx.fillStyle=A;
-    ctx.fillText((t('d-c3-label')||'').toUpperCase(),PX,bodyTop+16);
+    ctx.font=F('700',19); ctx.fillStyle=A;
+    ctx.fillText((t('d-c3-label')||'').toUpperCase(),PX,bodyTop+19);
 
-    // Closing: fixed at card bottom W*0.05 above edge
-    // clamp(8,1.3vw,10.5)→8→18px; padding-top 4%W
-    const closFSz=18, closPT=W*0.04;
+    // Closing: 22px, fixed at H-W*0.05
+    const closFSz=22, closPT=W*0.04;
     const closBaselineY=H-W*0.05;
     const closBorderY=closBaselineY-closFSz*1.2-closPT;
 
     // 4 items evenly fill space between label and closing border
     const items=[t('d-c3-item1'),t('d-c3-item2'),t('d-c3-item3'),t('d-c3-item4')].filter(x=>x.trim());
-    const iStart=bodyTop+16+W*0.05;
+    const iStart=bodyTop+19+W*0.05;
     const iH=(closBorderY-8-iStart)/Math.max(items.length,1);
-    // item text: clamp(9,1.55vw,12)→9→20px; dot radius 5px
-    const itemFSz=20, dotR2=5;
+    // item: 24px, dot radius 6px
+    const itemFSz=24, dotR2=6;
 
     items.forEach((item,i)=>{
       const iy=iStart+i*iH, mid=iy+iH/2;
@@ -1420,7 +1418,7 @@ async function renderCard(n) {
 
     // ── Bottom group (work bottom→up) ──
     // CTA: clamp(9,1.6vw,12)→9→20px, use 22px. height capped at BH*0.15
-    const ctaFSz=22;
+    const ctaFSz=26;
     const ctaH=Math.min(ctaFSz+W*0.08, BH*0.15);
     const ctaTopY=bodyBottom-ctaH;
     ctx.fillStyle=A; rr(ctx,PX,ctaTopY,W-PX*2,ctaH,10); ctx.fill();
@@ -1430,7 +1428,7 @@ async function renderCard(n) {
 
     // Account row: margin-bottom 4%W above CTA top
     // account clamp(10,1.8vw,13)→10→22px; host clamp(7,1.1vw,9)→7→16px
-    const accFSz=22, hostFSz=16;
+    const accFSz=26, hostFSz=19;
     const accBaseline=ctaTopY-W*0.04;
     ctx.font=F('700',accFSz); ctx.fillStyle='rgba(255,255,255,0.8)';
     ctx.fillText(t('d-c4-account'),PX,accBaseline);
@@ -1445,14 +1443,14 @@ async function renderCard(n) {
 
     // ── Top group ──
     // How-to label: clamp(7,1.1vw,9)→7→16px; margin-bottom 3%W
-    ctx.font=F('700',16); ctx.fillStyle=A;
-    ctx.fillText('신청 방법',PX,bodyTop+16);
+    ctx.font=F('700',19); ctx.fillStyle=A;
+    ctx.fillText('신청 방법',PX,bodyTop+19);
 
-    // How-to text: clamp(9,1.5vw,11.5)→9→20px; line-height 1.7
-    const howFSz=20;
+    // How-to text: 24px, line-height 1.7
+    const howFSz=24;
     ctx.font=F('400',howFSz); ctx.fillStyle='rgba(255,255,255,0.65)';
     const howLines=v('c4-howtext').split(/\\r?\\n/).filter(l=>l.trim());
-    const howFirstY=bodyTop+16+W*0.03+howFSz;
+    const howFirstY=bodyTop+19+W*0.03+howFSz;
     howLines.forEach((line,i)=>{ ctx.fillText(line,PX,howFirstY+i*howFSz*1.7); });
   }
 
