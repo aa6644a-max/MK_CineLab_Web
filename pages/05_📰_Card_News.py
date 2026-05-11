@@ -226,17 +226,63 @@ CARD_NEWS_HTML = """<!DOCTYPE html>
 
   .cards-container {
     width: 100%;
-    max-width: 900px;
     display: flex;
     flex-direction: column;
-    gap: 32px;
     align-items: center;
   }
+
+  .card-panel {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .card-panel.active { display: flex; }
 
   .canvas-wrapper {
     width: 100%;
     max-width: 540px;
     position: relative;
+    margin-top: 28px;
+  }
+
+  /* ── 모바일 반응형 ── */
+  @media (max-width: 768px) {
+    .app {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+    }
+    .sidebar {
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      max-height: 56vh;
+      overflow-y: auto;
+      padding: 20px 16px;
+    }
+    .card-tabs {
+      position: sticky;
+      top: -20px;
+      z-index: 10;
+      background: var(--surface);
+      padding: 8px 0 4px;
+    }
+    .preview-area {
+      padding: 20px 16px 48px;
+    }
+    .canvas-wrapper {
+      max-width: 100%;
+    }
+    .preview-header-title {
+      font-size: 11px;
+    }
+    .sidebar-actions {
+      position: sticky;
+      bottom: 0;
+      background: var(--surface);
+      padding: 12px 0 0;
+    }
   }
 
   .canvas-num {
@@ -850,7 +896,7 @@ DM으로 받습니다.
     </div>
 
     <div class="sidebar-actions">
-      <button class="btn-download" onclick="downloadAll()">전체 카드 이미지 저장 (4장)</button>
+      <button class="btn-download" onclick="downloadCurrent()">이 카드 저장 (1장)</button>
     </div>
   </aside>
 
@@ -863,6 +909,7 @@ DM으로 받습니다.
     <div class="cards-container">
 
       <!-- CARD 1 -->
+      <div class="card-panel active" id="panel-0">
       <div class="canvas-wrapper">
         <div class="canvas-num">01 — 모집 커버</div>
         <div class="canvas-card card1" id="canvas-card1">
@@ -891,8 +938,10 @@ DM으로 받습니다.
           </div>
         </div>
       </div>
+      </div><!-- /panel-0 -->
 
       <!-- CARD 2 -->
+      <div class="card-panel" id="panel-1">
       <div class="canvas-wrapper">
         <div class="canvas-num">02 — 모임 정보</div>
         <div class="canvas-card card2" id="canvas-card2">
@@ -931,8 +980,10 @@ DM으로 받습니다.
           </div>
         </div>
       </div>
+      </div><!-- /panel-1 -->
 
       <!-- CARD 3 -->
+      <div class="card-panel" id="panel-2">
       <div class="canvas-wrapper">
         <div class="canvas-num">03 — 모임 소개</div>
         <div class="canvas-card card3" id="canvas-card3">
@@ -959,8 +1010,10 @@ DM으로 받습니다.
           </div>
         </div>
       </div>
+      </div><!-- /panel-2 -->
 
       <!-- CARD 4 -->
+      <div class="card-panel" id="panel-3">
       <div class="canvas-wrapper">
         <div class="canvas-num">04 — 신청 안내</div>
         <div class="canvas-card card4" id="canvas-card4">
@@ -984,6 +1037,7 @@ DM으로 받습니다.
           </div>
         </div>
       </div>
+      </div><!-- /panel-3 -->
 
     </div>
   </main>
@@ -993,9 +1047,13 @@ DM으로 받습니다.
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
+let currentTab = 0;
+
 function switchTab(i) {
-  document.querySelectorAll('.tab-btn').forEach((b,j) => b.classList.toggle('active', i===j));
-  document.querySelectorAll('.tab-panel').forEach((p,j) => p.classList.toggle('active', i===j));
+  currentTab = i;
+  document.querySelectorAll('.tab-btn').forEach((b,j)    => b.classList.toggle('active', i===j));
+  document.querySelectorAll('.tab-panel').forEach((p,j)  => p.classList.toggle('active', i===j));
+  document.querySelectorAll('.card-panel').forEach((p,j) => p.classList.toggle('active', i===j));
 }
 
 function loadImage(input, bgId, prevId) {
@@ -1071,55 +1129,47 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2400);
 }
 
-function downloadAll() {
-  const cards  = ['canvas-card1','canvas-card2','canvas-card3','canvas-card4'];
-  const labels = ['card1_cover','card2_info','card3_intro','card4_cta'];
-  const TARGET_W = 1080;
-  const TARGET_H = 1350;
-  let i = 0;
+const CARD_IDS    = ['canvas-card1','canvas-card2','canvas-card3','canvas-card4'];
+const CARD_LABELS = ['card1_cover','card2_info','card3_intro','card4_cta'];
+const TARGET_W = 1080;
+const TARGET_H = 1350;
 
-  function exportCard(el) {
-    return new Promise(resolve => {
-      const elW = el.offsetWidth  || 540;
-      const elH = el.offsetHeight || 675;
-      // 출력 목표 크기를 충족하는 최소 scale 계산 (최소 4배 보장)
-      const scale = Math.max(4, Math.ceil(TARGET_W / elW) + 1);
+function exportCard(el) {
+  return new Promise(resolve => {
+    const elW   = el.offsetWidth  || 540;
+    const elH   = el.offsetHeight || 675;
+    const scale = Math.max(4, Math.ceil(TARGET_W / elW) + 1);
 
-      html2canvas(el, {
-        scale,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: null,
-        logging: false,
-      }).then(raw => {
-        // 정확히 1080×1350으로 리사이즈
-        const out = document.createElement('canvas');
-        out.width  = TARGET_W;
-        out.height = TARGET_H;
-        const ctx = out.getContext('2d');
-        ctx.imageSmoothingEnabled  = true;
-        ctx.imageSmoothingQuality  = 'high';
-        ctx.drawImage(raw, 0, 0, TARGET_W, TARGET_H);
-        resolve(out.toDataURL('image/png'));
-      });
+    html2canvas(el, {
+      scale,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+      logging: false,
+    }).then(raw => {
+      const out = document.createElement('canvas');
+      out.width  = TARGET_W;
+      out.height = TARGET_H;
+      const ctx = out.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(raw, 0, 0, TARGET_W, TARGET_H);
+      resolve(out.toDataURL('image/png'));
     });
-  }
+  });
+}
 
-  function next() {
-    if (i >= cards.length) { showToast('모든 카드 저장 완료! (1080×1350)'); return; }
-    const el = document.getElementById(cards[i]);
-    showToast(`카드 ${i+1}/4 저장 중...`);
-    exportCard(el).then(dataUrl => {
-      const link = document.createElement('a');
-      link.download = `mkcinelab_${labels[i]}.png`;
-      link.href = dataUrl;
-      link.click();
-      i++;
-      setTimeout(next, 800);
-    });
-  }
-
-  next();
+function downloadCurrent() {
+  const el    = document.getElementById(CARD_IDS[currentTab]);
+  const label = CARD_LABELS[currentTab];
+  showToast(`카드 ${currentTab + 1} 저장 중...`);
+  exportCard(el).then(dataUrl => {
+    const link = document.createElement('a');
+    link.download = `mkcinelab_${label}.png`;
+    link.href = dataUrl;
+    link.click();
+    showToast(`카드 ${currentTab + 1} 저장 완료!`);
+  });
 }
 
 update();
