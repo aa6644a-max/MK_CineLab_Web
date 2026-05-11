@@ -177,27 +177,21 @@ CARD_NEWS_HTML = """<!DOCTYPE html>
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
 
-  .sidebar-actions {
-    margin-top: auto;
-    padding-top: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
   .btn-download {
     width: 100%;
-    padding: 12px;
+    max-width: 540px;
+    padding: 15px;
     background: var(--accent);
     color: #1a0f00;
     border: none;
     border-radius: 10px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     font-family: 'Pretendard', sans-serif;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.5px;
     transition: opacity 0.2s;
+    margin-top: 16px;
   }
   .btn-download:hover { opacity: 0.88; }
 
@@ -276,12 +270,6 @@ CARD_NEWS_HTML = """<!DOCTYPE html>
     }
     .preview-header-title {
       font-size: 11px;
-    }
-    .sidebar-actions {
-      position: sticky;
-      bottom: 0;
-      background: var(--surface);
-      padding: 12px 0 0;
     }
   }
 
@@ -895,9 +883,6 @@ DM으로 받습니다.
       </div>
     </div>
 
-    <div class="sidebar-actions">
-      <button class="btn-download" onclick="downloadCurrent()">이 카드 저장 (1장)</button>
-    </div>
   </aside>
 
   <!-- PREVIEW -->
@@ -1040,6 +1025,9 @@ DM으로 받습니다.
       </div><!-- /panel-3 -->
 
     </div>
+
+    <button class="btn-download" onclick="downloadCurrent()">⬇ 이 카드 저장 (1080×1350)</button>
+
   </main>
 </div>
 
