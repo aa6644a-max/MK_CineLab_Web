@@ -1119,31 +1119,55 @@ function showToast(msg) {
 
 const CARD_IDS    = ['canvas-card1','canvas-card2','canvas-card3','canvas-card4'];
 const CARD_LABELS = ['card1_cover','card2_info','card3_intro','card4_cta'];
-const TARGET_W = 1080;
-const TARGET_H = 1350;
+const TARGET_W    = 1080;
+const TARGET_H    = 1350;
 
 function exportCard(el) {
   return new Promise(resolve => {
-    const elW   = el.offsetWidth  || 540;
-    const elH   = el.offsetHeight || 675;
-    const scale = Math.max(4, Math.ceil(TARGET_W / elW) + 1);
+    const wrapper = el.closest('.canvas-wrapper');
 
-    html2canvas(el, {
-      scale,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: null,
-      logging: false,
-    }).then(raw => {
-      const out = document.createElement('canvas');
-      out.width  = TARGET_W;
-      out.height = TARGET_H;
-      const ctx = out.getContext('2d');
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(raw, 0, 0, TARGET_W, TARGET_H);
-      resolve(out.toDataURL('image/png'));
-    });
+    // 현재 스타일 저장
+    const ws = wrapper.style, es = el.style;
+    const savedW = { position: ws.position, left: ws.left, top: ws.top,
+                     width: ws.width, maxWidth: ws.maxWidth, zIndex: ws.zIndex,
+                     marginTop: ws.marginTop };
+    const savedE = { width: es.width, height: es.height };
+
+    // 오프스크린에서 실제 1080px 크기로 렌더링
+    ws.position = 'fixed';
+    ws.left     = `-${TARGET_W + 300}px`;
+    ws.top      = '0';
+    ws.width    = TARGET_W + 'px';
+    ws.maxWidth = 'none';
+    ws.zIndex   = '-999';
+    ws.marginTop = '0';
+    es.width    = TARGET_W + 'px';
+    es.height   = TARGET_H + 'px';
+
+    // 리플로우 대기 후 캡처
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      html2canvas(el, {
+        scale: 2,           // 2x → 2160×2700, 다운스케일로 선명도 확보
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false,
+      }).then(raw => {
+        // 스타일 복원
+        Object.assign(ws, savedW);
+        Object.assign(es, savedE);
+
+        // 정확히 1080×1350으로 리사이즈
+        const out = document.createElement('canvas');
+        out.width  = TARGET_W;
+        out.height = TARGET_H;
+        const ctx  = out.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(raw, 0, 0, TARGET_W, TARGET_H);
+        resolve(out.toDataURL('image/png'));
+      });
+    }));
   });
 }
 
@@ -1156,7 +1180,7 @@ function downloadCurrent() {
     link.download = `mkcinelab_${label}.png`;
     link.href = dataUrl;
     link.click();
-    showToast(`카드 ${currentTab + 1} 저장 완료!`);
+    showToast(`카드 ${currentTab + 1} 저장 완료! (1080×1350)`);
   });
 }
 
