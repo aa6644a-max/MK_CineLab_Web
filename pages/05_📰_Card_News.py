@@ -849,7 +849,7 @@ CARD_NEWS_HTML = """<!DOCTYPE html>
         <div class="section-label">신청 안내</div>
         <div class="field">
           <label>신청 안내 문구</label>
-          <textarea id="c4-howtext">참가 신청은 인스타그램
+          <textarea id="c4-howtext" oninput="update()">참가 신청은 인스타그램
 DM으로 받습니다.
 선착순 마감이니 서둘러주세요.</textarea>
         </div>
