@@ -1092,10 +1092,6 @@ function downloadAll() {
         allowTaint: true,
         backgroundColor: null,
         logging: false,
-        width: elW,
-        height: elH,
-        windowWidth: elW,
-        windowHeight: elH,
       }).then(raw => {
         // 정확히 1080×1350으로 리사이즈
         const out = document.createElement('canvas');
