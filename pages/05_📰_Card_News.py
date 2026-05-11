@@ -1123,51 +1123,31 @@ const TARGET_W    = 1080;
 const TARGET_H    = 1350;
 
 function exportCard(el) {
-  return new Promise(resolve => {
-    const wrapper = el.closest('.canvas-wrapper');
+  return new Promise(async resolve => {
+    // 폰트 로딩 완료 대기
+    await document.fonts.ready;
 
-    // 현재 스타일 저장
-    const ws = wrapper.style, es = el.style;
-    const savedW = { position: ws.position, left: ws.left, top: ws.top,
-                     width: ws.width, maxWidth: ws.maxWidth, zIndex: ws.zIndex,
-                     marginTop: ws.marginTop };
-    const savedE = { width: es.width, height: es.height };
+    const elW = el.offsetWidth || 540;
+    // 표시 크기 → 1080px 정확 매핑 (오프스크린 불필요, 폰트 비율 유지)
+    const scale = TARGET_W / elW;
 
-    // 오프스크린에서 실제 1080px 크기로 렌더링
-    ws.position = 'fixed';
-    ws.left     = `-${TARGET_W + 300}px`;
-    ws.top      = '0';
-    ws.width    = TARGET_W + 'px';
-    ws.maxWidth = 'none';
-    ws.zIndex   = '-999';
-    ws.marginTop = '0';
-    es.width    = TARGET_W + 'px';
-    es.height   = TARGET_H + 'px';
-
-    // 리플로우 대기 후 캡처
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      html2canvas(el, {
-        scale: 2,           // 2x → 2160×2700, 다운스케일로 선명도 확보
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: null,
-        logging: false,
-      }).then(raw => {
-        // 스타일 복원
-        Object.assign(ws, savedW);
-        Object.assign(es, savedE);
-
-        // 정확히 1080×1350으로 리사이즈
-        const out = document.createElement('canvas');
-        out.width  = TARGET_W;
-        out.height = TARGET_H;
-        const ctx  = out.getContext('2d');
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(raw, 0, 0, TARGET_W, TARGET_H);
-        resolve(out.toDataURL('image/png'));
-      });
-    }));
+    html2canvas(el, {
+      scale,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+      logging: false,
+    }).then(raw => {
+      // 부동소수점 오차 보정으로 정확히 1080×1350
+      const out = document.createElement('canvas');
+      out.width  = TARGET_W;
+      out.height = TARGET_H;
+      const ctx  = out.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(raw, 0, 0, TARGET_W, TARGET_H);
+      resolve(out.toDataURL('image/png'));
+    });
   });
 }
 
