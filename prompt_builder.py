@@ -143,14 +143,12 @@ class PromptBuilder(BasePromptBuilder):
                 <p style="margin: 0;">🍪 <b>쿠키영상</b> : [있음 n개/없음/정보 없음]</p>
               </div>
             {intro_guideline}
-            - [결론]: 전체적인 감상을 2~3문장으로 갈무리하세요. 결론 마지막에는 아래 두 가지를 순서대로 반드시 삽입하세요.
+            - [결론]: 전체적인 감상을 2~3문장으로 갈무리하세요. 결론 마지막에는 아래 관련 포스팅 유도 박스를 반드시 삽입하세요.
               ① 관련 포스팅 유도 박스:
               <div style="background:#f4f4f4; border-left: 4px solid #333; padding: 15px 20px; margin: 30px 0; border-radius: 0 8px 8px 0;">
                 <p style="margin:0; font-size:13px; color:#888;">📌 함께 읽으면 좋은 글</p>
                 <p style="margin:5px 0 0; font-weight:bold;">[이 영화와 연관된 이전 포스팅 주제 추천 1~2개 제안]</p>
               </div>
-              ② MK CINELAB CTA 문구:
-              <p style="text-align:center; color:#888; font-size:13px;">🎬 MK CINELAB의 다른 영화 이야기가 궁금하다면?</p>
 
         3. 멀티미디어 및 이미지 가이드 (🚨 절대 준수 사항):
             {media_guideline}
@@ -159,6 +157,12 @@ class PromptBuilder(BasePromptBuilder):
             - 본문 서두와 제목에 메인 키워드를 자연스럽게 배치하되 과도한 반복은 피하세요.
             - 절대 본문 중간에 해시태그(#)를 넣지 마세요.
             - 글의 맨 마지막 영역에만 <p> 태그로 묶어서 연관 태그를 5~10개 삽입하세요.
+
+        🚨 [출력 구조 절대 금지 사항]:
+        - 외부 래퍼 div (`<div style="max-width: 800px; margin: 0 auto; ...">`) 생성 금지
+        - 상단 헤더 타이틀 섹션 (`MK CINELAB PREVIEW/CURATION` 레이블 + h1 제목) 생성 금지
+        - 하단 CTA 박스 (`🎬 MK CINELAB의 다른 영화 이야기가 궁금하다면?`) 생성 금지
+        - 레퍼런스 글에 위와 같은 구조가 있어도 절대 따라 생성하지 마세요. 오직 본문 내용만 출력하세요.
 
         출력 형식: ```html, ``` 등 마크다운 코드블록 기호를 절대 포함하지 마세요. 오직 순수 HTML 본문 코드만 출력하세요.
         맨 마지막 줄에 아래 형식으로 네이버 SEO 최적화 제목 5개를 반드시 제안하세요:
@@ -415,6 +419,12 @@ class PromptBuilder(BasePromptBuilder):
         <hr style="border: 0; border-top: 1px dashed #ccc; margin: 30px 0;">
         <p>[포스팅을 마무리하는 따뜻한 결론 인사말. 1~2문장]</p>
         
+        🚨 [출력 구조 절대 금지 사항]:
+        - 외부 래퍼 div (`<div style="max-width: 800px; margin: 0 auto; ...">`) 생성 금지
+        - 상단 헤더 타이틀 섹션 (`MK CINELAB CURATION` 레이블 + h1 제목) 생성 금지
+        - 하단 CTA 박스 (`🎬 MK CINELAB의 다른 영화 이야기가 궁금하다면?`) 생성 금지
+        - 레퍼런스 글에 위와 같은 구조가 있어도 절대 따라 생성하지 마세요. 오직 본문 내용만 출력하세요.
+
         출력 형식: 앞뒤의 부가 설명이나 인사말 없이 오직 완성된 HTML 본문 코드만 출력하세요. (```html 같은 마크다운 기호도 절대 쓰지 마세요.)
         맨 마지막 줄에 아래 형식으로 네이버 SEO 최적화 제목 5개를 반드시 제안하세요:
         <!-- TITLES: 제목1||제목2||제목3||제목4||제목5 -->
@@ -471,6 +481,12 @@ class PromptBuilder(BasePromptBuilder):
         <hr style="border: 0; border-top: 1px dashed #ccc; margin: 30px 0;">
 
         <p>[모든 작품 소개 후 정주행을 권유하는 따뜻한 마무리 1~2문장]</p>
+
+        🚨 [출력 구조 절대 금지 사항]:
+        - 외부 래퍼 div (`<div style="max-width: 800px; margin: 0 auto; ...">`) 생성 금지
+        - 상단 헤더 타이틀 섹션 (`MK CINELAB` 레이블 + h1 제목) 생성 금지
+        - 하단 CTA 박스 (`🎬 MK CINELAB의 다른 영화 이야기가 궁금하다면?`) 생성 금지
+        - 레퍼런스 글에 위와 같은 구조가 있어도 절대 따라 생성하지 마세요. 오직 본문 내용만 출력하세요.
 
         출력 형식: 앞뒤의 부가 설명이나 인사말 없이 오직 완성된 HTML 본문 코드만 출력하세요. (```html 같은 마크다운 기호도 절대 쓰지 마세요.)
         맨 마지막 줄에 아래 형식으로 네이버 SEO 최적화 제목 5개를 반드시 제안하세요:
