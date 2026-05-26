@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 import re
+import pandas as pd
 #import streamlit.components.v1 as components
 from tmdb_client import TMDBClient
 from claude_client import ClaudeClient
@@ -40,6 +41,8 @@ if "news_data" not in st.session_state: st.session_state.news_data = None
 if "converted_html" not in st.session_state: st.session_state.converted_html = None
 if "converted_titles" not in st.session_state: st.session_state.converted_titles = []
 if "cur_data" not in st.session_state: st.session_state.cur_data = None
+if "cur_movies_df" not in st.session_state:
+    st.session_state.cur_movies_df = pd.DataFrame({"영화 제목": ["", "", ""], "한마디 코멘트 (선택)": ["", "", ""]})
 if "binge_data" not in st.session_state: st.session_state.binge_data = None
 
 def parse_titles_from_html(html_text):
@@ -196,24 +199,43 @@ with tab4:
     st.markdown("여러 편의 영화를 특정 테마에 맞춰 한 번에 소개하는 포스팅을 작성합니다.")
     
     cur_theme = st.text_input("포스팅 메인 테마", placeholder="예: 다가오는 2026년 3월 개봉 예정 기대작 정리", key="cur_theme")
-    cur_movies = st.text_area("소개할 영화 제목들 (쉼표로 구분)", placeholder="예: 프로젝트 헤일메리, 브라이드!, 호퍼스", height=100, key="cur_movies")
-    
+
+    st.markdown("**소개할 영화 목록** — 영화 제목 입력 후, 각 영화에 하고 싶은 말이 있으면 '한마디 코멘트'에 적어주세요. (행 추가는 맨 아래 빈 행 클릭)")
+    edited_df = st.data_editor(
+        st.session_state.cur_movies_df,
+        num_rows="dynamic",
+        use_container_width=True,
+        key="cur_movies_editor",
+        column_config={
+            "영화 제목": st.column_config.TextColumn("영화 제목", width="medium"),
+            "한마디 코멘트 (선택)": st.column_config.TextColumn("한마디 코멘트 (선택)", width="large", help="예: 이 감독 전작을 정말 좋아해서 기대돼요"),
+        }
+    )
+
     if st.button("큐레이션 포스팅 생성", type="primary"):
-        if cur_theme and cur_movies:
-            movie_list = [m.strip() for m in cur_movies.split(",") if m.strip()]
-            
-            with st.spinner(f"총 {len(movie_list)}편의 영화 정보(TMDB)와 최신 뉴스(Naver)를 수집 중입니다..."):
+        movie_entries = [
+            (str(row["영화 제목"]).strip(), str(row["한마디 코멘트 (선택)"]).strip())
+            for _, row in edited_df.iterrows()
+            if str(row["영화 제목"]).strip() and str(row["영화 제목"]).strip() != "nan"
+        ]
+
+        if cur_theme and movie_entries:
+            st.session_state.cur_movies_df = edited_df
+
+            with st.spinner(f"총 {len(movie_entries)}편의 영화 정보(TMDB)와 최신 뉴스(Naver)를 수집 중입니다..."):
                 movies_data_text = ""
-                for m_title in movie_list:
+                for m_title, m_comment in movie_entries:
                     m_info = tmdb.search_movie(m_title)
                     if m_info:
                         details = tmdb.get_movie_details(m_info['id'])
-                        latest_news = naver.search_movie_news(m_title, display=2) 
-                        
+                        latest_news = naver.search_movie_news(m_title, display=2)
+
                         poster_html = builder._build_image_html(details.get('poster_url'), f"{details.get('title')} 포스터")
                         if not poster_html:
                             poster_html = builder._build_placeholder_html(f"영화 '{details.get('title')}' 메인 포스터")
-                            
+
+                        comment_line = f"- [MK의 한마디]: {m_comment}" if m_comment and m_comment != "nan" else ""
+
                         movies_data_text += f"""
                         [영화: {details.get('title')}]
                         - 원제: {details.get('original_title', '정보 없음')}
@@ -222,8 +244,9 @@ with tab4:
                         - 출연: {details.get('actors', '')}
                         - 개봉일: {details.get('release_date', '')}
                         - 줄거리: {details.get('overview', '')}
+                        {comment_line}
                         - <메인 포스터 HTML 코드>: {poster_html}
-                        - [최신 네이버 뉴스 동향]: 
+                        - [최신 네이버 뉴스 동향]:
                         {latest_news}
                         ============================================
                         """
@@ -245,9 +268,11 @@ with tab4:
                     st.session_state.cur_data = {"title": cur_theme, "html": final_html, "titles": titles}
                 else:
                     st.error("유효한 영화 정보를 하나도 수집하지 못했습니다. 제목을 정확히 확인해 주세요.")
+        elif not cur_theme:
+            st.warning("포스팅 메인 테마를 입력해 주세요.")
         else:
-            st.warning("테마와 영화 제목들을 모두 입력해 주세요.")
-            
+            st.warning("영화 제목을 한 편 이상 입력해 주세요.")
+
     if st.session_state.cur_data:
         st.success("큐레이션 리스트 포스팅 생성 완료!")
         titles = st.session_state.cur_data.get("titles", [])

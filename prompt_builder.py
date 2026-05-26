@@ -409,7 +409,7 @@ class PromptBuilder(BasePromptBuilder):
         <p>[TMDB 줄거리를 바탕으로 하되, 아주 간결하게 압축한 영화 소개글. (1~2문장)]</p>
 
         <h3 style="color: #2e7d32; margin-top: 20px;">🔎 관전 포인트</h3>
-        <p>[수집된 네이버 뉴스의 팩트와 MK의 주관적인 기대감을 섞은 핵심 관전 포인트. (1~2문장)]</p>
+        <p>[수집된 네이버 뉴스의 팩트와 MK의 주관적인 기대감을 섞은 핵심 관전 포인트. 만약 [MK의 한마디] 데이터가 존재한다면 그 내용을 자연스럽게 녹여서 반드시 반영하세요. (1~2문장)]</p>
 
         <p style="text-align: center;">&nbsp;</p>
         <hr style="border: 0; border-top: 1px dashed #ccc; margin: 30px 0;">
