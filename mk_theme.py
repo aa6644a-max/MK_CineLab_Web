@@ -13,15 +13,20 @@ _CSS = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap');
 
-/* ── Streamlit 크롬 제거 ── */
+/* ── Streamlit 크롬 최소화 (사이드바 토글은 유지) ── */
 #MainMenu {{ visibility: hidden; }}
-header[data-testid="stHeader"] {{ display: none !important; }}
 footer {{ visibility: hidden; }}
 .stAppDeployButton {{ display: none !important; }}
 [data-testid="stDecoration"] {{ display: none !important; }}
 [data-testid="stStatusWidget"] {{ display: none !important; }}
+[data-testid="stToolbar"] {{ display: none !important; }}
+/* 헤더 투명화 — 토글 버튼은 살림 */
+header[data-testid="stHeader"] {{
+    background: transparent !important;
+    border-bottom: none !important;
+}}
 .block-container {{
-    padding-top: 1.5rem !important;
+    padding-top: 1rem !important;
     padding-bottom: 2rem !important;
     max-width: 1200px !important;
 }}
