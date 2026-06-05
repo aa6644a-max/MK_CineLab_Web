@@ -13,6 +13,19 @@ _CSS = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap');
 
+/* ── Streamlit 크롬 제거 ── */
+#MainMenu {{ visibility: hidden; }}
+header[data-testid="stHeader"] {{ display: none !important; }}
+footer {{ visibility: hidden; }}
+.stAppDeployButton {{ display: none !important; }}
+[data-testid="stDecoration"] {{ display: none !important; }}
+[data-testid="stStatusWidget"] {{ display: none !important; }}
+.block-container {{
+    padding-top: 1.5rem !important;
+    padding-bottom: 2rem !important;
+    max-width: 1200px !important;
+}}
+
 /* ── 전체 앱 배경 ── */
 .stApp {{
     background-color: {_BG};
