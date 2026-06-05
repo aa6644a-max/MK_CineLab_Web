@@ -689,7 +689,10 @@ with tab_photo:
                                 photo_pdf_text += "\n".join([pg.extract_text() for pg in pdf.pages if pg.extract_text()])
                         except Exception as e:
                             st.warning(f"{pf.name} 읽기 오류: {e}")
-                reference_posts = rss.get_latest_posts_text(limit=3)
+                # 이미지 전송 시 토큰 절약: PDF 8000자 / 레퍼런스 1개로 제한
+                if len(photo_pdf_text) > 8000:
+                    photo_pdf_text = photo_pdf_text[:8000] + "\n...(이하 생략)"
+                reference_posts = rss.get_latest_posts_text(limit=1)
                 prompt = daily_builder.build_photo_post_prompt(
                     category=photo_category, vibe=photo_vibe,
                     place_info_text=place_info_text,
