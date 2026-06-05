@@ -156,7 +156,7 @@ with main_col:
                 score_col = "#D4A853" if m["vote_average"] >= 7 else "rgba(245,240,232,0.35)"
                 with col:
                     if m["poster_url"]:
-                        st.image(m["poster_url"], use_container_width=True)
+                        st.image(m["poster_url"], width='stretch')
                     else:
                         st.markdown('<div style="width:100%;padding-top:150%;background:#241A14;border-radius:6px;"></div>', unsafe_allow_html=True)
                     st.markdown(f"""

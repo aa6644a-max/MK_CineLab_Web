@@ -791,7 +791,7 @@ with tab_search:
                     col1, col2 = st.columns([1, 2.2])
                     with col1:
                         if poster_url:
-                            st.image(poster_url, use_container_width=True, caption="TMDB Database")
+                            st.image(poster_url, width='stretch', caption="TMDB Database")
                         else:
                             st.warning("🖼️ 포스터 이미지를 찾을 수 없습니다.")
                         st.markdown("### ⭐ 글로벌 평점")
