@@ -30,17 +30,17 @@ with c1:
     with st.container(border=True):
         st.markdown("**📝 포스팅 작업실**")
         st.caption("PDF 요약 · 리뷰 · 프리뷰 · 큐레이션 · 정주행 · 사진")
-        st.page_link("pages/01_📝_포스팅.py", label="이동", icon="→")
+        st.page_link("pages/01_📝_포스팅.py", label="이동 →")
 with c2:
     with st.container(border=True):
         st.markdown("**🎨 이미지 작업실**")
         st.caption("썸네일 메이커 · 카드뉴스 4종")
-        st.page_link("pages/02_🎨_이미지.py", label="이동", icon="→")
+        st.page_link("pages/02_🎨_이미지.py", label="이동 →")
 with c3:
     with st.container(border=True):
         st.markdown("**⚙️ 설정**")
         st.caption("네이버 블로그 데이터 동기화")
-        st.page_link("pages/03_⚙️_설정.py", label="이동", icon="→")
+        st.page_link("pages/03_⚙️_설정.py", label="이동 →")
 
 st.markdown("<div style='margin:2rem 0;'></div>", unsafe_allow_html=True)
 
