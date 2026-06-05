@@ -13,55 +13,50 @@ _CSS = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap');
 
-/* ── Streamlit 크롬 최소화 (사이드바 토글은 유지) ── */
+/* ── Streamlit 크롬 제거 + 사이드바 완전 숨김 ── */
 #MainMenu {{ visibility: hidden; }}
 footer {{ visibility: hidden; }}
 .stAppDeployButton {{ display: none !important; }}
 [data-testid="stDecoration"] {{ display: none !important; }}
 [data-testid="stStatusWidget"] {{ display: none !important; }}
 [data-testid="stToolbar"] {{ display: none !important; }}
-/* 헤더 투명화 — 토글 버튼은 살림 */
-header[data-testid="stHeader"] {{
-    background: transparent !important;
-    border-bottom: none !important;
-}}
-/* 사이드바 닫혔을 때 토글 버튼 강제 표시 */
-[data-testid="stSidebarCollapsedControl"] {{
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    background: {_SURFACE} !important;
-    border: 1px solid {_BORDER} !important;
-    border-radius: 0 8px 8px 0 !important;
-}}
-[data-testid="stSidebarCollapsedControl"] svg {{
-    fill: {_AMBER} !important;
-}}
+header[data-testid="stHeader"] {{ display: none !important; }}
+[data-testid="stSidebar"] {{ display: none !important; }}
+[data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
 .block-container {{
-    padding-top: 1rem !important;
+    padding-top: 1.5rem !important;
     padding-bottom: 2rem !important;
     max-width: 1200px !important;
+}}
+
+/* ── 상단 네비게이션 — page_link 언더라인 탭 스타일 ── */
+[data-testid="stPageLink"] a {{
+    color: {_TEXT_MUTED} !important;
+    text-decoration: none !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    padding: 6px 2px 8px !important;
+    display: block !important;
+    text-align: center !important;
+    border-bottom: 2px solid transparent !important;
+    transition: color 0.2s, border-color 0.2s !important;
+    white-space: nowrap !important;
+}}
+[data-testid="stPageLink"] a:hover {{
+    color: {_TEXT} !important;
+    border-bottom-color: rgba(212,168,83,0.35) !important;
+    text-decoration: none !important;
+}}
+[data-testid="stPageLink"] a[aria-current="page"],
+[data-testid="stPageLink"] a.active {{
+    color: {_AMBER} !important;
+    border-bottom: 2px solid {_AMBER} !important;
+    font-weight: 700 !important;
 }}
 
 /* ── 전체 앱 배경 ── */
 .stApp {{
     background-color: {_BG};
-}}
-
-/* ── 사이드바 ── */
-[data-testid="stSidebar"] {{
-    background-color: #130E0A !important;
-    border-right: 1px solid {_BORDER};
-}}
-[data-testid="stSidebarNav"] a {{
-    color: {_TEXT_MUTED} !important;
-    font-size: 14px;
-    letter-spacing: 0.3px;
-    transition: color 0.2s;
-}}
-[data-testid="stSidebarNav"] a:hover,
-[data-testid="stSidebarNav"] a[aria-selected="true"] {{
-    color: {_AMBER} !important;
 }}
 
 /* ── 탭 ── */

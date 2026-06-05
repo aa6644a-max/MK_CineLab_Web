@@ -23,6 +23,9 @@ st.set_page_config(page_title="MK 포스팅 작업실", page_icon="📝", layout
 from mk_theme import inject_css, PREVIEW_FONT_STYLE
 inject_css()
 
+from navbar import render_navbar
+render_navbar()
+
 # API keys for movie search (raw HTTP)
 KOBIS_API_KEY  = (st.secrets.get("KOBIS_API_KEY")         or os.getenv("KOBIS_API_KEY")         or "").strip().strip("'\"")
 TMDB_SEARCH_KEY = (st.secrets.get("TMDB_API_KEY")         or os.getenv("TMDB_API_KEY")           or "").strip().strip("'\"")

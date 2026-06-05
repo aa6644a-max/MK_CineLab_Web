@@ -6,6 +6,9 @@ st.set_page_config(page_title="MK 이미지 작업실", page_icon="🎨", layout
 from mk_theme import inject_css
 inject_css()
 
+from navbar import render_navbar
+render_navbar()
+
 THUMBNAIL_HTML = """<!DOCTYPE html>
 <html lang="ko">
 <head>
