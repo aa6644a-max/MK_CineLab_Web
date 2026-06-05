@@ -177,26 +177,33 @@ with side_col:
     # ── DB 현황 ──────────────────────────────────────────────────────
     try:
         all_posts = db.get_all_posts()
+        generated_posts = [p for p in all_posts if len(p) > 2 and p[2] != "블로그원본"]
+        ref_count = len(all_posts) - len(generated_posts)
         type_counts = {}
-        for p in all_posts:
+        for p in generated_posts:
             t = p[2] if len(p) > 2 else "기타"
             type_counts[t] = type_counts.get(t, 0) + 1
 
         count_html = "".join(
-            f'<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(212,168,83,0.06);">'
+            f'<div style="display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(212,168,83,0.06);">'
             f'<span style="font-size:12px; color:rgba(245,240,232,0.55);">{k}</span>'
             f'<span style="font-size:13px; font-weight:700; color:#D4A853;">{v}</span>'
             f'</div>'
             for k, v in type_counts.items()
-        )
+        ) if type_counts else f'<div style="font-size:11px; color:rgba(245,240,232,0.3); padding:8px 0;">생성된 포스팅 없음</div>'
+
         st.markdown(f"""
         <div style="background:#1E1610; border:1px solid rgba(212,168,83,0.15);
                     border-radius:14px; padding:20px 18px; margin-bottom:20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-                <span style="font-size:10px; letter-spacing:2px; color:#8B6F47; text-transform:uppercase;">포스팅 DB</span>
-                <span style="font-size:20px; font-weight:700; color:#D4A853;">{len(all_posts)}<span style="font-size:11px; font-weight:400; color:rgba(245,240,232,0.3); margin-left:4px;">개</span></span>
+                <span style="font-size:10px; letter-spacing:2px; color:#8B6F47; text-transform:uppercase;">생성 포스팅</span>
+                <span style="font-size:20px; font-weight:700; color:#D4A853;">{len(generated_posts)}<span style="font-size:11px; font-weight:400; color:rgba(245,240,232,0.3); margin-left:4px;">개</span></span>
             </div>
             {count_html}
+            <div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(212,168,83,0.06);
+                        font-size:10px; color:rgba(245,240,232,0.25);">
+                블로그 원본 레퍼런스 {ref_count}개 별도 보관
+            </div>
         </div>
         """, unsafe_allow_html=True)
     except Exception:
@@ -217,7 +224,9 @@ with side_col:
 
     try:
         all_posts = db.get_all_posts()
-        recent = list(reversed(all_posts))[:12]
+        # 블로그원본(스타일 레퍼런스용) 제외 — AI 생성 포스팅만 표시
+        generated = [p for p in all_posts if len(p) > 2 and p[2] != "블로그원본"]
+        recent = list(reversed(generated))[:12]
         if recent:
             items_html = ""
             for post in recent:
@@ -249,6 +258,15 @@ with side_col:
             </div>
             """, unsafe_allow_html=True)
         else:
-            st.caption("저장된 포스팅이 없습니다.")
+            st.markdown("""
+            <div style="background:#1A1310; border:1px solid rgba(212,168,83,0.08);
+                        border-radius:14px; padding:28px 20px; text-align:center;">
+                <div style="font-size:24px; margin-bottom:8px; opacity:0.3;">📝</div>
+                <div style="font-size:12px; color:rgba(245,240,232,0.35); line-height:1.6;">
+                    아직 저장된 포스팅이 없습니다.<br>
+                    포스팅 생성 후 💾 저장 버튼을 눌러주세요.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
     except Exception as e:
         st.caption(f"DB 오류: {e}")
