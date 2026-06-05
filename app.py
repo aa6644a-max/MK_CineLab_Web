@@ -239,25 +239,19 @@ with side_col:
                 except Exception:
                     date_fmt = str(date_str)[:5] if date_str else "—"
                 safe_title = _html.escape(str(title)[:28]) + ("…" if len(str(title)) > 28 else "")
-                items_html += f"""
-                <div style="display:flex; align-items:center; gap:10px; padding:9px 0;
-                            border-bottom:1px solid rgba(212,168,83,0.06);">
-                    <div style="width:6px; height:6px; border-radius:50%;
-                                background:{color}; flex-shrink:0;"></div>
-                    <div style="flex:1; min-width:0;">
-                        <div style="font-size:12px; color:#F5F0E8; white-space:nowrap;
-                                    overflow:hidden; text-overflow:ellipsis;">{safe_title}</div>
-                        <div style="font-size:10px; color:rgba(245,240,232,0.35); margin-top:1px;">{post_type}</div>
-                    </div>
-                    <div style="font-size:10px; color:rgba(245,240,232,0.25); white-space:nowrap;">{date_fmt}</div>
-                </div>
-                """
-            st.markdown(f"""
-            <div style="background:#1A1310; border:1px solid rgba(212,168,83,0.12);
-                        border-radius:14px; padding:16px 16px 8px;">
-                {items_html}
-            </div>
-            """, unsafe_allow_html=True)
+                items_html += (
+f'<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(212,168,83,0.06);">'
+f'<div style="width:6px;height:6px;border-radius:50%;background:{color};flex-shrink:0;"></div>'
+f'<div style="flex:1;min-width:0;">'
+f'<div style="font-size:12px;color:#F5F0E8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{safe_title}</div>'
+f'<div style="font-size:10px;color:rgba(245,240,232,0.35);margin-top:1px;">{post_type}</div>'
+f'</div>'
+f'<div style="font-size:10px;color:rgba(245,240,232,0.25);white-space:nowrap;">{date_fmt}</div>'
+f'</div>'
+                )
+            st.markdown(
+f'<div style="background:#1A1310;border:1px solid rgba(212,168,83,0.12);border-radius:14px;padding:16px 16px 8px;">{items_html}</div>',
+unsafe_allow_html=True)
         else:
             st.markdown("""
             <div style="background:#1A1310; border:1px solid rgba(212,168,83,0.08);
