@@ -2,9 +2,11 @@ import os
 import re
 import base64
 import time
+import io
 import streamlit as st
 from anthropic import Anthropic
 from dotenv import load_dotenv
+from PIL import Image
 
 load_dotenv()
 
@@ -35,10 +37,22 @@ class ClaudeClient:
                     if hasattr(img_file, 'seek'):
                         img_file.seek(0)
 
-                    media_type = getattr(img_file, 'type', None)
-                    if not media_type:
-                        name = getattr(img_file, 'name', '').lower()
-                        media_type = 'image/png' if name.endswith('.png') else 'image/jpeg'
+                    # 1024px 이하로 리사이즈 (API 413 방지)
+                    try:
+                        pil_img = Image.open(io.BytesIO(img_bytes))
+                        max_dim = 1024
+                        if max(pil_img.size) > max_dim:
+                            pil_img.thumbnail((max_dim, max_dim), Image.LANCZOS)
+                        buf = io.BytesIO()
+                        fmt = "JPEG" if pil_img.mode not in ("RGBA", "P") else "PNG"
+                        pil_img.save(buf, format=fmt, quality=85)
+                        img_bytes = buf.getvalue()
+                        media_type = "image/jpeg" if fmt == "JPEG" else "image/png"
+                    except Exception:
+                        media_type = getattr(img_file, 'type', None)
+                        if not media_type:
+                            name = getattr(img_file, 'name', '').lower()
+                            media_type = 'image/png' if name.endswith('.png') else 'image/jpeg'
 
                     b64 = base64.standard_b64encode(img_bytes).decode('utf-8')
                     content.append({
