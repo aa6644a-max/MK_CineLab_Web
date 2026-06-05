@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import datetime
+import html as _html
 
 st.set_page_config(page_title="MK CINELAB", page_icon="🎬", layout="wide")
 
@@ -237,7 +238,7 @@ with side_col:
                     date_fmt = d.strftime("%m.%d")
                 except Exception:
                     date_fmt = str(date_str)[:5] if date_str else "—"
-                safe_title = str(title)[:28] + ("…" if len(str(title)) > 28 else "")
+                safe_title = _html.escape(str(title)[:28]) + ("…" if len(str(title)) > 28 else "")
                 items_html += f"""
                 <div style="display:flex; align-items:center; gap:10px; padding:9px 0;
                             border-bottom:1px solid rgba(212,168,83,0.06);">
