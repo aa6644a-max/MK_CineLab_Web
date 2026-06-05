@@ -7,6 +7,9 @@ from db_manager import DBManager
 
 st.set_page_config(page_title="설정 및 동기화", page_icon="⚙️")
 
+from mk_theme import inject_css
+inject_css()
+
 @st.cache_resource
 def get_db():
     return DBManager()

@@ -83,13 +83,48 @@ class DailyPromptBuilder(BasePromptBuilder):
         (제목 조건: 검색 노출에 유리한 핵심 키워드를 앞에 배치, 30자 이내, 클릭을 유도하는 감성적 표현 포함)
         """
 
-    def build_photo_post_prompt(self, category, vibe, place_info_text, photo_contexts_text, reference_posts=""):
-        # 💡 수정된 부분 1: 공통 제약사항만 부르던 것을, 가독성/분량/디자인이 모두 담긴 베이스 지침 전체로 변경!
+    def build_photo_post_prompt(self, category, vibe, place_info_text, photo_contexts_text, reference_posts="", pdf_text=""):
         base_guideline = self._get_base_guideline()
         ref_prompt = self._get_reference_prompt(reference_posts)
-        
+
+        pdf_section = ""
+        if pdf_text and pdf_text.strip():
+            pdf_section = f"""
+        [📄 사전 조사 자료 (PDF)]
+        아래는 이 장소/주제에 대해 방문 전 직접 조사한 배경 자료입니다.
+        글의 도입부와 배경 설명 단락을 작성할 때 이 내용을 적극적으로 활용하세요.
+        단, 조사 내용을 나열하듯 쓰지 말고, 방문 경험과 자연스럽게 연결하세요.
+
+        {pdf_text}
+        """
+
+        structure_guide = f"""
+        [🗂️ MK 비평가 포스팅 구조 (반드시 이 순서로)]
+        이 포스팅은 맛집/장소 소개 인플루언서 글이 아닙니다.
+        MK는 어떤 장소나 경험을 '비평가의 시선'으로 기록합니다.
+
+        1단계 — 배경과 소개 (전체의 약 25%):
+           - 이 장소/가게/브랜드가 어떤 곳인지 PDF 조사 자료를 바탕으로 소개하세요.
+           - "~라는 곳이 있다고 해서 찾아봤는데" 식의 발견 동기를 자연스럽게 녹이세요.
+           - 홍보성 과장 표현('최고', '강추', '인생맛집') 절대 금지.
+
+        2단계 — 방문 경위와 첫인상 (약 15%):
+           - 왜, 어떤 계기로 갔는지 솔직하게 쓰세요 (집 근처라서, 궁금해서, 같이 간 사람이 있어서 등).
+           - 공간의 첫인상, 동선, 분위기를 간결하게 묘사하세요.
+
+        3단계 — 메뉴/경험 상세 기록 (약 45%):
+           - 먹거나 경험한 것들을 사진 순서에 맞춰 구체적으로 기록하세요.
+           - 맛/질감/온도/가격 등 실제 정보를 담되, '이게 맛있어요!'가 아니라 '이런 느낌이었다'로 쓰세요.
+           - 비교 대상이나 기대치 대비 실제 경험 차이를 솔직하게 서술하세요.
+
+        4단계 — MK의 총평 (약 15%):
+           - 억지 별점이나 추천 멘트 없이 "또 가겠냐"에 대한 솔직한 결론.
+           - 누구에게 어울릴 곳인지 구체적으로 (예: '영화 보고 가볍게 들르기 좋은 집').
+        """
+
         return f"""
-        당신은 네이버 인플루언서 'MK'입니다. 사용자가 직접 찍어 올린 [사진]들과 [짧은 메모]를 바탕으로 생생한 '{category}' 블로그 포스팅을 작성해야 합니다.
+        당신은 네이버 블로거 'MK'입니다. 맛집 인플루언서가 아닌, 경험을 솔직하게 기록하는 비평가입니다.
+        아래 제공된 [사전 조사 자료], [장소 정보], [사진 메모]를 바탕으로 포스팅을 작성하세요.
 
         [기록 기본 설정]
         - 포스팅 주제: {category}
@@ -97,26 +132,30 @@ class DailyPromptBuilder(BasePromptBuilder):
 
         {place_info_text}
 
+        {pdf_section}
+
         [📸 제공된 사진 및 사용자 메모]
-        당신에게는 실제 이미지 파일들이 순서대로 제공되었습니다. 
-        아래는 사용자가 각 이미지에 순서대로 남긴 짧은 메모입니다. 이미지의 시각적 정보(Vision)와 사용자의 메모를 결합하여 풍성한 문단을 만들어내세요.
-        
+        실제 이미지 파일들이 순서대로 제공되었습니다.
+        아래는 각 이미지에 남긴 메모입니다. 이미지의 시각 정보와 메모를 결합해 구체적인 문단을 만드세요.
+
         {photo_contexts_text}
+
+        {structure_guide}
 
         ======================================
         💡 [MK CINELAB 베이스 지침 절대 적용]
         {base_guideline}
         ======================================
 
-        [🎨 사진 포스팅 특화 가이드 (베이스 지침과 함께 적용)]
-        1. 전체 폰트: 기본 폰트는 `<div style="font-family: 'Nanum Gothic', '나눔고딕', sans-serif; color: #333; line-height: 1.8;">` 로 전체를 감싸세요.
-        2. 이미지 삽입 위치 (절대 준수): 
-           - 글의 전개는 사용자가 제공한 사진 순서를 그대로 따르세요.
-           - 본문 중 해당 사진이 보여야 할 위치(문단 사이)에는 반드시 아래 형식의 이미지 태그를 삽입하세요.
-             <div style="text-align: center; margin: 25px 0;"><img src="[PHOTO_번호]" alt="[사진 속 시각 정보 분석 내용]" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"></div>
-           - 여기서 '번호'는 제공된 사진의 순서(1부터 시작)와 일치해야 합니다. (예: 첫 번째 사진은 [PHOTO_1])
-        3. 내용 구분선: 문단 내용이 크게 전환될 때 네이버 스티커 느낌의 `<div style="height: 2px; background: linear-gradient(to right, #ffffff, #a5d6a7, #ffffff); margin: 50px 0;"></div>` 를 한두 번 적절히 사용하세요.
-        
+        [🎨 사진 포스팅 HTML 가이드]
+        1. 전체 폰트: `<div style="font-family: 'Nanum Gothic', '나눔고딕', sans-serif; color: #333; line-height: 1.8;">` 로 전체를 감싸세요.
+        2. 이미지 삽입 (절대 준수):
+           - 글의 전개는 사진 순서를 그대로 따르세요.
+           - 해당 사진이 보여야 할 문단 사이에 반드시 아래 형식으로 삽입:
+             <div style="text-align: center; margin: 25px 0;"><img src="[PHOTO_번호]" alt="[사진 설명]" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"></div>
+           - 번호는 사진 순서(1부터)와 일치해야 합니다.
+        3. 구분선: 단계 전환 시 `<div style="height: 2px; background: linear-gradient(to right, #ffffff, #a5d6a7, #ffffff); margin: 50px 0;"></div>` 1~2회 사용.
+
         {ref_prompt}
 
         출력 형식: 설명이나 인사말 없이 오직 완성된 HTML 본문 코드만 출력하세요. (```html 마크다운 기호 제외).

@@ -110,6 +110,28 @@ class TMDBClient:
             
         return {}
 
+    def get_weekly_trending(self, limit=6):
+        url = f"{self.base_url}/trending/movie/week"
+        params = {"api_key": self.api_key, "language": "ko-KR"}
+        try:
+            res = requests.get(url, params=params, timeout=10)
+            if res.status_code == 200:
+                results = res.json().get("results", [])[:limit]
+                return [
+                    {
+                        "id": m.get("id"),
+                        "title": m.get("title") or m.get("name", ""),
+                        "release_date": (m.get("release_date") or "")[:4],
+                        "vote_average": round(m.get("vote_average", 0), 1),
+                        "overview": (m.get("overview") or "")[:80],
+                        "poster_url": f"https://image.tmdb.org/t/p/w342{m['poster_path']}" if m.get("poster_path") else "",
+                    }
+                    for m in results
+                ]
+        except Exception as e:
+            print(f"TMDB Trending Error: {e}")
+        return []
+
     def search_tv(self, title):
         url = f"{self.base_url}/search/tv"
         params = {"api_key": self.api_key, "query": title, "language": "ko-KR"}
