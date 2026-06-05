@@ -25,6 +25,18 @@ header[data-testid="stHeader"] {{
     background: transparent !important;
     border-bottom: none !important;
 }}
+/* 사이드바 닫혔을 때 토글 버튼 강제 표시 */
+[data-testid="stSidebarCollapsedControl"] {{
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    background: {_SURFACE} !important;
+    border: 1px solid {_BORDER} !important;
+    border-radius: 0 8px 8px 0 !important;
+}}
+[data-testid="stSidebarCollapsedControl"] svg {{
+    fill: {_AMBER} !important;
+}}
 .block-container {{
     padding-top: 1rem !important;
     padding-bottom: 2rem !important;
