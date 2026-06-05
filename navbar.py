@@ -6,7 +6,7 @@ def render_navbar():
         st.markdown(
             '<span style="font-size:15px;font-weight:800;color:#D4A853;'
             'letter-spacing:3px;line-height:36px;display:block;'
-            'text-transform:uppercase;">🎬 MK CINELAB</span>',
+            'text-transform:uppercase;">🔗 MK LINK</span>',
             unsafe_allow_html=True,
         )
     with c1:

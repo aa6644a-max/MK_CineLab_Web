@@ -300,7 +300,7 @@ with tab_pdf:
                     )
                     result = claude_ai.generate_post(prompt)
                     st.session_state.daily_titles = parse_titles_from_html(result)
-                    st.session_state.daily_html = formatter.wrap_in_table(f"{post_category} 기록", result)
+                    st.session_state.daily_html = formatter.wrap_in_table(f"{post_category} 기록", result, post_type="일상")
                     st.success("노트북LM 스타일의 맞춤형 포스팅 생성이 완료되었습니다!")
         else:
             st.warning("PDF 파일, 카테고리, 그리고 추가 맥락을 모두 입력해 주세요.")
@@ -347,7 +347,7 @@ with tab_rev:
                     prompt = builder.build_review_prompt(details, comment, reason=reason_input, latest_news=latest_news, reference_posts=reference_posts)
                     result = claude_ai.generate_post(prompt)
                     titles = parse_titles_from_html(result)
-                    final_html = formatter.wrap_in_table(f"{details['title']} 리뷰", result)
+                    final_html = formatter.wrap_in_table(f"{details['title']} 리뷰", result, post_type="리뷰")
                     st.session_state.rev_data = {"title": details['title'], "html": final_html, "titles": titles}
                 else:
                     st.error(f"'{title}' 영화를 찾을 수 없습니다.")
@@ -393,7 +393,7 @@ with tab_pre:
                     prompt = builder.build_preview_prompt(details, point, reason=pre_reason_input, latest_news=latest_news, reference_posts=reference_posts)
                     result = claude_ai.generate_post(prompt)
                     titles = parse_titles_from_html(result)
-                    final_html = formatter.wrap_in_table(f"{details['title']} 프리뷰", result)
+                    final_html = formatter.wrap_in_table(f"{details['title']} 프리뷰", result, post_type="프리뷰")
                     st.session_state.pre_data = {"title": details['title'], "html": final_html, "titles": titles}
                 else:
                     st.error("해당하는 영화 정보가 없습니다.")
@@ -481,7 +481,7 @@ with tab_cur:
                     prompt = builder.build_curation_prompt(cur_theme, movies_data_text, reference_posts)
                     result = claude_ai.generate_post(prompt)
                     titles = parse_titles_from_html(result)
-                    final_html = formatter.wrap_in_table(cur_theme, result)
+                    final_html = formatter.wrap_in_table(cur_theme, result, post_type="리스트")
                     st.session_state.cur_data = {"title": cur_theme, "html": final_html, "titles": titles}
                 else:
                     st.error("유효한 영화 정보를 하나도 수집하지 못했습니다. 제목을 정확히 확인해 주세요.")
@@ -553,7 +553,7 @@ with tab_binge:
                     prompt = builder.build_binge_prompt(binge_theme, series_data_text, reference_posts)
                     result = claude_ai.generate_post(prompt)
                     titles = parse_titles_from_html(result)
-                    final_html = formatter.wrap_in_table(binge_theme, result)
+                    final_html = formatter.wrap_in_table(binge_theme, result, post_type="정주행")
                     st.session_state.binge_data = {"title": binge_theme, "html": final_html, "titles": titles}
                 else:
                     st.error("유효한 작품 정보를 하나도 수집하지 못했습니다. 제목을 확인해 주세요.")
@@ -702,10 +702,10 @@ with tab_photo:
                 )
                 result = claude_ai.generate_post(prompt, images=uploaded_photos)
                 st.session_state.photo_titles = parse_titles_from_html(result)
-                st.session_state.photo_result_html = formatter.wrap_in_table(f"{photo_category} 기록", result)
+                st.session_state.photo_result_html = formatter.wrap_in_table(f"{photo_category} 기록", result, post_type="사진")
                 st.session_state.photo_uploaded_files = uploaded_photos
                 copy_html_raw = strip_images_for_copy(result, len(uploaded_photos))
-                st.session_state.photo_copy_html = formatter.wrap_in_table(f"{photo_category} 기록", copy_html_raw)
+                st.session_state.photo_copy_html = formatter.wrap_in_table(f"{photo_category} 기록", copy_html_raw, post_type="사진")
                 st.success("사진 기반 맞춤형 포스팅 생성이 완료되었습니다!")
 
     if st.session_state.get("photo_result_html"):

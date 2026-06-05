@@ -1,7 +1,7 @@
 import streamlit as st
 import html as _html
 
-st.set_page_config(page_title="MK CINELAB", page_icon="🎬", layout="wide")
+st.set_page_config(page_title="MK LINK", page_icon="🔗", layout="wide")
 
 from mk_theme import inject_css
 inject_css()
@@ -19,7 +19,7 @@ tmdb = init_home_engines()
 
 st.markdown(
 '<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:18px;">'
-'<span style="font-size:10px;letter-spacing:3px;color:#8B6F47;text-transform:uppercase;">TMDB</span>'
+'<span style="font-size:10px;letter-spacing:3px;color:#8B6F47;text-transform:uppercase;">MK LINK</span>'
 '<span style="font-size:18px;font-weight:700;color:#F5F0E8;">이번 주 트렌딩</span>'
 '</div>',
     unsafe_allow_html=True)
