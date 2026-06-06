@@ -4,7 +4,6 @@ import re
 import pdfplumber
 import requests
 import os
-import pandas as pd
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from tmdb_client import TMDBClient
@@ -18,7 +17,7 @@ from rss_client import RSSClient
 
 load_dotenv()
 
-st.set_page_config(page_title="MK 포스팅 작업실", page_icon="📝", layout="centered")
+st.set_page_config(page_title="MK Studio · 포스팅", page_icon="✦", layout="centered")
 
 from mk_theme import inject_css, PREVIEW_FONT_STYLE
 inject_css()
@@ -37,6 +36,16 @@ NAVER_SECRET   = (st.secrets.get("NAVER_CLIENT_SECRET")   or os.getenv("NAVER_CL
 # ─────────────────────────────────────────────
 # HTML 렌더링 헬퍼
 # ─────────────────────────────────────────────
+def section_card(icon, title, desc=""):
+    desc_html = f'<div class="sc-desc">{desc}</div>' if desc else ""
+    st.markdown(f"""
+    <div class="mk-section-card">
+      <span class="sc-icon">{icon}</span>
+      <div class="sc-title">{title}</div>
+      {desc_html}
+    </div>""", unsafe_allow_html=True)
+
+
 def parse_titles_from_html(html_text):
     match = re.search(r'<!--\s*TITLES:\s*(.+?)\s*-->', html_text, re.DOTALL)
     if not match:
@@ -52,9 +61,11 @@ def show_isolated_html(html_str, height=1000, scrolling=True):
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" rel="stylesheet">
 <style>
-body{{margin:0;padding:0;font-family:'Noto Serif KR',serif;}}
+*{{box-sizing:border-box;}}
+body{{margin:0;padding:16px;font-family:'Pretendard Variable','Pretendard',sans-serif;max-width:720px;margin:0 auto;}}
+img{{max-width:100% !important;height:auto !important;display:block;margin:12px auto;border-radius:6px;}}
 </style>
 </head>
 <body>
@@ -68,29 +79,48 @@ body{{margin:0;padding:0;font-family:'Noto Serif KR',serif;}}
 
 
 def render_preview_with_photos(html_str, photos):
+    from PIL import Image
+    import io as _io
     clean = html_str.replace("```html\n", "").replace("```html", "").replace("```", "")
-    for i in range(len(photos)):
-        clean = clean.replace(f"[PHOTO_{i+1}]", f"<<<PHOTO_SLOT_{i+1}>>>")
-    for i in range(len(photos)):
-        slot = f"<<<PHOTO_SLOT_{i+1}>>>"
+
+    # 사진 → base64 data URI (최대 900px 리사이즈)
+    data_uris = []
+    for photo in photos:
+        photo.seek(0)
+        try:
+            img = Image.open(photo)
+            if img.width > 900:
+                ratio = 900 / img.width
+                img = img.resize((900, int(img.height * ratio)), Image.LANCZOS)
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+            buf = _io.BytesIO()
+            img.save(buf, format="JPEG", quality=82)
+            b64str = base64.b64encode(buf.getvalue()).decode("utf-8")
+            data_uris.append(f"data:image/jpeg;base64,{b64str}")
+        except Exception:
+            photo.seek(0)
+            b64str = base64.b64encode(photo.read()).decode("utf-8")
+            data_uris.append(f"data:image/jpeg;base64,{b64str}")
+
+    # [PHOTO_N] 플레이스홀더 교체
+    for i, uri in enumerate(data_uris):
+        img_tag = f'<div style="text-align:center;margin:20px 0;"><img src="{uri}" style="max-width:100%;max-height:600px;object-fit:contain;border-radius:8px;" alt="사진{i+1}"></div>'
+        clean = clean.replace(f"[PHOTO_{i+1}]", img_tag)
+
+    # 잔여 외부 http 이미지 URL도 data URI로 대체
+    for uri in data_uris:
+        img_tag = f'<div style="text-align:center;margin:20px 0;"><img src="{uri}" style="max-width:100%;max-height:600px;object-fit:contain;border-radius:8px;"></div>'
         pattern_div = r'<div[^>]*>\s*<img[^>]*src=["\']https?://[^"\'>\s]+["\'][^>]*>\s*</div>'
         pattern_img = r'<img[^>]*src=["\']https?://[^"\'>\s]+["\'][^>]*>'
         if re.search(pattern_div, clean):
-            clean = re.sub(pattern_div, slot, clean, count=1)
+            clean = re.sub(pattern_div, img_tag, clean, count=1)
         elif re.search(pattern_img, clean):
-            clean = re.sub(pattern_img, slot, clean, count=1)
-    master_pattern = re.compile(r'(<<<PHOTO_SLOT_\d+>>>)')
-    parts = master_pattern.split(clean)
-    for part in parts:
-        slot_match = re.match(r'<<<PHOTO_SLOT_(\d+)>>>', part)
-        if slot_match:
-            idx = int(slot_match.group(1)) - 1
-            if idx < len(photos):
-                photos[idx].seek(0)
-                st.image(photos[idx], width='stretch')
-        else:
-            if part.strip():
-                show_isolated_html(part, height=400, scrolling=False)
+            clean = re.sub(pattern_img, img_tag, clean, count=1)
+
+    show_isolated_html(clean, height=2500)
+
+
 
 
 def strip_images_for_copy(html_str, photo_count):
@@ -227,8 +257,12 @@ _defaults = {
 for k, v in _defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
-if "cur_movies_df" not in st.session_state:
-    st.session_state.cur_movies_df = pd.DataFrame({"영화 제목": ["", "", ""], "한마디 코멘트 (선택)": ["", "", ""]})
+if "cur_entries" not in st.session_state:
+    st.session_state.cur_entries = [{"id": i, "t": "", "c": ""} for i in range(3)]
+    st.session_state._cur_next_id = 3
+if "binge_entries" not in st.session_state:
+    st.session_state.binge_entries = [{"id": i} for i in range(3)]
+    st.session_state._binge_next_id = 3
 
 
 def get_recent_references(post_type_filter, limit=2):
@@ -245,8 +279,13 @@ def get_recent_references(post_type_filter, limit=2):
 # ─────────────────────────────────────────────
 # 페이지
 # ─────────────────────────────────────────────
-st.title("📝 MK 포스팅 작업실")
-st.markdown("---")
+st.markdown("""
+<div style="padding:4px 0 24px;">
+  <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:#C09030;text-transform:uppercase;margin-bottom:8px;">MK STUDIO</div>
+  <div style="font-size:1.7rem;font-weight:800;color:#2C2010;letter-spacing:-0.4px;line-height:1.15;">포스팅 작업실</div>
+  <div style="font-size:0.875rem;color:rgba(44,32,16,0.55);margin-top:7px;line-height:1.6;">AI가 영화 리뷰, 큐레이션, 사진 포스팅까지 모든 과정을 도와드립니다</div>
+</div>
+""", unsafe_allow_html=True)
 
 tab_pdf, tab_rev, tab_pre, tab_cur, tab_binge, tab_photo, tab_search = st.tabs([
     "📄 PDF 요약", "🎥 영화 리뷰", "📅 개봉 프리뷰",
@@ -258,8 +297,7 @@ tab_pdf, tab_rev, tab_pre, tab_cur, tab_binge, tab_photo, tab_search = st.tabs([
 # [TAB 1] PDF 요약 포스팅
 # ==========================================
 with tab_pdf:
-    st.subheader("📄 PDF 자료 기반 블로그 초안 생성")
-    st.write("다양한 PDF 자료들을 업로드하면, 오직 그 내용들만 분석하여 MK 스타일로 요약해 드립니다.")
+    section_card("📄", "PDF 자료 기반 초안 생성", "다양한 PDF 자료를 업로드하면 오직 그 내용만 분석해 MK 스타일로 요약합니다.")
     st.info("💡 여러 개의 PDF를 한꺼번에 올릴 수 있습니다. 자료가 많을수록 더 정확한 분석이 가능해요.")
 
     col1, col2 = st.columns([2, 1])
@@ -324,7 +362,7 @@ with tab_pdf:
 # [TAB 2] 영화 리뷰
 # ==========================================
 with tab_rev:
-    st.subheader("영화 리뷰 생성")
+    section_card("🎥", "영화 리뷰 생성", "영화 정보와 나의 감상을 바탕으로 네이버 최적화 리뷰를 자동 완성합니다.")
     col1, col2 = st.columns([3, 1])
     with col1: title = st.text_input("리뷰할 영화 제목", key="rev_title")
     with col2: year_input = st.text_input("개봉 연도 (선택)", placeholder="예: 2024", key="rev_year")
@@ -374,7 +412,7 @@ with tab_rev:
 # [TAB 3] 개봉 프리뷰
 # ==========================================
 with tab_pre:
-    st.subheader("개봉 예정작 프리뷰")
+    section_card("📅", "개봉 예정작 프리뷰", "기대작의 정보와 나만의 기대감을 담은 프리뷰 포스팅을 작성합니다.")
     p_title = st.text_input("프리뷰 영화 제목", key="pre_title")
     point = st.text_input("강조 포인트 (예: 배우 라인업, 감독의 전작 등)", key="pre_point")
     pre_reason_input = st.text_input("프리뷰를 쓰는 이유", placeholder="예: 예고편의 강렬한 분위기에 압도되어 개봉일만 손꼽아 기다리고 있습니다.", key="pre_reason")
@@ -420,31 +458,46 @@ with tab_pre:
 # [TAB 4] 큐레이션 리스트
 # ==========================================
 with tab_cur:
-    st.subheader("🎬 영화 큐레이션 리스트 생성")
-    st.markdown("여러 편의 영화를 특정 테마에 맞춰 한 번에 소개하는 포스팅을 작성합니다.")
+    section_card("🎬", "영화 큐레이션 리스트", "여러 편의 영화를 특정 테마에 맞춰 한 번에 소개하는 포스팅을 작성합니다.")
 
     cur_theme = st.text_input("포스팅 메인 테마", placeholder="예: 다가오는 2026년 3월 개봉 예정 기대작 정리", key="cur_theme")
-    st.markdown("**소개할 영화 목록** — 영화 제목 입력 후, 각 영화에 하고 싶은 말이 있으면 '한마디 코멘트'에 적어주세요. (행 추가는 맨 아래 빈 행 클릭)")
-    edited_df = st.data_editor(
-        st.session_state.cur_movies_df,
-        num_rows="dynamic",
-        use_container_width=True,
-        key="cur_movies_editor",
-        column_config={
-            "영화 제목": st.column_config.TextColumn("영화 제목", width="medium"),
-            "한마디 코멘트 (선택)": st.column_config.TextColumn("한마디 코멘트 (선택)", width="large", help="예: 이 감독 전작을 정말 좋아해서 기대돼요"),
-        }
-    )
+
+    def _cur_add():
+        nid = st.session_state._cur_next_id
+        st.session_state.cur_entries.append({"id": nid, "t": "", "c": ""})
+        st.session_state._cur_next_id = nid + 1
+
+    def _cur_del(eid):
+        st.session_state.cur_entries = [e for e in st.session_state.cur_entries if e["id"] != eid]
+
+    st.markdown("""<div style="display:grid;grid-template-columns:1fr 1.4fr 32px;gap:8px;margin-bottom:4px;">
+      <span style="font-size:12px;font-weight:600;color:rgba(44,32,16,0.5);">영화 제목</span>
+      <span style="font-size:12px;font-weight:600;color:rgba(44,32,16,0.5);">한마디 코멘트 (선택)</span>
+      <span></span></div>""", unsafe_allow_html=True)
+
+    for entry in st.session_state.cur_entries:
+        eid = entry["id"]
+        c1, c2, c3 = st.columns([1, 1.4, 0.18])
+        with c1:
+            st.text_input("영화 제목", key=f"cur_t_{eid}",
+                          placeholder="예: 인터스텔라", label_visibility="collapsed")
+        with c2:
+            st.text_input("한마디 코멘트", key=f"cur_c_{eid}",
+                          placeholder="예: 놀란 감독 최고작", label_visibility="collapsed")
+        with c3:
+            st.button("✕", key=f"cur_del_{eid}", on_click=_cur_del, args=(eid,))
+
+    st.button("＋ 영화 추가", on_click=_cur_add)
 
     if st.button("큐레이션 포스팅 생성", type="primary"):
         movie_entries = [
-            (str(row["영화 제목"]).strip(), str(row["한마디 코멘트 (선택)"]).strip())
-            for _, row in edited_df.iterrows()
-            if str(row["영화 제목"]).strip() and str(row["영화 제목"]).strip() != "nan"
+            (st.session_state.get(f"cur_t_{e['id']}", "").strip(),
+             st.session_state.get(f"cur_c_{e['id']}", "").strip())
+            for e in st.session_state.cur_entries
+            if st.session_state.get(f"cur_t_{e['id']}", "").strip()
         ]
         if cur_theme and movie_entries:
-            st.session_state.cur_movies_df = edited_df
-            with st.spinner(f"총 {len(movie_entries)}편의 영화 정보(TMDB)와 최신 뉴스(Naver)를 수집 중입니다..."):
+            with st.spinner(f"{len(movie_entries)}편의 영화 정보(TMDB)와 뉴스(Naver) 수집 중..."):
                 movies_data_text = ""
                 for m_title, m_comment in movie_entries:
                     m_info = tmdb.search_movie(m_title)
@@ -510,16 +563,38 @@ with tab_cur:
 # [TAB 5] 정주행 추천
 # ==========================================
 with tab_binge:
-    st.subheader("📺 정주행 추천 포스팅")
-    st.markdown("애니메이션·드라마 등 시리즈물을 **정주행** 관점으로 소개하는 포스팅을 작성합니다.")
+    section_card("📺", "정주행 추천 포스팅", "애니메이션·드라마 등 시리즈물을 정주행 관점으로 소개하는 포스팅을 작성합니다.")
 
     binge_theme = st.text_input("포스팅 메인 테마", placeholder="예: 2025년 상반기 정주행 완료 애니 총결산", key="binge_theme")
-    binge_titles_input = st.text_area("소개할 작품 제목들 (쉼표로 구분)", placeholder="예: 귀멸의 칼날, 프리렌, 던전밥", height=80, key="binge_titles_input")
+
+    def _binge_add():
+        nid = st.session_state._binge_next_id
+        st.session_state.binge_entries.append({"id": nid})
+        st.session_state._binge_next_id = nid + 1
+
+    def _binge_del(eid):
+        st.session_state.binge_entries = [e for e in st.session_state.binge_entries if e["id"] != eid]
+
+    st.markdown('<div style="font-size:12px;font-weight:600;color:rgba(44,32,16,0.5);margin-bottom:4px;">소개할 작품 제목</div>', unsafe_allow_html=True)
+    for entry in st.session_state.binge_entries:
+        eid = entry["id"]
+        c1, c2 = st.columns([1, 0.1])
+        with c1:
+            st.text_input("작품 제목", key=f"binge_t_{eid}",
+                          placeholder="예: 귀멸의 칼날", label_visibility="collapsed")
+        with c2:
+            st.button("✕", key=f"binge_del_{eid}", on_click=_binge_del, args=(eid,))
+
+    st.button("＋ 작품 추가", on_click=_binge_add)
 
     if st.button("정주행 추천 포스팅 생성", type="primary"):
-        if binge_theme and binge_titles_input:
-            title_list = [t.strip() for t in binge_titles_input.split(",") if t.strip()]
-            with st.spinner(f"총 {len(title_list)}편의 시리즈 정보(TMDB)를 수집 중입니다..."):
+        title_list = [
+            st.session_state.get(f"binge_t_{e['id']}", "").strip()
+            for e in st.session_state.binge_entries
+            if st.session_state.get(f"binge_t_{e['id']}", "").strip()
+        ]
+        if binge_theme and title_list:
+            with st.spinner(f"{len(title_list)}편의 시리즈 정보(TMDB) 수집 중..."):
                 series_data_text = ""
                 for s_title in title_list:
                     tv_info = tmdb.search_tv(s_title)
@@ -558,7 +633,7 @@ with tab_binge:
                 else:
                     st.error("유효한 작품 정보를 하나도 수집하지 못했습니다. 제목을 확인해 주세요.")
         else:
-            st.warning("테마와 작품 제목들을 모두 입력해 주세요.")
+            st.warning("테마와 작품 제목을 하나 이상 입력해 주세요.")
 
     if st.session_state.binge_data:
         st.success("정주행 추천 포스팅 생성 완료!")
@@ -580,7 +655,7 @@ with tab_binge:
 # [TAB 6] 사진 포스팅
 # ==========================================
 with tab_photo:
-    st.subheader("📸 사진 기반 포스팅 (MK 비평가 스타일)")
+    section_card("📸", "사진 기반 포스팅", "직접 찍은 사진과 함께 MK 비평가 스타일의 감성 포스팅을 작성합니다.")
     st.write("장소 배경 조사(PDF) → 방문 경위 → 메뉴/감상 순서로 작성됩니다. 맛집 인플루언서 글이 아닌, MK만의 시선으로 기록합니다.")
 
     st.markdown("#### 📍 1. 장소 정보 입력 (선택)")
@@ -732,7 +807,7 @@ with tab_photo:
 # [TAB 7] 영화 검색
 # ==========================================
 with tab_search:
-    st.subheader("🎬 영화 검색 & 박스오피스")
+    section_card("🔍", "영화 검색 & 박스오피스", "TMDB·KOBIS 기반으로 영화 정보와 박스오피스 데이터를 실시간으로 검색합니다.")
     st.markdown("현재 극장가 트렌드를 확인하고, 원하는 영화의 상세 정보를 검색해 보세요.")
 
     search_sub1, search_sub2 = st.tabs(["🏆 일별 박스오피스", "🔍 영화 상세 검색"])
