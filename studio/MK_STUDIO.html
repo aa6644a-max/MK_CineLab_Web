@@ -3874,6 +3874,21 @@ function t06RenderThumb(ctx, S) {
   ctx.fillStyle='rgba(255,255,255,0.28)'; ctx.fillRect(pbL,pbY,pbW,pbH);
   ctx.fillStyle='#e50914'; ctx.fillRect(pbL,pbY,fillW,pbH);
   ctx.beginPath(); ctx.arc(pbL+fillW,pbY+pbH/2,Math.max(4,S*0.007),0,Math.PI*2); ctx.fill();
+  t06DrawCtrlBar(ctx, S);
+}
+function t06DrawCtrlBar(ctx, S) {
+  const sz=S*0.027, cy=S*0.955, gap=S*0.050, lx=S*0.040, rx=S-S*0.040, k=sz/24;
+  ctx.save(); ctx.shadowBlur=0; ctx.fillStyle='rgba(255,255,255,0.90)'; ctx.strokeStyle='rgba(255,255,255,0.90)';
+  function at(cx, fn) { ctx.save(); ctx.translate(cx-sz/2,cy-sz/2); ctx.scale(k,k); ctx.lineWidth=2.2/k; ctx.lineCap='round'; ctx.lineJoin='round'; fn(); ctx.restore(); }
+  at(lx, ()=>{ ctx.fillRect(5.5,4,4.5,16); ctx.fillRect(14,4,4.5,16); });
+  at(lx+gap, ()=>{ ctx.beginPath(); ctx.arc(12,12.5,8,0.55,Math.PI*1.45,false); ctx.stroke(); const a=Math.PI*1.45,px=12+8*Math.cos(a),py=12.5+8*Math.sin(a),tdx=Math.sin(a),tdy=-Math.cos(a); ctx.beginPath(); ctx.moveTo(px+tdx*3,py+tdy*3); ctx.lineTo(px-tdy*2.5,py+tdx*2.5); ctx.lineTo(px+tdy*2.5,py-tdx*2.5); ctx.closePath(); ctx.fill(); ctx.font='bold 7px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('10',12,12.5); });
+  at(lx+gap*2, ()=>{ ctx.beginPath(); ctx.arc(12,12.5,8,Math.PI-0.55,-Math.PI*0.45,true); ctx.stroke(); const a=-Math.PI*0.45,px=12+8*Math.cos(a),py=12.5+8*Math.sin(a),tdx=-Math.sin(a),tdy=Math.cos(a); ctx.beginPath(); ctx.moveTo(px+tdx*3,py+tdy*3); ctx.lineTo(px-tdy*2.5,py+tdx*2.5); ctx.lineTo(px+tdy*2.5,py-tdx*2.5); ctx.closePath(); ctx.fill(); ctx.font='bold 7px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('10',12,12.5); });
+  at(lx+gap*3, ()=>{ ctx.beginPath(); ctx.moveTo(11,5); ctx.lineTo(6,9); ctx.lineTo(2.5,9); ctx.lineTo(2.5,15); ctx.lineTo(6,15); ctx.lineTo(11,19); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.arc(12.5,12,4,-Math.PI*0.5,Math.PI*0.5,false); ctx.stroke(); ctx.beginPath(); ctx.arc(12.5,12,7.5,-Math.PI*0.5,Math.PI*0.5,false); ctx.stroke(); });
+  at(rx-gap*3, ()=>{ ctx.beginPath(); ctx.moveTo(4,4); ctx.lineTo(17,12); ctx.lineTo(4,20); ctx.closePath(); ctx.fill(); ctx.fillRect(18,4,2.5,16); });
+  at(rx-gap*2, ()=>{ [6,12,18].forEach(y=>{ ctx.beginPath(); ctx.arc(3.5,y,1.5,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.moveTo(8,y); ctx.lineTo(22,y); ctx.stroke(); }); });
+  at(rx-gap, ()=>{ ctx.beginPath(); ctx.moveTo(4,3.5); ctx.lineTo(20,3.5); ctx.arcTo(22.5,3.5,22.5,6,2.5); ctx.lineTo(22.5,16); ctx.arcTo(22.5,18.5,20,18.5,2.5); ctx.lineTo(14,18.5); ctx.lineTo(10,22); ctx.lineTo(10,18.5); ctx.lineTo(4,18.5); ctx.arcTo(1.5,18.5,1.5,16,2.5); ctx.lineTo(1.5,6); ctx.arcTo(1.5,3.5,4,3.5,2.5); ctx.closePath(); ctx.stroke(); });
+  at(rx, ()=>{ const d=4.5,m=2; ctx.beginPath(); ctx.moveTo(m+d,m); ctx.lineTo(m,m); ctx.lineTo(m,m+d); ctx.stroke(); ctx.beginPath(); ctx.moveTo(24-m-d,m); ctx.lineTo(24-m,m); ctx.lineTo(24-m,m+d); ctx.stroke(); ctx.beginPath(); ctx.moveTo(m+d,24-m); ctx.lineTo(m,24-m); ctx.lineTo(m,24-m-d); ctx.stroke(); ctx.beginPath(); ctx.moveTo(24-m-d,24-m); ctx.lineTo(24-m,24-m); ctx.lineTo(24-m,24-m-d); ctx.stroke(); });
+  ctx.restore();
 }
 function t06RoundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r); ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r); ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r); ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath(); }
 function t06DrawPreview() {
