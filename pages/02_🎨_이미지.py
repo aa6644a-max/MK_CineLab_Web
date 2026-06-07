@@ -17,4 +17,4 @@ _studio_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "studio"
 with open(_studio_path, "r", encoding="utf-8") as f:
     _studio_html = f.read()
 
-components.v1.html(_studio_html, height=900, scrolling=False)
+components.html(_studio_html, height=900, scrolling=False)
