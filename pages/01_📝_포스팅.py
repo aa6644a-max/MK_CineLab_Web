@@ -10,6 +10,7 @@ from tmdb_client import TMDBClient
 from claude_client import ClaudeClient
 from prompt_builder import PromptBuilder
 from DailyPromptBuilder import DailyPromptBuilder
+from LocalNewsPromptBuilder import LocalNewsPromptBuilder
 from html_formatter import HTMLFormatter
 from naver_client import NaverClient
 from db_manager import DBManager
@@ -238,10 +239,11 @@ def format_money(amount_str):
 def init_posting_engines():
     return (
         TMDBClient(), ClaudeClient(), PromptBuilder(), DailyPromptBuilder(),
-        HTMLFormatter(), NaverClient(), DBManager(), RSSClient()
+        HTMLFormatter(), NaverClient(), DBManager(), RSSClient(),
+        LocalNewsPromptBuilder()
     )
 
-tmdb, claude_ai, builder, daily_builder, formatter, naver, db, rss = init_posting_engines()
+tmdb, claude_ai, builder, daily_builder, formatter, naver, db, rss, local_news_builder = init_posting_engines()
 
 
 # ─────────────────────────────────────────────
@@ -253,6 +255,7 @@ _defaults = {
     "photo_result_html": None, "photo_copy_html": None,
     "photo_uploaded_files": None, "photo_titles": [],
     "place_search_results": None, "selected_place": None,
+    "local_news_html": None, "local_news_titles": [],
 }
 for k, v in _defaults.items():
     if k not in st.session_state:
@@ -287,9 +290,10 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-tab_pdf, tab_rev, tab_pre, tab_cur, tab_binge, tab_photo, tab_search = st.tabs([
+tab_pdf, tab_rev, tab_pre, tab_cur, tab_binge, tab_photo, tab_local, tab_search = st.tabs([
     "📄 PDF 요약", "🎥 영화 리뷰", "📅 개봉 프리뷰",
-    "🎬 큐레이션 리스트", "📺 정주행 추천", "📸 사진 포스팅", "🔍 영화 검색"
+    "🎬 큐레이션 리스트", "📺 정주행 추천", "📸 사진 포스팅",
+    "📢 로컬소식/공고문", "🔍 영화 검색"
 ])
 
 
@@ -804,7 +808,83 @@ with tab_photo:
 
 
 # ==========================================
-# [TAB 7] 영화 검색
+# [TAB 7] 로컬소식/공고문
+# ==========================================
+with tab_local:
+    section_card("📢", "로컬소식 · 공고문 포스팅", "교육/채용/공모전/지원사업 등 공고문 PDF를 올리면 MK LINK 로컬 소식 스타일로 포스팅을 생성합니다.")
+    st.info("💡 공고문 원본 PDF를 업로드하세요. 정보는 PDF 내용만 사용하며 임의 추가·변형하지 않습니다.")
+
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        local_pdf_files = st.file_uploader(
+            "공고문 PDF 파일 선택 (복수 선택 가능)",
+            type="pdf", accept_multiple_files=True, key="local_pdf_uploader"
+        )
+        if local_pdf_files:
+            st.caption(f"📂 총 {len(local_pdf_files)}개 파일 선택됨")
+        local_user_context = st.text_area(
+            "이 소식을 소개하는 목적 및 독자 설명",
+            placeholder="예: 대구·경북 IT 취업 준비생에게 도움이 될 SW 테스트 자격증 무료 교육 소식입니다.",
+            height=180, key="local_user_context"
+        )
+    with col2:
+        local_brand_color = st.color_picker(
+            "섹션 헤더 색상", value="#1a2e4a", key="local_brand_color"
+        )
+        st.caption("기본: 네이비 #1a2e4a")
+        st.write("---")
+        local_generate_btn = st.button("📢 로컬소식 포스팅 생성", type="primary", width='stretch')
+
+    if local_generate_btn:
+        if local_pdf_files and local_user_context:
+            with st.spinner(f"{len(local_pdf_files)}개의 공고문을 분석 중입니다..."):
+                combined_text = ""
+                for f in local_pdf_files:
+                    try:
+                        with pdfplumber.open(f) as pdf:
+                            combined_text += "\n".join(
+                                [page.extract_text() for page in pdf.pages if page.extract_text()]
+                            )
+                    except Exception as e:
+                        st.error(f"{f.name} 읽기 오류: {e}")
+
+                if not combined_text.strip():
+                    st.error("PDF에서 텍스트를 추출할 수 없습니다. 이미지 기반 PDF인지 확인하세요.")
+                else:
+                    prompt = local_news_builder.build_announcement_prompt(
+                        pdf_text=combined_text,
+                        user_context=local_user_context,
+                        brand_color=local_brand_color,
+                    )
+                    result = claude_ai.generate_post(prompt)
+                    st.session_state.local_news_titles = parse_titles_from_html(result)
+                    st.session_state.local_news_html = formatter.wrap_in_table(
+                        "로컬소식 · 공고", result, post_type="로컬소식"
+                    )
+                    st.success("로컬소식 포스팅 생성이 완료되었습니다!")
+        else:
+            st.warning("PDF 파일과 소개 목적을 모두 입력해 주세요.")
+
+    if st.session_state.local_news_html:
+        st.markdown("---")
+        if st.session_state.local_news_titles:
+            with st.container(border=True):
+                st.markdown("##### 📌 네이버 SEO 최적화 제목 추천")
+                selected = st.selectbox(
+                    "원하는 제목을 선택하세요",
+                    st.session_state.local_news_titles,
+                    key="local_title_select"
+                )
+                st.code(selected, language=None)
+        res_tab1, res_tab2 = st.tabs(["👁️ 블로그 미리보기", "📄 HTML 코드"])
+        with res_tab1:
+            show_isolated_html(st.session_state.local_news_html)
+        with res_tab2:
+            st.code(st.session_state.local_news_html, language="html")
+
+
+# ==========================================
+# [TAB 8] 영화 검색
 # ==========================================
 with tab_search:
     section_card("🔍", "영화 검색 & 박스오피스", "TMDB·KOBIS 기반으로 영화 정보와 박스오피스 데이터를 실시간으로 검색합니다.")

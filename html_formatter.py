@@ -9,6 +9,7 @@ class HTMLFormatter:
         "사진":   "MK LINK DAILY",
         "일상":   "MK LINK DAILY",
         "daily":  "MK LINK DAILY",
+        "로컬소식": "MK LINK LOCAL",
     }
 
     def wrap_in_table(self, title, content, post_type=""):
